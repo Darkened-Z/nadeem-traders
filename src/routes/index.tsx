@@ -1,14 +1,13 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Search, Mic, ShoppingCart, Heart, User, MapPin, Menu, Phone,
-  Star, Truck, ShieldCheck, Headphones, Leaf, Wallet, Clock,
-  ChevronRight, ChevronDown, Facebook, Instagram, Youtube, Mail, MessageCircle,
+  ShoppingCart, Heart, User,
+  Star, Headphones, Wallet, Clock,
+  ChevronRight, Facebook, Instagram, Youtube, Mail, MessageCircle,
   Plus, Minus, Zap, Package, Award, TrendingUp, ArrowRight, X,
-  ShoppingBag, Check, LogOut, Loader2, Eye
+  ShoppingBag, Check, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
-import mandiImg from "@/assets/wholesale_mandi.png";
 import spicesBgImg from "@/assets/spices_background.png";
 import spicesAppImg from "@/assets/spices_app_mockup.png";
 
@@ -19,13 +18,6 @@ import {
   getBrands,
   createOrder,
   restoreSession,
-  getCartItems,
-  addToCartDb,
-  updateCartItemQuantityDb,
-  removeFromCartDb,
-  getRecentlyViewed,
-  recordRecentlyViewedDb,
-  getUserAddresses,
   toggleWishlistDb,
   getWishlist,
   clearCartDb
@@ -62,20 +54,26 @@ interface UserProfile {
   picture?: string;
 }
 
-const reasons = [
-  { icon: Leaf, title: "Fresh Products", desc: "Farm-to-door quality, every day." },
-  { icon: Truck, title: "Fast Delivery", desc: "Same-day across major cities." },
-  { icon: Wallet, title: "Wholesale Prices", desc: "Direct commercial market rates." },
-  { icon: ShieldCheck, title: "Trusted Sellers", desc: "Verified vendors only." },
-  { icon: Award, title: "Secure Payments", desc: "COD, EasyPaisa, JazzCash & cards." },
-  { icon: Headphones, title: "24/7 Support", desc: "We're here whenever you need us." },
+const CATEGORY_GRADIENTS = [
+  { from: "from-amber-500", to: "to-orange-600" },
+  { from: "from-red-600", to: "to-rose-700" },
+  { from: "from-yellow-500", to: "to-amber-600" },
+  { from: "from-green-600", to: "to-emerald-700" },
+  { from: "from-purple-600", to: "to-violet-700" },
+  { from: "from-blue-500", to: "to-indigo-600" },
+  { from: "from-pink-500", to: "to-rose-600" },
+  { from: "from-teal-500", to: "to-cyan-600" },
 ];
 
-const testimonials = [
-  { name: "Ayesha Khan", city: "Karachi", text: "Khushbudar Elaichi aur fresh ration items, aur delivery bohat fast. Nadeem Traders meri kitchen ki jaan ban gaya hai!", rating: 5 },
-  { name: "Bilal Ahmed", city: "Lahore", text: "Wholesale rates for my restaurant are unbeatable. Bulk flour and oil orders always on time.", rating: 5 },
-  { name: "Sana Malik", city: "Islamabad", text: "Packaging is extremely safe and prices are genuinely lower than standard retail stores.", rating: 4 },
+const reasons = [
+  { icon: Zap, title: "2–4 Hour City Delivery", desc: "Order before 2pm, get it by evening across Lahore, Karachi & Islamabad." },
+  { icon: TrendingUp, title: "50,000+ Orders Delivered", desc: "Trusted by thousands of homes and businesses across Pakistan." },
+  { icon: Package, title: "Zero Middlemen", desc: "Direct from farms and producers — you get the real price, not inflated retail." },
+  { icon: Award, title: "Quality Inspected", desc: "Every batch is hand-graded before packing. No second-grade maal, period." },
+  { icon: Wallet, title: "Up to 40% Cheaper", desc: "Wholesale pricing unlocked for retail buyers. Beats any sabzi mandi." },
+  { icon: Headphones, title: "WhatsApp Support 24/7", desc: "Real humans, quick responses. Hit us up anytime — we reply fast." },
 ];
+
 
 const getClientDataCache = () => {
   if (typeof window === "undefined") {
@@ -115,7 +113,6 @@ function Home() {
     if (!cache.products) return [];
     return cache.products.filter((p: any) => p.category_id === 1 || p.category_id === 5).slice(0, 6);
   });
-  const [recommended, setRecommended] = useState<any[]>([]);
   
   // App interactivity states
   const cart = useCart();
@@ -130,10 +127,7 @@ function Home() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
   
-  // Map Location Picker States
-  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const [enteredAddress, setEnteredAddress] = useState("");
-  const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  // (location picker removed)
 
   // Checkout details
   const [checkoutForm, setCheckoutForm] = useState({
@@ -219,15 +213,6 @@ function Home() {
             email: user.email
           }));
           
-          // Load default address
-          const addrs = await getUserAddresses({ data: { userId: user.id } });
-          const def = addrs.find(a => a.is_default) || addrs[0];
-          if (def) {
-            const fullAddr = `${def.address_line1}, ${def.address_line2 ? def.address_line2 + ', ' : ''}${def.city}, ${def.state} - ${def.postal_code}`;
-            setEnteredAddress(fullAddr);
-            setCheckoutForm(prev => ({ ...prev, address: fullAddr }));
-          }
-
           // Load wishlist
           const w = await getWishlist({ data: { userId: user.id } });
           setWishlist(w);
@@ -251,98 +236,7 @@ function Home() {
     initializeSession();
   }, []);
 
-  // Update recommendations based on cart/views
-  useEffect(() => {
-    const loadRecommendations = async () => {
-      try {
-        const rv = await getRecentlyViewed({ data: {} });
-        if (rv.length > 0) {
-          const catIds = Array.from(new Set(rv.map(p => p.category_id)));
-          const rec = products.filter(p => catIds.includes(p.category_id) && !rv.some(r => r.id === p.id)).slice(0, 6);
-          setRecommended(rec.length > 0 ? rec : products.slice(6, 12));
-        } else {
-          setRecommended(products.slice(6, 12));
-        }
-      } catch (e) {
-        setRecommended(products.slice(6, 12));
-      }
-    };
-    if (products.length > 0) {
-      loadRecommendations();
-    }
-  }, [products, cart]);
 
-  // Leaflet map initializer
-  useEffect(() => {
-    if (!isLocationModalOpen) return;
-
-    let mapInstance: any = null;
-    let markerInstance: any = null;
-
-    const initMap = () => {
-      const L = (window as any).L;
-      if (!L) return;
-
-      const defaultLat = 31.5204;
-      const defaultLng = 74.3587;
-
-      mapInstance = L.map("location-map").setView([defaultLat, defaultLng], 12);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(mapInstance);
-
-      markerInstance = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(mapInstance);
-
-      const updateAddressFromCoords = async (lat: number, lng: number) => {
-        setMapCoordinates({ lat, lng });
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
-          const data = await res.json();
-          if (data && data.display_name) {
-            setEnteredAddress(data.display_name);
-          } else {
-            setEnteredAddress(`Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`);
-          }
-        } catch (e) {
-          setEnteredAddress(`Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`);
-        }
-      };
-
-      mapInstance.on("click", (e: any) => {
-        const { lat, lng } = e.latlng;
-        markerInstance.setLatLng([lat, lng]);
-        updateAddressFromCoords(lat, lng);
-      });
-
-      markerInstance.on("dragend", (e: any) => {
-        const { lat, lng } = e.target.getLatLng();
-        updateAddressFromCoords(lat, lng);
-      });
-    };
-
-    if (!(window as any).L) {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-      document.head.appendChild(link);
-
-      const script = document.createElement("script");
-      script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-      script.onload = () => {
-        setTimeout(initMap, 200);
-      };
-      document.body.appendChild(script);
-    } else {
-      setTimeout(initMap, 100);
-    }
-
-    return () => {
-      if (mapInstance) {
-        mapInstance.remove();
-      }
-    };
-  }, [isLocationModalOpen]);
 
   // Cart operations
   const addToCart = async (product: any, qty: number = 1) => {
@@ -470,20 +364,11 @@ function Home() {
     return matchesCat && matchesSearch;
   });
 
-  const wholesaleProducts = products.filter(p => p.wholesale_price);
-  const filteredWholesale = wholesaleProducts.filter(p => {
-    const matchesSearch =
-      !searchQuery ||
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.brand.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
 
   // Track product view in DB
   const handleProductClick = async (p: any) => {
     setQuickViewProduct(p);
     try {
-      await recordRecentlyViewedDb({ data: { productId: p.id } });
     } catch (err) {
       console.error(err);
     }
@@ -493,11 +378,6 @@ function Home() {
     <div className="min-h-screen bg-background text-foreground relative">
       {/* 1. Header & Navigation */}
       <div className="sticky top-0 z-40 shadow-sm">
-        <TopBar 
-          onLocationClick={() => setIsLocationModalOpen(true)} 
-          enteredAddress={enteredAddress} 
-          currentUser={currentUser}
-        />
         <Header
           cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
           onCartClick={() => setIsCartOpen(true)}
@@ -506,8 +386,6 @@ function Home() {
           setSearchQuery={setSearchQuery}
           suggestions={suggestions}
           setSuggestions={setSuggestions}
-          onLocationClick={() => setIsLocationModalOpen(true)}
-          enteredAddress={enteredAddress}
         />
       </div>
       
@@ -581,23 +459,6 @@ function Home() {
           </div>
         </div>
 
-        {/* Recommendations */}
-        {recommended.length > 0 && (
-          <div>
-            <SectionHead title="Recommended For You" subtitle="Smart recommendations curated dynamically based on your browsing pattern." />
-            <div className="mt-8">
-              {isLoading ? <SkeletonLoader /> : (
-                <ProductSlider 
-                  products={recommended} 
-                  onAddToCart={addToCart} 
-                  onProductClick={handleProductClick}
-                  onToggleWishlist={handleToggleWishlist}
-                  wishlist={wishlist}
-                />
-              )}
-            </div>
-          </div>
-        )}
       </section>
 
       <FlashSale />
@@ -607,18 +468,7 @@ function Home() {
       {/* Dynamic Brands Marquee */}
       <BrandsSection brands={brands} />
 
-      {/* Dynamic Wholesale Catalog */}
-      <WholesaleSection
-        products={filteredWholesale}
-        onAddToCart={addToCart}
-        onProductClick={handleProductClick}
-        onToggleWishlist={handleToggleWishlist}
-        wishlist={wishlist}
-        isLoading={isLoading}
-      />
-
       <WhyUs />
-      <Testimonials />
       <AppPromo />
       <Footer />
 
@@ -672,8 +522,8 @@ function Home() {
                           )}
 
                           {isWholesaleApplied && (
-                            <span className="inline-block mt-1 text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded uppercase">
-                              Wholesale Rate Applied
+                            <span className="inline-block mt-1 text-[9px] bg-amber-100 text-amber-800 font-extrabold px-1.5 py-0.5 rounded uppercase">
+                              Bulk Rate Applied
                             </span>
                           )}
 
@@ -703,7 +553,7 @@ function Home() {
               {cart.length > 0 && (
                 <div className="border-t border-border p-6 bg-card">
                   {savings > 0 && (
-                    <div className="flex justify-between items-center mb-3 text-xs bg-emerald-100/50 border border-emerald-200 text-emerald-800 p-2.5 rounded-xl font-bold">
+                    <div className="flex justify-between items-center mb-3 text-xs bg-amber-100/50 border border-amber-200 text-amber-800 p-2.5 rounded-xl font-bold">
                       <span>Bulk Savings Applied:</span>
                       <span>Rs. {savings.toLocaleString()}</span>
                     </div>
@@ -746,7 +596,7 @@ function Home() {
 
             {createdOrderId ? (
               <div className="text-center py-8">
-                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100 text-emerald-800 mb-6">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-amber-100 text-amber-800 mb-6">
                   <Check className="h-8 w-8" />
                 </div>
                 <h3 className="text-2xl font-black text-slate-800">Order Placed!</h3>
@@ -832,13 +682,13 @@ function Home() {
                     />
                   </div>
 
-                  <div className="border border-emerald-200 bg-emerald-50 rounded-2xl p-4 flex gap-3 mt-4">
-                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-emerald-800 shrink-0">
+                  <div className="border border-amber-200 bg-amber-50 rounded-2xl p-4 flex gap-3 mt-4">
+                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-amber-100 text-amber-800 shrink-0">
                       <Wallet className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-emerald-800">Cash on Delivery</h4>
-                      <p className="text-[10px] text-emerald-700/80 leading-relaxed mt-0.5">
+                      <h4 className="text-xs font-bold text-amber-800">Cash on Delivery</h4>
+                      <p className="text-[10px] text-amber-700/80 leading-relaxed mt-0.5">
                         Paying cash on delivery is the only method available. Please verify order total amount at your door.
                       </p>
                     </div>
@@ -925,7 +775,7 @@ function Home() {
                       setIsCheckoutOpen(true);
                     }
                   }}
-                  className="flex-1 py-3 bg-emerald-950 text-white text-xs font-bold rounded-xl text-center border border-emerald-900"
+                  className="flex-1 py-3 bg-amber-950 text-white text-xs font-bold rounded-xl text-center border border-amber-900"
                 >
                   Buy Now
                 </button>
@@ -935,66 +785,25 @@ function Home() {
         </div>
       )}
 
-      {/* 6. Location Picker Dialog */}
-      {isLocationModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsLocationModalOpen(false)} />
-          <div className="relative w-full max-w-lg bg-card text-foreground rounded-3xl border border-border p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <button onClick={() => setIsLocationModalOpen(false)} className="absolute right-4 top-4 rounded-xl p-2 hover:bg-accent text-muted-foreground">
-              <X className="h-5 w-5" />
-            </button>
-
-            <h3 className="text-xl font-black text-slate-800 border-b border-border pb-3 mb-4 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" /> Delivery Location Setup
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Shipping Address</label>
-                <textarea
-                  rows={2}
-                  value={enteredAddress}
-                  onChange={(e) => setEnteredAddress(e.target.value)}
-                  placeholder="Enter details or click on the map"
-                  className="mt-1 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-xs text-foreground outline-none focus:border-primary resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">Select from Map</label>
-                <div id="location-map" className="h-60 w-full rounded-2xl border border-border bg-slate-50 overflow-hidden relative z-10" />
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setIsLocationModalOpen(false)}
-                  className="flex-1 py-3 text-xs font-bold text-center border border-border rounded-xl hover:bg-accent transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setCheckoutForm(prev => ({ ...prev, address: enteredAddress }));
-                    setIsLocationModalOpen(false);
-                    toast.success("Delivery location successfully saved!");
-                  }}
-                  className="flex-1 py-3 text-xs font-bold text-white bg-gradient-primary rounded-xl hover:brightness-105 transition"
-                >
-                  Save Location Address
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* WhatsApp Floating Widget */}
+      <a
+        href="https://wa.me/923001234567"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 flex items-center justify-center h-14 w-14 rounded-full shadow-2xl transition hover:scale-110"
+        style={{ backgroundColor: "#25D366" }}
+        aria-label="Chat on WhatsApp"
+      >
+        <svg viewBox="0 0 24 24" className="h-7 w-7 fill-white">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+      </a>
     </div>
   );
 }
 
 function ProductCard({ p, onAddToCart, onProductClick, onToggleWishlist, wishlist }: { p: any; onAddToCart: (p: any) => void; onProductClick: (p: any) => void; onToggleWishlist: (id: number) => void; wishlist: any[] }) {
   const isWishlisted = wishlist.some((item) => item.id === p.id);
-  const save = p.old_price ? Math.round(((p.old_price - p.price) / p.old_price) * 100) : 0;
-  
   return (
     <div className="group relative flex flex-col justify-between overflow-hidden rounded-[24px] border border-border bg-card shadow-soft transition duration-300 hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-elegant h-[340px]">
       <div onClick={() => onProductClick(p)} className="absolute inset-0 w-full h-full cursor-pointer">
@@ -1008,9 +817,7 @@ function ProductCard({ p, onAddToCart, onProductClick, onToggleWishlist, wishlis
       </div>
 
       <div className="relative p-3.5 flex justify-between items-start z-10 pointer-events-none">
-        {save > 0 ? (
-          <span className="rounded-full bg-gradient-gold px-2.5 py-0.5 text-[10px] font-bold text-gold-foreground shadow-soft pointer-events-auto">-{save}%</span>
-        ) : <div />}
+        <div />
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -1044,10 +851,10 @@ function ProductCard({ p, onAddToCart, onProductClick, onToggleWishlist, wishlis
 
       <div className="mt-auto relative z-10 p-4 pt-12 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent text-white">
         <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
-          <span className="text-emerald-400">{p.brand}</span>
+          <span className="text-amber-400">{p.brand}</span>
           <span>{p.weight}</span>
         </div>
-        <div onClick={() => onProductClick(p)} className="hover:text-emerald-400 transition mt-1.5 block cursor-pointer">
+        <div onClick={() => onProductClick(p)} className="hover:text-amber-400 transition mt-1.5 block cursor-pointer">
           <h3 className="line-clamp-2 text-xs font-bold leading-snug text-slate-100">{p.name}</h3>
         </div>
         <div className="flex items-center gap-1 text-[10px] mt-1.5 text-slate-300">
@@ -1055,9 +862,9 @@ function ProductCard({ p, onAddToCart, onProductClick, onToggleWishlist, wishlis
           <span className="font-bold text-white">{p.rating}</span>
           <span>({p.reviews})</span>
         </div>
-        <div className="flex items-center justify-between gap-2 pt-3 mt-2 border-t border-emerald-950/40">
+        <div className="flex items-center justify-between gap-2 pt-3 mt-2 border-t border-amber-950/40">
           <div>
-            <div className="text-sm font-black text-emerald-400">Rs. {p.price}</div>
+            <div className="text-sm font-black text-amber-400">Rs. {p.price}</div>
             {p.old_price && <div className="text-[10px] text-slate-400 line-through">Rs. {p.old_price}</div>}
           </div>
           <button
@@ -1093,7 +900,7 @@ function ProductSlider({ products, onAddToCart, onProductClick, onToggleWishlist
 const SkeletonLoader = () => (
   <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-none">
     {Array.from({ length: 4 }).map((_, idx) => (
-      <div key={idx} className="shrink-0 w-[200px] h-[340px] rounded-3xl border border-emerald-950/20 bg-slate-900/10 animate-pulse p-4 space-y-4">
+      <div key={idx} className="shrink-0 w-[200px] h-[340px] rounded-3xl border border-amber-950/20 bg-slate-900/10 animate-pulse p-4 space-y-4">
         <div className="h-40 bg-slate-800 rounded-2xl" />
         <div className="h-4 bg-slate-800 rounded w-2/3" />
         <div className="h-4 bg-slate-800 rounded w-1/2" />
@@ -1106,40 +913,6 @@ const SkeletonLoader = () => (
   </div>
 );
 
-function TopBar({ 
-  onLocationClick, 
-  enteredAddress,
-  currentUser
-}: { 
-  onLocationClick: () => void; 
-  enteredAddress: string;
-  currentUser: any;
-}) {
-  return (
-    <div className="bg-emerald-950/95 text-emerald-100 text-xs py-2 shadow-sm font-sans backdrop-blur border-b border-emerald-900/60">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1">
-        <div className="flex items-center gap-4">
-          <button onClick={onLocationClick} className="flex items-center gap-1.5 hover:opacity-90 transition text-left">
-            <MapPin className="h-3.5 w-3.5 text-emerald-200" />
-            <span className="truncate max-w-[200px] md:max-w-xs font-semibold">
-              {enteredAddress ? `Delivering to: ${enteredAddress.split(",")[0]}` : "Select Delivery Location"}
-            </span>
-          </button>
-        </div>
-        <div className="flex items-center gap-4 font-semibold">
-          <Link to="/contact" className="hover:opacity-80">Contact Us</Link>
-          <Link to="/help" className="hover:opacity-80">FAQ Help</Link>
-          {currentUser ? (
-            <Link to="/dashboard" className="hover:opacity-80 text-emerald-300">My Dashboard</Link>
-          ) : (
-            <Link to="/login" className="hover:opacity-80">My Dashboard</Link>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Header({
   cartCount,
   onCartClick,
@@ -1148,8 +921,6 @@ function Header({
   setSearchQuery,
   suggestions,
   setSuggestions,
-  onLocationClick,
-  enteredAddress
 }: {
   cartCount: number;
   onCartClick: () => void;
@@ -1158,8 +929,6 @@ function Header({
   setSearchQuery: (q: string) => void;
   suggestions: any[];
   setSuggestions: (s: any[]) => void;
-  onLocationClick: () => void;
-  enteredAddress: string;
 }) {
   return (
     <header className="border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -1170,34 +939,18 @@ function Header({
           </div>
           <div className="leading-tight">
             <div className="text-lg font-extrabold tracking-tight">Nadeem<span className="text-primary">Traders</span></div>
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Retail • Wholesale</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Your Trusted Stop</div>
           </div>
         </Link>
 
-        {/* Navigation links in place of the search bar */}
         <nav className="hidden md:flex items-center gap-6 text-xs font-extrabold uppercase tracking-wider text-slate-600">
-          {/* Catalogs Link Dropdown */}
-          <div className="relative group py-2">
-            <button className="flex items-center gap-1 hover:text-primary transition focus:outline-none cursor-pointer">
-              Catalogs <ChevronDown className="h-3.5 w-3.5" />
-            </button>
-            <div className="absolute top-full left-1/2 -translate-x-1/2 w-44 bg-card border border-border rounded-xl shadow-xl py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition duration-200 z-50">
-              <a href="/shop?tab=retail" className="block px-4 py-2.5 hover:bg-accent hover:text-primary transition text-xs font-bold text-foreground">
-                Retail Shop
-              </a>
-              <a href="/shop?tab=wholesale" className="block px-4 py-2.5 hover:bg-accent hover:text-primary transition text-xs font-bold text-foreground">
-                Wholesale Store
-              </a>
-            </div>
-          </div>
-
+          <Link to="/shop" className="hover:text-primary transition">Shop</Link>
           <a href="/shop?tab=offers" className="hover:text-primary transition">Special Offers</a>
-          <a href="/shop?tab=brands" className="hover:text-primary transition">Brands</a>
           <Link to="/bulk-orders" className="hover:text-primary transition">Bulk Orders</Link>
         </nav>
 
         <div className="flex items-center gap-2">
-          {currentUser ? (
+          {currentUser && (
             <Link
               to="/dashboard"
               className="relative rounded-xl p-2.5 transition flex items-center gap-1 hover:bg-accent text-slate-700"
@@ -1205,14 +958,6 @@ function Header({
             >
               <User className="h-5 w-5 text-slate-700 hover:text-primary transition" />
               <span className="hidden sm:inline text-xs font-bold text-slate-600 truncate max-w-[80px]">{currentUser.name.split(" ")[0]}</span>
-            </Link>
-          ) : (
-            <Link
-              to="/login"
-              className="relative rounded-xl p-2.5 transition flex items-center gap-1 hover:bg-accent text-slate-700"
-              title="Sign In"
-            >
-              <User className="h-5 w-5 text-slate-700" />
             </Link>
           )}
 
@@ -1230,13 +975,11 @@ function Header({
           </button>
         </div>
       </div>
-      
+
       {/* Mobile navigation links */}
       <div className="md:hidden border-t border-border/50 px-4 py-2.5 overflow-x-auto scrollbar-none flex gap-5 text-xs font-extrabold uppercase tracking-wider text-slate-600 whitespace-nowrap">
-        <a href="/shop?tab=retail" className="hover:text-primary transition">Retail Shop</a>
-        <a href="/shop?tab=wholesale" className="hover:text-primary transition">Wholesale Store</a>
+        <Link to="/shop" className="hover:text-primary transition">Shop</Link>
         <a href="/shop?tab=offers" className="hover:text-primary transition">Special Offers</a>
-        <a href="/shop?tab=brands" className="hover:text-primary transition">Brands</a>
         <Link to="/bulk-orders" className="hover:text-primary transition">Bulk Orders</Link>
       </div>
     </header>
@@ -1257,16 +1000,16 @@ function Hero() {
       <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/40 to-black/20" />
       <div className="relative mx-auto grid max-w-7xl w-full items-center gap-10 px-4 lg:grid-cols-2 z-10">
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/20 px-3 py-1 text-xs font-semibold text-emerald-300">
-            <Zap className="h-3.5 w-3.5 text-primary" /> Free delivery over Rs. 1,500
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/20 px-3 py-1 text-xs font-semibold text-amber-300">
+            <Zap className="h-3.5 w-3.5 text-primary" /> ✦ Apka Trusted Stop
           </span>
           <h1 className="mt-5 text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl text-white">
-            Pakistan's Premier{" "}
-            <span className="bg-gradient-primary bg-clip-text text-transparent">Digital Wholesale</span>{" "}
-            & Retail Marketplace
+            Pakistan's Most Trusted{" "}
+            <span className="bg-gradient-primary bg-clip-text text-transparent">Grocery & Spice</span>{" "}
+            Marketplace
           </h1>
           <p className="mt-5 max-w-xl text-base text-gray-200 sm:text-lg">
-            Fresh groceries, wholesale prices, fast delivery, and trusted quality — everything your kitchen and business needs, in one green basket.
+            Farm-fresh maal, real prices, aur doorstep delivery — sab kuch ek jagah. No middlemen, no bakwaas. Period.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -1294,34 +1037,37 @@ function CategoriesSection({
 }) {
   return (
     <section id="categories" className="mx-auto max-w-7xl px-4 py-16">
-      <SectionHead eyebrow="Shop by need" title="Explore Categories" subtitle="From daily spices to bulk wholesale essentials — everything in one basket." />
+      <SectionHead eyebrow="Shop by need" title="Explore Categories" subtitle="From daily spices to premium dry fruits — everything in one basket." />
       <div className="mt-10 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setSelectedCategory(selectedCategory === c.id ? null : c.id)}
-            className={`group relative overflow-hidden rounded-2xl border p-4 text-center shadow-soft transition hover:-translate-y-1 hover:border-primary/50 hover:shadow-elegant min-h-[100px] flex flex-col items-center justify-center ${
-              selectedCategory === c.id
-                ? "border-primary shadow-glow"
-                : "border-border bg-card"
-            }`}
-          >
-            {c.image_url ? (
-              <>
-                <img src={c.image_url} alt={c.name} className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-110" />
-                <div className={`absolute inset-0 bg-black/50 transition-colors ${selectedCategory === c.id ? 'bg-primary/50' : 'group-hover:bg-black/60'}`} />
-                <div className="relative text-white z-10 text-xs font-bold truncate max-w-full drop-shadow">{c.name}</div>
-              </>
-            ) : (
-              <>
-                <div className="relative mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-mint text-2xl transition group-hover:scale-110">
-                  {c.icon || "📦"}
+        {categories.map((c, idx) => {
+          const grad = CATEGORY_GRADIENTS[idx % CATEGORY_GRADIENTS.length];
+          const isSelected = selectedCategory === c.id;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setSelectedCategory(isSelected ? null : c.id)}
+              className={`group relative overflow-hidden rounded-2xl border text-center shadow-soft transition hover:-translate-y-1 hover:shadow-elegant min-h-[100px] flex flex-col items-center justify-center ${
+                isSelected ? "border-primary shadow-glow" : "border-border"
+              }`}
+            >
+              {c.image_url ? (
+                <>
+                  <img src={c.image_url} alt={c.name} className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-110" />
+                  <div className={`absolute inset-0 bg-gradient-to-t ${grad.from}/70 ${grad.to}/40 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-85 group-hover:opacity-95'}`} />
+                  <div className="relative text-white z-10 text-xs font-bold px-2 drop-shadow-lg">{c.name}</div>
+                </>
+              ) : (
+                <div className={`absolute inset-0 bg-gradient-to-br ${grad.from} ${grad.to} opacity-90`} />
+              )}
+              {!c.image_url && (
+                <div className="relative z-10 flex flex-col items-center gap-1.5 p-3">
+                  <div className="text-2xl">{c.icon || "📦"}</div>
+                  <div className="text-xs font-bold text-white drop-shadow">{c.name}</div>
                 </div>
-                <div className="relative mt-2 truncate text-xs font-bold text-slate-700">{c.name}</div>
-              </>
-            )}
-          </button>
-        ))}
+              )}
+            </button>
+          );
+        })}
       </div>
     </section>
   );
@@ -1428,7 +1174,7 @@ function FlashSale() {
 function BrandPromiseBanner() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-10">
-      <div className="relative overflow-hidden rounded-[32px] border border-emerald-100/30 bg-card shadow-elegant h-[320px] sm:h-[400px] flex items-center">
+      <div className="relative overflow-hidden rounded-[32px] border border-amber-100/30 bg-card shadow-elegant h-[320px] sm:h-[400px] flex items-center">
         <img
           src="/BANNER.png"
           alt="Nadeem Traders Premium Quality Spices"
@@ -1436,7 +1182,7 @@ function BrandPromiseBanner() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-transparent md:bg-gradient-to-r md:from-black/95 md:via-black/60 md:to-transparent" />
         <div className="relative p-8 sm:p-12 text-white max-w-xl text-left z-10 space-y-4">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-400">
             Premium Quality Promise
           </span>
           <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
@@ -1445,7 +1191,7 @@ function BrandPromiseBanner() {
           <p className="text-sm sm:text-base text-gray-200 leading-relaxed font-medium">
             From hand-picked organic spices and clean grains to premium dry fruits, we bring top quality commercial products directly to your doorstep.
           </p>
-          <div className="pt-2 flex flex-wrap gap-4 text-xs font-black text-emerald-400">
+          <div className="pt-2 flex flex-wrap gap-4 text-xs font-black text-amber-400">
             <span>✓ 100% Organic Spices</span>
             <span>✓ Premium Quality Grains</span>
             <span>✓ Direct Sourcing</span>
@@ -1491,132 +1237,6 @@ function BrandsSection({ brands }: { brands: any[] }) {
   );
 }
 
-function WholesaleSection({
-  products,
-  onAddToCart,
-  onProductClick,
-  onToggleWishlist,
-  wishlist,
-  isLoading,
-}: {
-  products: any[];
-  onAddToCart: (p: any, q: number) => void;
-  onProductClick: (p: any) => void;
-  onToggleWishlist: (id: number) => void;
-  wishlist: any[];
-  isLoading: boolean;
-}) {
-  const displayedProducts = products.slice(0, 5);
-  const hasMore = products.length > 5;
-
-  return (
-    <section className="bg-[#f0fdf4]/50 py-12">
-      <div className="mx-auto max-w-7xl px-4">
-        {/* Banner Card - Spans full width */}
-        <div className="relative overflow-hidden rounded-[32px] border border-emerald-100/50 bg-card shadow-sm h-[320px] sm:h-[380px] min-h-[250px] mb-8">
-          <img
-            src={mandiImg}
-            alt="Wholesale Agriculture Sourcing"
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-102"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent md:bg-gradient-to-r md:from-black/85 md:via-black/55 md:to-transparent" />
-          <div className="absolute bottom-6 left-6 right-6 md:top-0 md:bottom-0 md:left-10 md:right-10 flex flex-col justify-end md:justify-center text-white max-w-2xl text-left">
-            <h3 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">Direct Producer Sourcing</h3>
-            <p className="mt-3 text-sm sm:text-base text-gray-200 leading-relaxed font-medium">
-              We connect directly with top agricultural producers & grain hubs across Punjab & Sindh to get you the lowest bulk rates.
-            </p>
-            <div className="mt-4 flex items-center gap-1.5 text-sm font-extrabold text-[#10b981]">
-              Fresh Stock Daily <Star className="h-4 w-4 fill-current" />
-            </div>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="flex h-48 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            No wholesale catalog products loaded.
-          </div>
-        ) : (
-          /* Products Grid - 2 columns below the banner */
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {displayedProducts.map((w) => {
-                // Calculate discount percentage based on retail price and wholesale price
-                const retailPrice = w.price;
-                const wholesalePrice = w.wholesale_price || w.price;
-                const savePercent = retailPrice > wholesalePrice
-                  ? Math.round(((retailPrice - wholesalePrice) / retailPrice) * 100)
-                  : 0;
-
-                return (
-                  <div
-                    key={w.id}
-                    className="flex items-center justify-between bg-white border border-slate-100 rounded-[28px] p-5 shadow-sm hover:shadow-md transition duration-300 text-left"
-                  >
-                    <div className="flex items-center gap-4 cursor-pointer" onClick={() => onProductClick(w)}>
-                      {/* Image / Emoji Box */}
-                      <div className="w-14 h-14 bg-emerald-50/75 rounded-full flex items-center justify-center text-3xl shrink-0 overflow-hidden border border-slate-100/50">
-                        {w.image_url ? (
-                          <img src={w.image_url} alt={w.name} className="w-full h-full object-cover" />
-                        ) : (
-                          w.emoji
-                        )}
-                      </div>
-                      {/* Info */}
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-extrabold text-slate-800 text-sm sm:text-base">{w.name}</span>
-                          {savePercent > 0 && (
-                            <span className="inline-flex items-center bg-[#e8f7ee] text-emerald-600 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                              Save {savePercent}%
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-1 flex items-baseline gap-1.5">
-                          {retailPrice > wholesalePrice && (
-                            <span className="text-slate-400 line-through text-xs font-semibold">
-                              Rs. {retailPrice}/kg
-                            </span>
-                          )}
-                          <span className="text-emerald-600 text-base sm:text-lg font-extrabold">
-                            Rs. {wholesalePrice}/kg
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Add Button */}
-                    <button
-                      onClick={() => onAddToCart(w, w.wholesale_min_qty || 1)}
-                      className="w-10 h-10 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center text-xl font-bold cursor-pointer transition shadow shrink-0"
-                      title={`Add minimum wholesale quantity: ${w.wholesale_min_qty || 1} kg`}
-                    >
-                      +
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-            {hasMore && (
-              <div className="mt-8 flex justify-center">
-                <a
-                  href="/shop?tab=wholesale"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-gradient-primary px-8 py-3.5 text-sm font-semibold text-primary-foreground shadow-elegant transition hover:shadow-glow hover:-translate-y-0.5 duration-200"
-                >
-                  Explore Wholesale Catalog <ArrowRight className="h-4 w-4" />
-                </a>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </section>
-  );
-}
-
 function WhyUs() {
   return (
     <section className="relative overflow-hidden py-20 text-white">
@@ -1629,7 +1249,7 @@ function WhyUs() {
 
       <div className="relative mx-auto max-w-7xl px-4 z-10">
         <div className="text-center md:text-left">
-          <div className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">Why Nadeem Traders</div>
+          <div className="text-xs font-bold uppercase tracking-[0.2em] text-amber-400">Why Nadeem Traders</div>
           <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl text-white">Built for Pakistani kitchens & businesses</h2>
         </div>
         
@@ -1641,36 +1261,6 @@ function WhyUs() {
               </div>
               <h3 className="mt-4 text-lg font-bold text-white">{r.title}</h3>
               <p className="mt-1 text-sm text-gray-200 leading-relaxed">{r.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Testimonials() {
-  return (
-    <section className="bg-card border-t border-b border-border/50 py-16">
-      <div className="mx-auto max-w-7xl px-4">
-        <SectionHead eyebrow="Loved across Pakistan" title="What our customers say" />
-        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {testimonials.map((t) => (
-            <div key={t.name} className="relative rounded-3xl border border-border bg-card/60 p-6 shadow-soft backdrop-blur-sm">
-              <div className="absolute -top-4 left-6 grid h-9 w-9 place-items-center rounded-2xl bg-gradient-primary text-lg text-primary-foreground shadow-glow">“</div>
-              <div className="flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className={`h-4 w-4 ${i < t.rating ? "fill-gold text-gold" : "text-muted-foreground/40"}`} />
-                ))}
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-foreground/90">{t.text}</p>
-              <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-primary font-bold text-primary-foreground">{t.name[0]}</div>
-                <div>
-                  <div className="text-sm font-bold">{t.name}</div>
-                  <div className="text-xs text-muted-foreground">{t.city}</div>
-                </div>
-              </div>
             </div>
           ))}
         </div>
@@ -1726,7 +1316,7 @@ function AppPromo() {
 
 function Footer() {
   return (
-    <footer className="border-t border-emerald-900 bg-[#0a2f1d] text-white">
+    <footer className="border-t border-amber-900 bg-[#1a0a00] text-white">
       <div className="mx-auto max-w-7xl px-4 py-14">
         <div className="grid gap-10 md:grid-cols-4">
           <div>
@@ -1736,10 +1326,10 @@ function Footer() {
               </div>
               <div className="text-lg font-extrabold text-white">Nadeem<span className="text-primary">Traders</span></div>
             </div>
-            <p className="mt-4 text-sm text-emerald-100/80 leading-relaxed">Pakistan's leading digital wholesale & retail marketplace — fresh, affordable, and delivered fast.</p>
+            <p className="mt-4 text-sm text-amber-100/80 leading-relaxed">Pakistan's most trusted grocery & spice marketplace — fresh, affordable, and delivered fast.</p>
             <div className="mt-5 flex gap-2">
               {[Facebook, Instagram, Youtube, MessageCircle, Mail].map((I, i) => (
-                <a key={i} href="#" className="grid h-9 w-9 place-items-center rounded-xl border border-emerald-800/80 text-emerald-100 transition hover:border-gold hover:text-gold">
+                <a key={i} href="#" className="grid h-9 w-9 place-items-center rounded-xl border border-amber-800/80 text-amber-100 transition hover:border-gold hover:text-gold">
                   <I className="h-4 w-4" />
                 </a>
               ))}
@@ -1748,30 +1338,28 @@ function Footer() {
 
           <div>
             <h4 className="text-xs font-bold uppercase tracking-widest text-gold">Quick Links</h4>
-            <ul className="mt-4 space-y-2.5 text-xs text-emerald-100/70">
+            <ul className="mt-4 space-y-2.5 text-xs text-amber-100/70">
               <li><Link to="/" className="hover:text-gold transition">Home</Link></li>
-              <li><Link to="/shop" className="hover:text-gold transition">Shop Catalog</Link></li>
-              <li><a href="/shop?tab=wholesale" className="hover:text-gold transition">Wholesale Store</a></li>
-              <li><a href="/shop?tab=brands" className="hover:text-gold transition">Partner Brands</a></li>
+              <li><Link to="/shop" className="hover:text-gold transition">Shop</Link></li>
               <li><a href="/shop?tab=offers" className="hover:text-gold transition">Special Offers</a></li>
+              <li><Link to="/bulk-orders" className="hover:text-gold transition">Bulk Orders</Link></li>
               <li><Link to="/dashboard" className="hover:text-gold transition">Profile Dashboard</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-xs font-bold uppercase tracking-widest text-gold">Customer Care</h4>
-            <ul className="mt-4 space-y-2.5 text-xs text-emerald-100/70">
+            <ul className="mt-4 space-y-2.5 text-xs text-amber-100/70">
               <li><Link to="/contact" className="hover:text-gold transition">Contact Us</Link></li>
               <li><Link to="/help" className="hover:text-gold transition">Help Center & FAQ</Link></li>
               <li><Link to="/delivery-info" className="hover:text-gold transition">Delivery Info</Link></li>
-              <li><Link to="/bulk-orders" className="hover:text-gold transition">Bulk Orders</Link></li>
               <li><Link to="/sell-with-us" className="hover:text-gold transition">Sell With Us</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-xs font-bold uppercase tracking-widest text-gold">Policies</h4>
-            <ul className="mt-4 space-y-2.5 text-xs text-emerald-100/70">
+            <ul className="mt-4 space-y-2.5 text-xs text-amber-100/70">
               <li><Link to="/privacy-policy" className="hover:text-gold transition">Privacy Policy</Link></li>
               <li><Link to="/terms-of-use" className="hover:text-gold transition">Terms of Use</Link></li>
               <li><Link to="/refund-policy" className="hover:text-gold transition">Refund Policy</Link></li>
@@ -1781,12 +1369,12 @@ function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-emerald-800/50 pt-6 text-xs text-emerald-300/80">
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-amber-800/50 pt-6 text-xs text-amber-300/80">
           <div>© {new Date().getFullYear()} Nadeem Traders. All rights reserved.</div>
           <div className="flex flex-wrap items-center gap-3">
             <span>We accept:</span>
-            {["COD", "EasyPaisa", "JazzCash", "Visa", "Master", "Bank"].map((p) => (
-              <span key={p} className="rounded-lg border border-emerald-800 bg-emerald-950/50 px-2 py-1 font-semibold text-emerald-100">{p}</span>
+            {["COD", "EasyPaisa", "JazzCash", "Postex", "Visa", "Master", "Bank"].map((p) => (
+              <span key={p} className="rounded-lg border border-amber-800 bg-amber-950/50 px-2 py-1 font-semibold text-amber-100">{p}</span>
             ))}
           </div>
         </div>
