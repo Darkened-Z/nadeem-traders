@@ -71,37 +71,37 @@ export const DEFAULT_CATEGORIES = [
     id: 1,
     name: "Dry Fruits",
     icon: "🥜",
-    image_url: "https://images.unsplash.com/photo-1557844352-761f2565b576?w=900&q=80&fit=crop",
+    image_url: "/categories/dry-fruits.jpg",
   },
   {
     id: 2,
     name: "Spices",
     icon: "🌶️",
-    image_url: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=900&q=80&fit=crop",
+    image_url: "/categories/spices.jpg",
   },
   {
     id: 3,
     name: "Pulses & Lentils",
     icon: "🫘",
-    image_url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900&q=80&fit=crop",
+    image_url: "/categories/pulses-lentils.jpg",
   },
   {
     id: 4,
     name: "Rice & Grains",
     icon: "🌾",
-    image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=900&q=80&fit=crop",
+    image_url: "/categories/rice-grains.jpg",
   },
   {
     id: 5,
     name: "Cooking Oils",
     icon: "🫙",
-    image_url: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=900&q=80&fit=crop",
+    image_url: "/categories/cooking-oils.jpg",
   },
   {
     id: 6,
     name: "Sugar & Salt",
     icon: "🧂",
-    image_url: "https://images.unsplash.com/photo-1584515979956-55e43cbcf6cb?w=900&q=80&fit=crop",
+    image_url: "/categories/sugar-salt.jpg",
   },
 ];
 
@@ -122,7 +122,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 1,
     category_name: "Dry Fruits",
-    image_url: "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&q=80&fit=crop",
+    image_url: "/products/almonds.jpg",
   },
   {
     id: 2,
@@ -140,7 +140,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 1,
     category_name: "Dry Fruits",
-    image_url: "https://images.unsplash.com/photo-1574261379-37f78d9e9a09?w=800&q=80&fit=crop",
+    image_url: "/products/pumpkin-seeds.jpg",
   },
   {
     id: 3,
@@ -158,7 +158,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 2,
     category_name: "Spices",
-    image_url: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80&fit=crop",
+    image_url: "/products/red-chilli.jpg",
   },
   {
     id: 4,
@@ -176,7 +176,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 2,
     category_name: "Spices",
-    image_url: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=800&q=80&fit=crop",
+    image_url: "/products/haldi-powder.jpg",
   },
   {
     id: 5,
@@ -194,7 +194,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 3,
     category_name: "Pulses & Lentils",
-    image_url: "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=800&q=80&fit=crop",
+    image_url: "/products/masoor-dal.jpg",
   },
   {
     id: 6,
@@ -212,7 +212,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 3,
     category_name: "Pulses & Lentils",
-    image_url: "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=800&q=80&fit=crop",
+    image_url: "/products/chana-dal.jpg",
   },
   {
     id: 7,
@@ -230,7 +230,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 4,
     category_name: "Rice & Grains",
-    image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&q=80&fit=crop",
+    image_url: "/products/kainat-rice.jpg",
   },
   {
     id: 8,
@@ -248,7 +248,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 1,
     category_name: "Dry Fruits",
-    image_url: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=800&q=80&fit=crop",
+    image_url: "/products/cashews.jpg",
   },
   {
     id: 9,
@@ -266,7 +266,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 2,
     category_name: "Spices",
-    image_url: "https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=800&q=80&fit=crop",
+    image_url: "/products/zeera.jpg",
   },
   {
     id: 10,
@@ -284,7 +284,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 5,
     category_name: "Cooking Oils",
-    image_url: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=800&q=80&fit=crop",
+    image_url: "/products/sunflower-oil.jpg",
   },
   {
     id: 11,
@@ -302,7 +302,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 6,
     category_name: "Sugar & Salt",
-    image_url: "https://images.unsplash.com/photo-1584515979956-55e43cbcf6cb?w=800&q=80&fit=crop",
+    image_url: "/products/pink-salt.jpg",
   },
   {
     id: 12,
@@ -320,7 +320,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 6,
     category_name: "Sugar & Salt",
-    image_url: "https://images.unsplash.com/photo-1581441363689-1f3c3c414635?w=800&q=80&fit=crop",
+    image_url: "/products/white-sugar.jpg",
   },
 ];
 
