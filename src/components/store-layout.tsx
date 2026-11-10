@@ -71,37 +71,37 @@ export const DEFAULT_CATEGORIES = [
     id: 1,
     name: "Dry Fruits",
     icon: "🥜",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Almonds_in_a_bowl.jpg?width=900",
+    image_url: "https://images.unsplash.com/photo-1557844352-761f2565b576?w=900&q=80&fit=crop",
   },
   {
     id: 2,
     name: "Spices",
     icon: "🌶️",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Red_chilli_powder.jpg?width=900",
+    image_url: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=900&q=80&fit=crop",
   },
   {
     id: 3,
     name: "Pulses & Lentils",
     icon: "🫘",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Red_lentils_-_jules.jpg?width=900",
+    image_url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900&q=80&fit=crop",
   },
   {
     id: 4,
     name: "Rice & Grains",
     icon: "🌾",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Basmati_Rice_(49683600583).jpg?width=900",
+    image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=900&q=80&fit=crop",
   },
   {
     id: 5,
     name: "Cooking Oils",
     icon: "🫙",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Sunflower_oil.jpg?width=900",
+    image_url: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=900&q=80&fit=crop",
   },
   {
     id: 6,
     name: "Sugar & Salt",
     icon: "🧂",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Himalayan_salt_(coarse).jpg?width=900",
+    image_url: "https://images.unsplash.com/photo-1584515979956-55e43cbcf6cb?w=900&q=80&fit=crop",
   },
 ];
 
@@ -122,7 +122,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 1,
     category_name: "Dry Fruits",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Almonds_in_a_bowl.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=800&q=80&fit=crop",
   },
   {
     id: 2,
@@ -140,7 +140,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 1,
     category_name: "Dry Fruits",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Pumpkin_Seeds_macro_1.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1574261379-37f78d9e9a09?w=800&q=80&fit=crop",
   },
   {
     id: 3,
@@ -158,7 +158,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 2,
     category_name: "Spices",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Red_chilli_powder.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=800&q=80&fit=crop",
   },
   {
     id: 4,
@@ -176,7 +176,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 2,
     category_name: "Spices",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Turmeric_Powder.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=800&q=80&fit=crop",
   },
   {
     id: 5,
@@ -194,7 +194,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 3,
     category_name: "Pulses & Lentils",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Red_lentils_-_jules.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=800&q=80&fit=crop",
   },
   {
     id: 6,
@@ -212,7 +212,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 3,
     category_name: "Pulses & Lentils",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Split_Chickpeas.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1546094096-0df4bcaaa337?w=800&q=80&fit=crop",
   },
   {
     id: 7,
@@ -230,7 +230,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 4,
     category_name: "Rice & Grains",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Basmati_Rice_(49683600583).jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800&q=80&fit=crop",
   },
   {
     id: 8,
@@ -248,7 +248,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 1,
     category_name: "Dry Fruits",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Cashews_1314.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=800&q=80&fit=crop",
   },
   {
     id: 9,
@@ -266,7 +266,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 2,
     category_name: "Spices",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Whole_Cumin_Seeds.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1599940824399-b87987ceb72a?w=800&q=80&fit=crop",
   },
   {
     id: 10,
@@ -284,7 +284,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 5,
     category_name: "Cooking Oils",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Sunflower_oil.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=800&q=80&fit=crop",
   },
   {
     id: 11,
@@ -302,7 +302,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 6,
     category_name: "Sugar & Salt",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Himalayan_salt_(coarse).jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1584515979956-55e43cbcf6cb?w=800&q=80&fit=crop",
   },
   {
     id: 12,
@@ -320,7 +320,7 @@ export const DEFAULT_PRODUCTS = [
     stock: true,
     category_id: 6,
     category_name: "Sugar & Salt",
-    image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Granulated_White_Sugar_with_Large_Crystals,_Bright_Front_Light.jpg?width=800",
+    image_url: "https://images.unsplash.com/photo-1581441363689-1f3c3c414635?w=800&q=80&fit=crop",
   },
 ];
 
@@ -428,6 +428,7 @@ export function ModernProductCard({
   showWholesalePrimary?: boolean;
 }) {
   const [justAdded, setJustAdded] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const isWishlisted = wishlist.some((item) => item.id === p.id);
 
   const hasWholesale = !!p.wholesale_price && p.wholesale_price < p.price;
@@ -458,11 +459,12 @@ export function ModernProductCard({
           }}
           className="block h-full w-full"
         >
-          {p.image_url ? (
+          {p.image_url && !imgError ? (
             <img
               src={p.image_url}
               alt={p.name}
               loading="lazy"
+              onError={() => setImgError(true)}
               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             />
           ) : (
@@ -736,9 +738,9 @@ export function StoreLayout({
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Single Clean Header (No Top Announcement Bar Above Header) */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
-        <div className="mx-auto grid max-w-7xl grid-cols-3 items-center px-4 py-5 sm:px-8">
-          {/* Left: Menu + Search + Navigation Links */}
-          <div className="flex items-center gap-5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
+          {/* Left: Menu + Search */}
+          <div className="flex items-center gap-4 sm:gap-6 w-1/3">
             <button
               type="button"
               onClick={() => setIsNavDrawerOpen(true)}
@@ -758,22 +760,10 @@ export function StoreLayout({
               <Search className="h-4 w-4 stroke-[1.5]" />
               <span className="hidden md:inline">Search</span>
             </button>
-
-            <nav className="hidden xl:flex items-center gap-5 pl-2 border-l border-border text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              <Link to="/categories" className="hover:text-foreground transition-colors">
-                Categories
-              </Link>
-              <Link to="/shop" className="hover:text-foreground transition-colors">
-                Catalog
-              </Link>
-              <Link to="/bulk-orders" className="hover:text-foreground transition-colors">
-                Bulk Orders
-              </Link>
-            </nav>
           </div>
 
           {/* Center: Brand Wordmark */}
-          <div className="text-center">
+          <div className="text-center w-1/3 shrink-0">
             <Link to="/" className="inline-block">
               <span className="font-display text-2xl sm:text-3xl font-normal tracking-[0.18em] uppercase text-foreground block leading-none">
                 Nadeem Traders
@@ -782,7 +772,7 @@ export function StoreLayout({
           </div>
 
           {/* Right: Sign In + Bag */}
-          <div className="flex items-center justify-end gap-5 text-xs">
+          <div className="flex items-center justify-end gap-5 text-xs w-1/3">
             {currentUser ? (
               <Link
                 to="/dashboard"
@@ -808,10 +798,26 @@ export function StoreLayout({
               aria-label="Your Shopping Bag"
             >
               <ShoppingBag className="h-4 w-4 stroke-[1.5]" />
-              <span>{totalItems}</span>
+              <span>Bag ({totalItems})</span>
             </button>
           </div>
         </div>
+
+        {/* Sub-navigation bar: clean, centered, no overlap possible */}
+        <nav className="hidden sm:flex items-center justify-center gap-8 py-2.5 border-t border-border/50 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+          <Link to="/categories" className="hover:text-foreground transition-colors">
+            Categories
+          </Link>
+          <Link to="/shop" className="hover:text-foreground transition-colors">
+            Catalog
+          </Link>
+          <Link to="/bulk-orders" className="hover:text-foreground transition-colors">
+            Bulk Orders
+          </Link>
+          <Link to="/contact" className="hover:text-foreground transition-colors">
+            Contact
+          </Link>
+        </nav>
 
         {/* Expandable Search Bar Overlay */}
         {isSearchOpen && (

@@ -16,7 +16,7 @@ import {
   useStoreData,
 } from "../components/store-layout";
 
-export const Route = createFileRoute("/product/%24productId")({
+export const Route = createFileRoute("/product/$productId")({
   head: () => ({
     meta: [
       { title: "Product Details | Nadeem Traders" },
@@ -30,6 +30,7 @@ function ProductDetailsPage() {
   const { productId } = Route.useParams() as any;
   const { categories, products, currentUser, wishlist, toggleWishlist, isLoading } = useStoreData();
   const [qty, setQty] = useState(1);
+  const [imgError, setImgError] = useState(false);
 
   const product = products.find((p) => p.id === Number(productId)) || null;
   const relatedProducts = product
@@ -116,10 +117,11 @@ function ProductDetailsPage() {
 
         <div className="grid gap-10 md:grid-cols-2 border border-border bg-card p-6 sm:p-10">
           <div className="aspect-[4/5] overflow-hidden bg-muted flex items-center justify-center">
-            {product.image_url ? (
+            {product.image_url && !imgError ? (
               <img
                 src={product.image_url}
                 alt={product.name}
+                onError={() => setImgError(true)}
                 className="h-full w-full object-cover"
               />
             ) : (

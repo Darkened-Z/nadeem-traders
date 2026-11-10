@@ -11,7 +11,7 @@ import {
   getCategoryMeta,
 } from "../components/store-layout";
 
-export const Route = createFileRoute("/category/%24categoryId")({
+export const Route = createFileRoute("/category/$categoryId")({
   head: () => ({
     meta: [
       { title: "Category | Nadeem Traders" },
@@ -154,6 +154,7 @@ function CategoryPage() {
                 <img
                   src={activeCategory.image_url}
                   alt={activeCategory.name}
+                  onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
                   className="h-full w-full object-cover"
                 />
               )}

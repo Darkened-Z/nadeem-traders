@@ -29,8 +29,8 @@ import { Route as BulkOrdersRouteImport } from './routes/bulk-orders'
 import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as AdminPortalNadeem786RouteImport } from './routes/admin-portal-nadeem-786'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProductChar3724productIdRouteImport } from './routes/product.%24productId'
-import { Route as CategoryChar3724categoryIdRouteImport } from './routes/category.%24categoryId'
+import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as CategoryCategoryIdRouteImport } from './routes/category.$categoryId'
 
 const TermsOfUseRoute = TermsOfUseRouteImport.update({
   id: '/terms-of-use',
@@ -132,18 +132,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProductChar3724productIdRoute =
-  ProductChar3724productIdRouteImport.update({
-    id: '/product/%24productId',
-    path: '/product/%24productId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const CategoryChar3724categoryIdRoute =
-  CategoryChar3724categoryIdRouteImport.update({
-    id: '/category/%24categoryId',
-    path: '/category/%24categoryId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+const ProductProductIdRoute = ProductProductIdRouteImport.update({
+  id: '/product/$productId',
+  path: '/product/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoryCategoryIdRoute = CategoryCategoryIdRouteImport.update({
+  id: '/category/$categoryId',
+  path: '/category/$categoryId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -166,8 +164,8 @@ export interface FileRoutesByFullPath {
   '/shipping-policy': typeof ShippingPolicyRoute
   '/shop': typeof ShopRoute
   '/terms-of-use': typeof TermsOfUseRoute
-  '/category/%24categoryId': typeof CategoryChar3724categoryIdRoute
-  '/product/%24productId': typeof ProductChar3724productIdRoute
+  '/category/$categoryId': typeof CategoryCategoryIdRoute
+  '/product/$productId': typeof ProductProductIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -190,8 +188,8 @@ export interface FileRoutesByTo {
   '/shipping-policy': typeof ShippingPolicyRoute
   '/shop': typeof ShopRoute
   '/terms-of-use': typeof TermsOfUseRoute
-  '/category/%24categoryId': typeof CategoryChar3724categoryIdRoute
-  '/product/%24productId': typeof ProductChar3724productIdRoute
+  '/category/$categoryId': typeof CategoryCategoryIdRoute
+  '/product/$productId': typeof ProductProductIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -215,8 +213,8 @@ export interface FileRoutesById {
   '/shipping-policy': typeof ShippingPolicyRoute
   '/shop': typeof ShopRoute
   '/terms-of-use': typeof TermsOfUseRoute
-  '/category/%24categoryId': typeof CategoryChar3724categoryIdRoute
-  '/product/%24productId': typeof ProductChar3724productIdRoute
+  '/category/$categoryId': typeof CategoryCategoryIdRoute
+  '/product/$productId': typeof ProductProductIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -241,8 +239,8 @@ export interface FileRouteTypes {
     | '/shipping-policy'
     | '/shop'
     | '/terms-of-use'
-    | '/category/%24categoryId'
-    | '/product/%24productId'
+    | '/category/$categoryId'
+    | '/product/$productId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -265,8 +263,8 @@ export interface FileRouteTypes {
     | '/shipping-policy'
     | '/shop'
     | '/terms-of-use'
-    | '/category/%24categoryId'
-    | '/product/%24productId'
+    | '/category/$categoryId'
+    | '/product/$productId'
   id:
     | '__root__'
     | '/'
@@ -289,8 +287,8 @@ export interface FileRouteTypes {
     | '/shipping-policy'
     | '/shop'
     | '/terms-of-use'
-    | '/category/%24categoryId'
-    | '/product/%24productId'
+    | '/category/$categoryId'
+    | '/product/$productId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -314,8 +312,8 @@ export interface RootRouteChildren {
   ShippingPolicyRoute: typeof ShippingPolicyRoute
   ShopRoute: typeof ShopRoute
   TermsOfUseRoute: typeof TermsOfUseRoute
-  CategoryChar3724categoryIdRoute: typeof CategoryChar3724categoryIdRoute
-  ProductChar3724productIdRoute: typeof ProductChar3724productIdRoute
+  CategoryCategoryIdRoute: typeof CategoryCategoryIdRoute
+  ProductProductIdRoute: typeof ProductProductIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -460,18 +458,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/product/%24productId': {
-      id: '/product/%24productId'
-      path: '/product/%24productId'
-      fullPath: '/product/%24productId'
-      preLoaderRoute: typeof ProductChar3724productIdRouteImport
+    '/product/$productId': {
+      id: '/product/$productId'
+      path: '/product/$productId'
+      fullPath: '/product/$productId'
+      preLoaderRoute: typeof ProductProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/category/%24categoryId': {
-      id: '/category/%24categoryId'
-      path: '/category/%24categoryId'
-      fullPath: '/category/%24categoryId'
-      preLoaderRoute: typeof CategoryChar3724categoryIdRouteImport
+    '/category/$categoryId': {
+      id: '/category/$categoryId'
+      path: '/category/$categoryId'
+      fullPath: '/category/$categoryId'
+      preLoaderRoute: typeof CategoryCategoryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -498,8 +496,8 @@ const rootRouteChildren: RootRouteChildren = {
   ShippingPolicyRoute: ShippingPolicyRoute,
   ShopRoute: ShopRoute,
   TermsOfUseRoute: TermsOfUseRoute,
-  CategoryChar3724categoryIdRoute: CategoryChar3724categoryIdRoute,
-  ProductChar3724productIdRoute: ProductChar3724productIdRoute,
+  CategoryCategoryIdRoute: CategoryCategoryIdRoute,
+  ProductProductIdRoute: ProductProductIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

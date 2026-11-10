@@ -105,6 +105,7 @@ function CategoriesDirectoryPage() {
                       <img
                         src={cat.image_url}
                         alt={cat.name}
+                        onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
                         className="h-full w-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
                       />
                     )}
