@@ -1,48 +1,48 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Leaf, RotateCcw } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { RotateCcw } from "lucide-react";
+import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/refund-policy")({
   head: () => ({
     meta: [
       { title: "Refund & Return Policy — Nadeem Traders" },
-      { name: "description", content: "Returns and refund policy for grocery products and bulk wholesale grains." }
+      { name: "description", content: "Returns and refund policy for grocery products and bulk wholesale grains." },
     ],
   }),
   component: RefundPage,
 });
 
 function RefundPage() {
+  const { categories, products, currentUser } = useStoreData();
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="border-b border-emerald-950/40 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-primary">
-              <Leaf className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-extrabold text-base tracking-tight text-white">Nadeem<span className="text-primary">Traders</span></span>
-          </Link>
-          <Link to="/" className="text-xs font-bold text-slate-400 hover:text-white transition">Return to Store</Link>
+    <StoreLayout categories={categories} products={products} currentUser={currentUser}>
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <div className="rounded-3xl border border-border bg-card p-6 sm:p-10 shadow-soft space-y-6 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <div className="border-b border-border pb-5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-primary">
+              <RotateCcw className="h-3.5 w-3.5" /> Quality Guarantee
+            </span>
+            <h1 className="mt-1 font-display text-3xl font-bold text-foreground">
+              Refund & Return Policy
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground">Effective Date: November 2026</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">1. Inspection Upon Delivery</h3>
+            <p>
+              Because spices, grains, and dry fruits are agricultural food commodities, we encourage inspecting your parcel upon delivery. Return or replacement requests must be raised within 24 hours of receipt.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">2. Packaging Integrity</h3>
+            <p>
+              Items eligible for return must remain in their original moisture-resistant packaging. If a batch fails our stated quality or weight specification, we provide a free replacement or full refund via bank transfer / mobile wallet within 3 business days.
+            </p>
+          </div>
         </div>
-      </header>
-
-      <main className="flex-1 mx-auto max-w-3xl w-full px-6 py-12 space-y-6 text-xs text-slate-400 leading-relaxed">
-        <div className="text-center space-y-3 mb-8">
-          <RotateCcw className="h-12 w-12 text-primary mx-auto" />
-          <h1 className="text-3xl font-black text-white">Refund & Return Policy</h1>
-          <p className="text-[11px] text-slate-500">Last updated: July 2026</p>
-        </div>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">1. Return Window</h3>
-        <p>
-          Since spices, rice, and food commodities are fresh agricultural goods, returns are accepted strictly within 24 hours of delivery. Items must remain sealed in their original moisture-resistant packaging.
-        </p>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">2. Damaged Goods</h3>
-        <p>
-          If your bulk bags are torn or wet upon arrival, refuse delivery or submit photos to support within 12 hours. We will replace or refund damaged packages immediately.
-        </p>
-      </main>
-    </div>
+      </div>
+    </StoreLayout>
   );
 }

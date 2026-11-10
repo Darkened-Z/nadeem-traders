@@ -1,53 +1,53 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Leaf, Shield } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Shield } from "lucide-react";
+import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/privacy-policy")({
   head: () => ({
     meta: [
       { title: "Privacy Policy — Nadeem Traders" },
-      { name: "description", content: "Understand how your personal credentials and session data are managed securely." }
+      { name: "description", content: "Understand how your personal credentials and session data are managed securely." },
     ],
   }),
   component: PrivacyPolicyPage,
 });
 
 function PrivacyPolicyPage() {
+  const { categories, products, currentUser } = useStoreData();
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="border-b border-emerald-950/40 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-primary">
-              <Leaf className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-extrabold text-base tracking-tight text-white">Nadeem<span className="text-primary">Traders</span></span>
-          </Link>
-          <Link to="/" className="text-xs font-bold text-slate-400 hover:text-white transition">Return to Store</Link>
+    <StoreLayout categories={categories} products={products} currentUser={currentUser}>
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <div className="rounded-3xl border border-border bg-card p-6 sm:p-10 shadow-soft space-y-6 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <div className="border-b border-border pb-5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-primary">
+              <Shield className="h-3.5 w-3.5" /> Data Protection
+            </span>
+            <h1 className="mt-1 font-display text-3xl font-bold text-foreground">Privacy Policy</h1>
+            <p className="mt-1 text-xs text-muted-foreground">Effective Date: November 2026</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">1. Information Collection</h3>
+            <p>
+              We collect only the account details required to process and deliver your orders: your name, verified email address, delivery address, and phone number. When signing in via Google OAuth, we receive your basic profile identifier and verified email without accessing or storing your password.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">2. Session & Cookie Security</h3>
+            <p>
+              Active sessions are maintained using HTTP-only cookies backed by our encrypted database session store. You can review your login history or sign out active devices at any time from your account dashboard.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">3. Order & Logistics Sharing</h3>
+            <p>
+              Your delivery address and contact phone number are shared strictly with our dispatch couriers and freight partners to fulfill your order. We never sell or rent customer data to third-party marketers.
+            </p>
+          </div>
         </div>
-      </header>
-
-      <main className="flex-1 mx-auto max-w-3xl w-full px-6 py-12 space-y-6 text-xs text-slate-400 leading-relaxed">
-        <div className="text-center space-y-3 mb-8">
-          <Shield className="h-12 w-12 text-primary mx-auto" />
-          <h1 className="text-3xl font-black text-white">Privacy Policy</h1>
-          <p className="text-[11px] text-slate-500">Last updated: July 2026</p>
-        </div>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">1. Information Collection</h3>
-        <p>
-          We only collect personal information linked to your Google profile upon secure Google Authentication (specifically Name, Email Address, and Profile picture). We do not store or collect passwords or any credit card credential.
-        </p>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">2. Session Cookie Cookies</h3>
-        <p>
-          We employ HTTP-only cookies to secure sessions. These keys verify request authentication, block cross-site request forgery (CSRF), and merge guest shopping carts into user profiles once they register.
-        </p>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">3. Data Sharing</h3>
-        <p>
-          Nadeem Traders does not sell or distribute user logs, phone numbers, or addresses to third-party aggregators. Address information is shared strictly with dispatch logistics teams to complete wholesale shipping.
-        </p>
-      </main>
-    </div>
+      </div>
+    </StoreLayout>
   );
 }

@@ -5,14 +5,16 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", "Fraunces", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-2xl: calc(var(--radius) + 6px);
+  --radius-3xl: calc(var(--radius) + 8px);
+  --radius-4xl: calc(var(--radius) + 12px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -40,84 +42,40 @@
 }
 
 :root {
-  --radius: 1rem;
-  /* Warm Saffron / Amber theme */
-  --background: oklch(0.99 0.01 80);
-  --foreground: oklch(0.18 0.01 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.01 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.01 260);
-  --primary: oklch(0.68 0.20 55);            /* Rich saffron-amber */
-  --primary-foreground: oklch(1 0 0);
-  --primary-glow: oklch(0.76 0.18 62);
-  --secondary: oklch(0.52 0.18 48);
-  --secondary-foreground: oklch(1 0 0);
-  --leaf: oklch(0.52 0.18 48);
-  --mint: oklch(0.97 0.015 80);
-  --muted: oklch(0.96 0.005 80);
-  --muted-foreground: oklch(0.45 0.02 250);
-  --accent: oklch(0.95 0.03 80);
-  --accent-foreground: oklch(0.38 0.14 50);
-  --gold: oklch(0.82 0.16 85);
-  --gold-foreground: oklch(0.18 0.01 260);
-  --destructive: oklch(0.6 0.22 27);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.91 0.02 75);
-  --input: oklch(0.93 0.02 78);
-  --ring: oklch(0.68 0.20 55);
-  --sidebar: oklch(0.99 0.01 80);
-  --sidebar-foreground: oklch(0.18 0.01 260);
-  --sidebar-primary: oklch(0.68 0.20 55);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.95 0.03 80);
-  --sidebar-accent-foreground: oklch(0.38 0.14 50);
-  --sidebar-border: oklch(0.91 0.02 75);
-  --sidebar-ring: oklch(0.68 0.20 55);
+  --radius: 0.25rem;
+  /* Seed Jewelry Inspired Warm Champagne, Alabaster & Deep Espresso-Botanical Palette */
+  --background: oklch(0.978 0.007 82);        /* #F9F6F0 Warm Silk Alabaster */
+  --foreground: oklch(0.19 0.01 65);          /* #171513 Deep Espresso Ink */
+  --card: oklch(0.995 0.003 82);              /* #FDFCFA Ivory Surface */
+  --card-foreground: oklch(0.19 0.01 65);
+  --popover: oklch(0.995 0.003 82);
+  --popover-foreground: oklch(0.19 0.01 65);
+  --primary: oklch(0.24 0.035 150);           /* #182C22 Deep Botanical Forest */
+  --primary-foreground: oklch(0.985 0.005 82);
+  --primary-glow: oklch(0.32 0.05 150);
+  --secondary: oklch(0.55 0.08 68);           /* #8A6D4B Warm Champagne Bronze */
+  --secondary-foreground: oklch(0.99 0.005 82);
+  --leaf: oklch(0.24 0.035 150);
+  --mint: oklch(0.95 0.01 82);                /* #F1ECE1 Soft Linen */
+  --muted: oklch(0.95 0.01 82);               /* #F1ECE1 Soft Linen */
+  --muted-foreground: oklch(0.48 0.015 65);   /* #6E685F Warm Taupe */
+  --accent: oklch(0.94 0.012 80);
+  --accent-foreground: oklch(0.19 0.01 65);
+  --gold: oklch(0.68 0.10 75);                /* #B5945B Muted Brushed Gold */
+  --gold-foreground: oklch(0.19 0.01 65);
+  --destructive: oklch(0.52 0.17 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.89 0.012 80);             /* #E5DFD3 Delicate Hairline */
+  --input: oklch(0.89 0.012 80);
+  --ring: oklch(0.24 0.035 150);
 
-  /* Gradients & shadows */
-  --gradient-primary: linear-gradient(135deg, oklch(0.63 0.21 48), oklch(0.74 0.18 64));
-  --gradient-hero: linear-gradient(135deg, oklch(0.40 0.18 42) 0%, oklch(0.62 0.21 52) 50%, oklch(0.74 0.17 66) 100%);
-  --gradient-gold: linear-gradient(135deg, oklch(0.85 0.16 90), oklch(0.78 0.18 75));
-  --gradient-mint: linear-gradient(180deg, oklch(0.98 0.015 80), oklch(1 0 0));
-  --shadow-soft: 0 4px 20px -6px oklch(0.52 0.18 48 / 0.15);
-  --shadow-elegant: 0 20px 50px -18px oklch(0.52 0.18 48 / 0.3);
-  --shadow-glow: 0 0 40px oklch(0.74 0.18 62 / 0.35);
-}
-
-.dark {
-  --background: oklch(0.14 0.03 50);
-  --foreground: oklch(0.97 0.01 80);
-  --card: oklch(0.19 0.04 50);
-  --card-foreground: oklch(0.97 0.01 80);
-  --popover: oklch(0.19 0.04 50);
-  --popover-foreground: oklch(0.97 0.01 80);
-  --primary: oklch(0.74 0.18 62);
-  --primary-foreground: oklch(0.12 0.03 50);
-  --primary-glow: oklch(0.80 0.17 65);
-  --secondary: oklch(0.34 0.10 50);
-  --secondary-foreground: oklch(0.97 0.01 80);
-  --leaf: oklch(0.54 0.16 52);
-  --mint: oklch(0.26 0.05 52);
-  --muted: oklch(0.27 0.04 52);
-  --muted-foreground: oklch(0.74 0.02 80);
-  --accent: oklch(0.29 0.07 52);
-  --accent-foreground: oklch(0.94 0.04 80);
-  --gold: oklch(0.82 0.16 85);
-  --gold-foreground: oklch(0.12 0.03 50);
-  --destructive: oklch(0.65 0.2 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.74 0.18 62);
-  --sidebar: oklch(0.19 0.04 50);
-  --sidebar-foreground: oklch(0.97 0.01 80);
-  --sidebar-primary: oklch(0.74 0.18 62);
-  --sidebar-primary-foreground: oklch(0.12 0.03 50);
-  --sidebar-accent: oklch(0.29 0.07 52);
-  --sidebar-accent-foreground: oklch(0.94 0.04 80);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.74 0.18 62);
+  --gradient-primary: linear-gradient(135deg, #182C22, #243E31);
+  --gradient-hero: linear-gradient(180deg, rgba(20, 18, 15, 0.45) 0%, rgba(20, 18, 15, 0.72) 100%);
+  --gradient-gold: linear-gradient(135deg, #C5A56E, #9F7E49);
+  --gradient-mint: linear-gradient(180deg, #F4EFE6, #F9F6F0);
+  --shadow-soft: 0 2px 16px -4px rgba(23, 21, 19, 0.04);
+  --shadow-elegant: 0 20px 40px -15px rgba(23, 21, 19, 0.09);
+  --shadow-glow: 0 10px 28px -6px rgba(24, 44, 34, 0.18);
 }
 
 @utility bg-gradient-primary { background-image: var(--gradient-primary); }
@@ -127,36 +85,100 @@
 @utility shadow-soft { box-shadow: var(--shadow-soft); }
 @utility shadow-elegant { box-shadow: var(--shadow-elegant); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
-@utility glass {
-  background: color-mix(in oklab, var(--card) 70%, transparent);
-  backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
-}
+@utility font-display { font-family: var(--font-display); }
+@utility font-mono { font-family: var(--font-mono); }
 
 @layer base {
   * { border-color: var(--color-border); }
-  html { font-family: var(--font-sans); }
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
+/* Subtle Editorial Animations */
 @keyframes marquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
-@utility animate-marquee { animation: marquee 30s linear infinite; }
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+@utility animate-marquee {
+  animation: marquee 36s linear infinite;
 }
-@utility animate-float { animation: float 4s ease-in-out infinite; }
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
 
-/* Admin Portal Theme Overrides (Green and White combination) */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@utility animate-fade-up {
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@utility animate-fade-in {
+  animation: fadeIn 0.3s ease-out both;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@utility animate-scale-in {
+  animation: scaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+@utility animate-slide-in-right {
+  animation: slideInRight 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@utility animate-slide-in-left {
+  animation: slideInLeft 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .animate-marquee {
+    animation: none !important;
+  }
+}
+
+/* Admin Portal Clean Light Surface Overrides */
 .admin-portal {
   background-color: var(--background) !important;
   color: var(--foreground) !important;
@@ -164,10 +186,6 @@
 .admin-portal header {
   background-color: var(--card) !important;
   border-color: var(--border) !important;
-  color: var(--foreground) !important;
-}
-.admin-portal header button,
-.admin-portal header a {
   color: var(--foreground) !important;
 }
 .admin-portal .bg-slate-950,
@@ -208,126 +226,4 @@
   background-color: var(--background) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
-}
-.admin-portal input::placeholder {
-  color: var(--muted-foreground) !important;
-  opacity: 0.7;
-}
-.admin-portal .hover\:bg-slate-900\/20:hover {
-  background-color: var(--accent) !important;
-}
-.admin-portal .hover\:bg-slate-800:hover {
-  background-color: var(--accent) !important;
-}
-.admin-portal table tr {
-  border-color: var(--border) !important;
-}
-.admin-portal table th {
-  color: var(--muted-foreground) !important;
-}
-.admin-portal .bg-emerald-950\/10 {
-  background-color: var(--primary) !important;
-  color: var(--primary-foreground) !important;
-}
-.admin-portal button.bg-slate-950,
-.admin-portal button.bg-slate-900 {
-  background-color: var(--background) !important;
-  border-color: var(--border) !important;
-  color: var(--foreground) !important;
-}
-
-/* Simple button styling in admin portal */
-.admin-portal button {
-  background-image: none !important;
-  box-shadow: none !important;
-  transition: all 0.2s ease-in-out !important;
-}
-
-/* Primary buttons (Verify PIN, Save changes, Add buttons, Submit) */
-.admin-portal button.bg-gradient-primary,
-.admin-portal button[type="submit"],
-.admin-portal button.bg-gradient-to-r {
-  background-color: var(--primary) !important;
-  color: #ffffff !important;
-  border: 1px solid var(--primary) !important;
-}
-.admin-portal button.bg-gradient-primary:hover,
-.admin-portal button[type="submit"]:hover,
-.admin-portal button.bg-gradient-to-r:hover {
-  background-color: oklch(0.55 0.15 150) !important; /* Slightly darker green */
-  border-color: oklch(0.55 0.15 150) !important;
-}
-
-/* Secondary / Standard outline buttons */
-.admin-portal button.border-border,
-.admin-portal button.border-emerald-900\/80,
-.admin-portal button.border-emerald-900\/20,
-.admin-portal button.bg-slate-950,
-.admin-portal button.bg-slate-900 {
-  background-color: var(--card) !important;
-  color: var(--foreground) !important;
-  border: 1px solid var(--border) !important;
-}
-.admin-portal button.border-border:hover,
-.admin-portal button.border-emerald-900\/80:hover,
-.admin-portal button.bg-slate-950:hover,
-.admin-portal button.bg-slate-900:hover {
-  background-color: var(--accent) !important;
-}
-
-/* Logout button */
-.admin-portal button.bg-rose-950\/40,
-.admin-portal button.bg-rose-950 {
-  background-color: oklch(0.95 0.05 20) !important; /* Light rose */
-  color: oklch(0.5 0.15 20) !important; /* Darker red */
-  border: 1px solid oklch(0.9 0.1 20) !important;
-}
-.admin-portal button.bg-rose-950\/40:hover,
-.admin-portal button.bg-rose-950:hover {
-  background-color: oklch(0.9 0.08 20) !important;
-}
-
-/* Disable button override */
-.admin-portal button.bg-rose-950 {
-  background-color: #fee2e2 !important; /* Light Red */
-  color: #ef4444 !important; /* Red */
-  border-color: #fca5a5 !important;
-}
-.admin-portal button.bg-rose-950:hover {
-  background-color: #fca5a5 !important;
-  color: #b91c1c !important;
-}
-
-/* Enable button override */
-.admin-portal button.bg-emerald-950 {
-  background-color: #d1fae5 !important; /* Light Green */
-  color: #10b981 !important; /* Emerald */
-  border-color: #6ee7b7 !important;
-}
-.admin-portal button.bg-emerald-950:hover {
-  background-color: #6ee7b7 !important;
-  color: #047857 !important;
-}
-
-/* View Logs button override */
-.admin-portal button.bg-emerald-900\/30,
-.admin-portal button.bg-emerald-900\/30 {
-  background-color: #ecfdf5 !important;
-  color: #059669 !important;
-  border-color: #a7f3d0 !important;
-}
-.admin-portal button.bg-emerald-900\/30:hover {
-  background-color: var(--primary) !important;
-  color: #ffffff !important;
-  border-color: var(--primary) !important;
-}
-
-/* Force Logout button override */
-.admin-portal button.bg-slate-950 {
-  background-color: #f3f4f6 !important;
-  color: #4b5563 !important;
-  border-color: #d1d5db !important;
-}
-.admin-portal button.bg-slate-950:hover:not(:disabled) {
-  background-color: #e5e7eb !important;
 }

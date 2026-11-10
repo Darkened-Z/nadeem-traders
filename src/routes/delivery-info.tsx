@@ -1,67 +1,96 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Leaf, Truck, ShieldCheck, MapPin } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Truck, ShieldCheck, MapPin, Clock } from "lucide-react";
+import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/delivery-info")({
   head: () => ({
     meta: [
       { title: "Delivery Information — Nadeem Traders" },
-      { name: "description", content: "Details about shipping rates, wholesale timelines, and delivery areas in Pakistan." }
+      { name: "description", content: "Details about shipping rates, wholesale timelines, and delivery areas in Pakistan." },
     ],
   }),
   component: DeliveryInfoPage,
 });
 
 function DeliveryInfoPage() {
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="border-b border-emerald-950/40 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-primary">
-              <Leaf className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-extrabold text-base tracking-tight text-white">Nadeem<span className="text-primary">Traders</span></span>
-          </Link>
-          <Link to="/" className="text-xs font-bold text-slate-400 hover:text-white transition">Return to Store</Link>
-        </div>
-      </header>
+  const { categories, products, currentUser } = useStoreData();
 
-      <main className="flex-1 mx-auto max-w-4xl w-full px-6 py-12 space-y-8">
-        <div className="text-center space-y-3">
-          <Truck className="h-12 w-12 text-primary mx-auto" />
-          <h1 className="text-3xl font-black text-white">Delivery Information</h1>
-          <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
-            Nadeem Traders provides reliable, fast delivery solutions for retail and bulk wholesale orders across Pakistan.
+  return (
+    <StoreLayout categories={categories} products={products} currentUser={currentUser}>
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 space-y-10">
+        <div className="space-y-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-primary">
+            Logistics & Dispatch
+          </span>
+          <h1 className="font-display text-3xl font-bold text-foreground">
+            Delivery Information
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
+            Nadeem Traders dispatches retail parcels and bulk wholesale sacks daily across Pakistan with moisture-resistant packaging.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-slate-900/30 border border-emerald-900/15 rounded-3xl p-5 text-center space-y-3">
-            <MapPin className="h-8 w-8 text-primary mx-auto" />
-            <h3 className="font-bold text-sm text-slate-200">Delivery Areas</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              We dispatch wholesale and retail items directly to all major cities in Punjab, Sindh, KPK, and Balochistan.
-            </p>
-          </div>
+          {[
+            {
+              icon: MapPin,
+              title: "Nationwide Coverage",
+              desc: "Direct courier and freight bilty delivery across Punjab, Sindh, KPK, Islamabad, and Balochistan.",
+            },
+            {
+              icon: Clock,
+              title: "Dispatch Timelines",
+              desc: "Same-day dispatch on orders before 2:00 PM. Major Punjab cities arrive in 24–48 hours; nationwide in 2–4 business days.",
+            },
+            {
+              icon: ShieldCheck,
+              title: "Moisture-Sealed Packing",
+              desc: "Spices and dry fruits are heat-sealed in food-grade pouches; grains and pulses ship in woven polypropylene sacks.",
+            },
+          ].map((c) => {
+            const Icon = c.icon;
+            return (
+              <div key={c.title} className="rounded-2xl border border-border bg-card p-6 shadow-soft space-y-3">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="font-display text-lg font-bold text-foreground">{c.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">{c.desc}</p>
+              </div>
+            );
+          })}
+        </div>
 
-          <div className="bg-slate-900/30 border border-emerald-900/15 rounded-3xl p-5 text-center space-y-3">
-            <Clock className="h-8 w-8 text-primary mx-auto" />
-            <h3 className="font-bold text-sm text-slate-200">Delivery Timelines</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Retail orders take 2-4 business days. Bulk orders are processed from central wholesale hubs and ship in 3-6 business days.
-            </p>
+        <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
+          <div className="border-b border-border bg-muted/50 px-6 py-4">
+            <h3 className="font-display text-base font-bold text-foreground">
+              Standard Shipping Tariff Schedule
+            </h3>
           </div>
-
-          <div className="bg-slate-900/30 border border-emerald-900/15 rounded-3xl p-5 text-center space-y-3">
-            <ShieldCheck className="h-8 w-8 text-primary mx-auto" />
-            <h3 className="font-bold text-sm text-slate-200">Secure Packaging</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              All bulk bags (rice, atta, spices) are packed in moisture-resistant bags to maintain freshness during transit.
-            </p>
+          <div className="divide-y divide-border text-xs">
+            <div className="grid grid-cols-3 px-6 py-3.5 font-semibold text-muted-foreground">
+              <span>Order Tier</span>
+              <span>Delivery Window</span>
+              <span>Shipping Fee</span>
+            </div>
+            <div className="grid grid-cols-3 px-6 py-3.5">
+              <span className="font-semibold text-foreground">Orders Above Rs. 2,000</span>
+              <span>1–3 Business Days</span>
+              <span className="font-mono font-bold text-primary">FREE</span>
+            </div>
+            <div className="grid grid-cols-3 px-6 py-3.5">
+              <span className="font-semibold text-foreground">Standard Retail (Under Rs. 2,000)</span>
+              <span>1–3 Business Days</span>
+              <span className="font-mono font-semibold">Rs. 180</span>
+            </div>
+            <div className="grid grid-cols-3 px-6 py-3.5">
+              <span className="font-semibold text-foreground">Bulk Mandi Sacks (25kg–50kg+)</span>
+              <span>2–5 Business Days (Bilty / Freight)</span>
+              <span className="font-mono font-semibold">Calculated by Weight & City</span>
+            </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </StoreLayout>
   );
 }
-import { Clock } from "lucide-react";

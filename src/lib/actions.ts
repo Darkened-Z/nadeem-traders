@@ -158,7 +158,7 @@ export const loginWithGoogleCredential = createServerFn({ method: "POST" })
       // Seed first notification
       await sql`
         INSERT INTO notifications (user_id, title, message)
-        VALUES (${user.id}, 'Welcome to Haraa Bazaar!', 'Thank you for registering. You have been awarded 100 welcome reward points! Start shopping and explore our fresh catalog.')
+        VALUES (${user.id}, 'Welcome to Nadeem Traders!', 'Thank you for registering. You have been awarded 100 welcome reward points! Start shopping and explore our fresh catalog.')
       `;
       // Seed welcome rewards history
       await sql`
@@ -244,6 +244,7 @@ export const loginWithGoogleCredential = createServerFn({ method: "POST" })
 
 // Restore persistent user session
 export const restoreSession = createServerFn({ method: "POST" }).handler(async () => {
+  if (!sql) return null;
   const { getSessionToken, clearSessionToken } = await import("./server-cookies");
   const token = await getSessionToken();
   if (!token) return null;
@@ -762,8 +763,39 @@ export const getCustomerAuditLogs = createServerFn({ method: "POST" })
   });
 
 // 1. Categories
+const MOCK_CATEGORIES = [
+  { id: 1, name: "Dry Fruits", icon: "🥜", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Almonds_in_a_bowl.jpg?width=900" },
+  { id: 2, name: "Spices", icon: "🌶️", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Red_chilli_powder.jpg?width=900" },
+  { id: 3, name: "Pulses & Lentils", icon: "🫘", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Red_lentils_-_jules.jpg?width=900" },
+  { id: 4, name: "Rice & Grains", icon: "🌾", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Basmati_Rice_(49683600583).jpg?width=900" },
+  { id: 5, name: "Cooking Oils", icon: "🫙", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Sunflower_oil.jpg?width=900" },
+  { id: 6, name: "Sugar & Salt", icon: "🧂", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Himalayan_salt_(coarse).jpg?width=900" },
+];
+
+const MOCK_PRODUCTS = [
+  { id: 1, name: "Premium Almonds", brand: "Nadeem Traders", weight: "500g", price: 1800, old_price: null, wholesale_price: 1620, wholesale_min_qty: 5, rating: 5.0, reviews: 120, discount: 0, emoji: "🥜", stock: true, category_id: 1, category_name: "Dry Fruits", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Almonds_in_a_bowl.jpg?width=800" },
+  { id: 2, name: "Pumpkin Seeds", brand: "Nadeem Traders", weight: "250g", price: 650, old_price: null, wholesale_price: 560, wholesale_min_qty: 5, rating: 4.9, reviews: 85, discount: 0, emoji: "🌱", stock: true, category_id: 1, category_name: "Dry Fruits", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Pumpkin_Seeds_macro_1.jpg?width=800" },
+  { id: 3, name: "Kashmiri Red Chilli", brand: "Nadeem Traders", weight: "200g", price: 320, old_price: null, wholesale_price: 275, wholesale_min_qty: 10, rating: 4.8, reviews: 200, discount: 0, emoji: "🌶️", stock: true, category_id: 2, category_name: "Spices", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Red_chilli_powder.jpg?width=800" },
+  { id: 4, name: "Haldi Powder", brand: "Nadeem Traders", weight: "200g", price: 180, old_price: null, wholesale_price: 150, wholesale_min_qty: 10, rating: 4.9, reviews: 310, discount: 0, emoji: "🟡", stock: true, category_id: 2, category_name: "Spices", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Turmeric_Powder.jpg?width=800" },
+  { id: 5, name: "Masoor Dal", brand: "Nadeem Traders", weight: "1kg", price: 280, old_price: null, wholesale_price: 245, wholesale_min_qty: 10, rating: 4.7, reviews: 95, discount: 0, emoji: "🫘", stock: true, category_id: 3, category_name: "Pulses & Lentils", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Red_lentils_-_jules.jpg?width=800" },
+  { id: 6, name: "Chana Dal", brand: "Nadeem Traders", weight: "1kg", price: 240, old_price: null, wholesale_price: 210, wholesale_min_qty: 10, rating: 4.8, reviews: 140, discount: 0, emoji: "🟤", stock: true, category_id: 3, category_name: "Pulses & Lentils", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Split_Chickpeas.jpg?width=800" },
+  { id: 7, name: "Super Kainat Rice", brand: "Nadeem Traders", weight: "5kg", price: 1650, old_price: null, wholesale_price: 1480, wholesale_min_qty: 5, rating: 4.9, reviews: 275, discount: 0, emoji: "🌾", stock: true, category_id: 4, category_name: "Rice & Grains", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Basmati_Rice_(49683600583).jpg?width=800" },
+  { id: 8, name: "Cashews Premium", brand: "Nadeem Traders", weight: "250g", price: 950, old_price: null, wholesale_price: 840, wholesale_min_qty: 5, rating: 5.0, reviews: 60, discount: 0, emoji: "🥜", stock: true, category_id: 1, category_name: "Dry Fruits", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Cashews_1314.jpg?width=800" },
+  { id: 9, name: "Zeera (Cumin)", brand: "Nadeem Traders", weight: "100g", price: 160, old_price: null, wholesale_price: 135, wholesale_min_qty: 10, rating: 4.8, reviews: 180, discount: 0, emoji: "🌿", stock: true, category_id: 2, category_name: "Spices", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Whole_Cumin_Seeds.jpg?width=800" },
+  { id: 10, name: "Sunflower Oil", brand: "Nadeem Traders", weight: "1L", price: 480, old_price: null, wholesale_price: 445, wholesale_min_qty: 12, rating: 4.7, reviews: 90, discount: 0, emoji: "🫙", stock: true, category_id: 5, category_name: "Cooking Oils", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Sunflower_oil.jpg?width=800" },
+  { id: 11, name: "Pink Salt", brand: "Nadeem Traders", weight: "800g", price: 120, old_price: null, wholesale_price: 95, wholesale_min_qty: 12, rating: 4.9, reviews: 145, discount: 0, emoji: "🧂", stock: true, category_id: 6, category_name: "Sugar & Salt", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Himalayan_salt_(coarse).jpg?width=800" },
+  { id: 12, name: "White Sugar", brand: "Nadeem Traders", weight: "1kg", price: 155, old_price: null, wholesale_price: 142, wholesale_min_qty: 20, rating: 4.8, reviews: 210, discount: 0, emoji: "🧂", stock: true, category_id: 6, category_name: "Sugar & Salt", image_url: "https://commons.wikimedia.org/wiki/Special:FilePath/Granulated_White_Sugar_with_Large_Crystals,_Bright_Front_Light.jpg?width=800" },
+];
+
+const MOCK_BRANDS = [
+  { id: 1, name: "Nadeem Traders", image_url: null },
+  { id: 2, name: "Punjab Fresh", image_url: null },
+  { id: 3, name: "Farm Direct", image_url: null },
+];
+
 export const getCategories = createServerFn({ method: "GET" }).handler(
   async () => {
+    if (!sql) return MOCK_CATEGORIES;
     const { serverCache } = await import("./server-cache");
     const cached = serverCache.get("categories");
     if (cached) return cached;
@@ -812,6 +844,7 @@ export const editCategory = createServerFn({ method: "POST" })
 // 2. Products
 export const getProducts = createServerFn({ method: "GET" }).handler(
   async () => {
+    if (!sql) return MOCK_PRODUCTS;
     const { serverCache } = await import("./server-cache");
     const cached = serverCache.get("products");
     if (cached) return cached;
@@ -918,6 +951,7 @@ export const editProduct = createServerFn({ method: "POST" })
 
 // 3. Brands
 export const getBrands = createServerFn({ method: "GET" }).handler(async () => {
+  if (!sql) return MOCK_BRANDS;
   const { serverCache } = await import("./server-cache");
   const cached = serverCache.get("brands");
   if (cached) return cached;

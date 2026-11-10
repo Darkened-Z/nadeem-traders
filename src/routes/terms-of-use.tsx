@@ -1,53 +1,53 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Leaf, FileText } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { FileText } from "lucide-react";
+import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/terms-of-use")({
   head: () => ({
     meta: [
       { title: "Terms of Use — Nadeem Traders" },
-      { name: "description", content: "Terms of service and user compliance conditions." }
+      { name: "description", content: "Terms of service and commercial ordering conditions." },
     ],
   }),
   component: TermsPage,
 });
 
 function TermsPage() {
+  const { categories, products, currentUser } = useStoreData();
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="border-b border-emerald-950/40 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-primary">
-              <Leaf className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-extrabold text-base tracking-tight text-white">Nadeem<span className="text-primary">Traders</span></span>
-          </Link>
-          <Link to="/" className="text-xs font-bold text-slate-400 hover:text-white transition">Return to Store</Link>
+    <StoreLayout categories={categories} products={products} currentUser={currentUser}>
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <div className="rounded-3xl border border-border bg-card p-6 sm:p-10 shadow-soft space-y-6 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <div className="border-b border-border pb-5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-primary">
+              <FileText className="h-3.5 w-3.5" /> Legal Terms
+            </span>
+            <h1 className="mt-1 font-display text-3xl font-bold text-foreground">Terms of Use</h1>
+            <p className="mt-1 text-xs text-muted-foreground">Effective Date: November 2026</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">1. Acceptance of Terms</h3>
+            <p>
+              By browsing and placing retail or wholesale orders on Nadeem Traders, you agree to these commercial terms. All orders are subject to stock availability and commodity market verification.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">2. Retail & Wholesale Pricing</h3>
+            <p>
+              Wholesale unit prices apply automatically when the quantity of an eligible item meets or exceeds its stated minimum bulk threshold. Commercial quotes for 25kg–50kg sacks are valid for 48 hours due to daily mandi fluctuations.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">3. Cash on Delivery Verification</h3>
+            <p>
+              Customers placing Cash-on-Delivery orders must provide an accurate street address and reachable mobile number. Repeated refusal of dispatched COD parcels may result in account suspension.
+            </p>
+          </div>
         </div>
-      </header>
-
-      <main className="flex-1 mx-auto max-w-3xl w-full px-6 py-12 space-y-6 text-xs text-slate-400 leading-relaxed">
-        <div className="text-center space-y-3 mb-8">
-          <FileText className="h-12 w-12 text-primary mx-auto" />
-          <h1 className="text-3xl font-black text-white">Terms of Use</h1>
-          <p className="text-[11px] text-slate-500">Last updated: July 2026</p>
-        </div>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">1. Acceptance of Terms</h3>
-        <p>
-          By accessing and browsing Nadeem Traders, you agree to comply with our commercial guidelines. All orders placed are subject to stock availability and logistics validation.
-        </p>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">2. Account Registration</h3>
-        <p>
-          Users must verify their session credentials using Google Auth. You agree not to spoof devices, tamper with cookies, or attempt to bypass secure route gates.
-        </p>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">3. Wholesale Prices</h3>
-        <p>
-          Real-time wholesale market rates are subject to daily price fluctuations. We reserve the right to cancel or amend orders if errors are found in catalog prices.
-        </p>
-      </main>
-    </div>
+      </div>
+    </StoreLayout>
   );
 }

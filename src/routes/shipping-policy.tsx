@@ -1,48 +1,46 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Leaf, Truck } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Truck } from "lucide-react";
+import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/shipping-policy")({
   head: () => ({
     meta: [
       { title: "Shipping Policy — Nadeem Traders" },
-      { name: "description", content: "Details on wholesale shipping schedules and logistics networks." }
+      { name: "description", content: "Details on wholesale shipping schedules and logistics networks." },
     ],
   }),
   component: ShippingPolicyPage,
 });
 
 function ShippingPolicyPage() {
+  const { categories, products, currentUser } = useStoreData();
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="border-b border-emerald-950/40 bg-slate-900/60 backdrop-blur sticky top-0 z-40">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-primary">
-              <Leaf className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="font-extrabold text-base tracking-tight text-white">Nadeem<span className="text-primary">Traders</span></span>
-          </Link>
-          <Link to="/" className="text-xs font-bold text-slate-400 hover:text-white transition">Return to Store</Link>
+    <StoreLayout categories={categories} products={products} currentUser={currentUser}>
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <div className="rounded-3xl border border-border bg-card p-6 sm:p-10 shadow-soft space-y-6 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+          <div className="border-b border-border pb-5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-primary">
+              <Truck className="h-3.5 w-3.5" /> Fulfillment Terms
+            </span>
+            <h1 className="mt-1 font-display text-3xl font-bold text-foreground">Shipping Policy</h1>
+            <p className="mt-1 text-xs text-muted-foreground">Effective Date: November 2026</p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">1. Dispatch Schedule</h3>
+            <p>
+              Standard retail orders are packed and handed over to courier partners within 24 hours. Orders above Rs. 2,000 qualify for free standard delivery across major cities.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-display text-base font-bold text-foreground">2. Bulk & Freight Bilty</h3>
+            <p>
+              Wholesale orders involving 25kg–50kg sacks or multiple oil cartons are dispatched via registered goods transport (bilty) or dedicated commercial vehicles from our Punjab hub.
+            </p>
+          </div>
         </div>
-      </header>
-
-      <main className="flex-1 mx-auto max-w-3xl w-full px-6 py-12 space-y-6 text-xs text-slate-400 leading-relaxed">
-        <div className="text-center space-y-3 mb-8">
-          <Truck className="h-12 w-12 text-primary mx-auto" />
-          <h1 className="text-3xl font-black text-white">Shipping Policy</h1>
-          <p className="text-[11px] text-slate-500">Last updated: July 2026</p>
-        </div>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">1. Processing Schedules</h3>
-        <p>
-          Standard orders are processed within 24 hours. Wholesale bulk orders are synchronized with morning market rates and packed directly at central logistics hubs.
-        </p>
-
-        <h3 className="font-bold text-sm text-slate-200 mt-6">2. Logistics & Delivery</h3>
-        <p>
-          We partner with leading cargo services for bulk shipping across Pakistan. Real-time tracking IDs are generated as soon as consignments leave our Lahore warehouse.
-        </p>
-      </main>
-    </div>
+      </div>
+    </StoreLayout>
   );
 }

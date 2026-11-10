@@ -24,6 +24,7 @@ import { Route as DeliveryInfoRouteImport } from './routes/delivery-info'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CookiePolicyRouteImport } from './routes/cookie-policy'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as BulkOrdersRouteImport } from './routes/bulk-orders'
 import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as AdminPortalNadeem786RouteImport } from './routes/admin-portal-nadeem-786'
@@ -106,6 +107,11 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CategoriesRoute = CategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BulkOrdersRoute = BulkOrdersRouteImport.update({
   id: '/bulk-orders',
   path: '/bulk-orders',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/admin-portal-nadeem-786': typeof AdminPortalNadeem786Route
   '/brands': typeof BrandsRoute
   '/bulk-orders': typeof BulkOrdersRoute
+  '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/dashboard': typeof DashboardRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/admin-portal-nadeem-786': typeof AdminPortalNadeem786Route
   '/brands': typeof BrandsRoute
   '/bulk-orders': typeof BulkOrdersRoute
+  '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/dashboard': typeof DashboardRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/admin-portal-nadeem-786': typeof AdminPortalNadeem786Route
   '/brands': typeof BrandsRoute
   '/bulk-orders': typeof BulkOrdersRoute
+  '/categories': typeof CategoriesRoute
   '/contact': typeof ContactRoute
   '/cookie-policy': typeof CookiePolicyRoute
   '/dashboard': typeof DashboardRoute
@@ -216,6 +225,7 @@ export interface FileRouteTypes {
     | '/admin-portal-nadeem-786'
     | '/brands'
     | '/bulk-orders'
+    | '/categories'
     | '/contact'
     | '/cookie-policy'
     | '/dashboard'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/admin-portal-nadeem-786'
     | '/brands'
     | '/bulk-orders'
+    | '/categories'
     | '/contact'
     | '/cookie-policy'
     | '/dashboard'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/admin-portal-nadeem-786'
     | '/brands'
     | '/bulk-orders'
+    | '/categories'
     | '/contact'
     | '/cookie-policy'
     | '/dashboard'
@@ -286,6 +298,7 @@ export interface RootRouteChildren {
   AdminPortalNadeem786Route: typeof AdminPortalNadeem786Route
   BrandsRoute: typeof BrandsRoute
   BulkOrdersRoute: typeof BulkOrdersRoute
+  CategoriesRoute: typeof CategoriesRoute
   ContactRoute: typeof ContactRoute
   CookiePolicyRoute: typeof CookiePolicyRoute
   DashboardRoute: typeof DashboardRoute
@@ -412,6 +425,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/categories': {
+      id: '/categories'
+      path: '/categories'
+      fullPath: '/categories'
+      preLoaderRoute: typeof CategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bulk-orders': {
       id: '/bulk-orders'
       path: '/bulk-orders'
@@ -462,6 +482,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminPortalNadeem786Route: AdminPortalNadeem786Route,
   BrandsRoute: BrandsRoute,
   BulkOrdersRoute: BulkOrdersRoute,
+  CategoriesRoute: CategoriesRoute,
   ContactRoute: ContactRoute,
   CookiePolicyRoute: CookiePolicyRoute,
   DashboardRoute: DashboardRoute,
