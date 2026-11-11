@@ -11,6 +11,7 @@ import {
   Check,
   Menu,
   ArrowRight,
+  Truck,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
