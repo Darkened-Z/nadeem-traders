@@ -21,10 +21,10 @@ import {
 export const Route = createFileRoute("/shop")({
   head: () => ({
     meta: [
-      { title: "Product Catalog | Nadeem Traders" },
+      { title: "All Products | Nadeem Traders — Apka Trusted Stop" },
       {
         name: "description",
-        content: "Browse retail and wholesale groceries, spices, rice, pulses, and dry fruits.",
+        content: "Explore 100% pure spices, aged basmati rice, pulses, and dry fruits from Apka Trusted Stop. Delivered via PostEx Courier.",
       },
     ],
   }),
@@ -36,7 +36,6 @@ function ShopPage() {
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedChannel, setSelectedChannel] = useState<string>("all");
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [sortOption, setSortOption] = useState<string>("default");
@@ -45,14 +44,10 @@ function ShopPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get("tab");
       const brandParam = params.get("brand");
       const queryParam = params.get("q");
       const catParam = params.get("category");
 
-      if (tabParam && ["retail", "wholesale"].includes(tabParam)) {
-        setSelectedChannel(tabParam);
-      }
       if (brandParam) setSelectedBrands([brandParam]);
       if (queryParam) setSearchQuery(queryParam);
       if (catParam && !Number.isNaN(Number(catParam))) {
@@ -69,7 +64,6 @@ function ShopPage() {
 
   const clearAllFilters = () => {
     setSearchQuery("");
-    setSelectedChannel("all");
     setSelectedCategories([]);
     setSelectedBrands([]);
     setSortOption("default");
@@ -84,9 +78,6 @@ function ShopPage() {
         p.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (p.category_name && p.category_name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchesChannel =
-        selectedChannel === "wholesale" ? !!p.wholesale_price : true;
-
       const matchesCategory =
         selectedCategories.length === 0 || selectedCategories.includes(p.category_id);
 
@@ -95,22 +86,20 @@ function ShopPage() {
 
       const matchesStock = !inStockOnly || p.stock;
 
-      return matchesSearch && matchesChannel && matchesCategory && matchesBrand && matchesStock;
+      return matchesSearch && matchesCategory && matchesBrand && matchesStock;
     });
-  }, [products, searchQuery, selectedChannel, selectedCategories, selectedBrands, inStockOnly]);
+  }, [products, searchQuery, selectedCategories, selectedBrands, inStockOnly]);
 
   const sortedProducts = useMemo(() => {
     return [...filteredProducts].sort((a, b) => {
-      const priceA =
-        selectedChannel === "wholesale" && a.wholesale_price ? a.wholesale_price : a.price;
-      const priceB =
-        selectedChannel === "wholesale" && b.wholesale_price ? b.wholesale_price : b.price;
+      const priceA = a.price;
+      const priceB = b.price;
 
       if (sortOption === "price-asc") return priceA - priceB;
       if (sortOption === "price-desc") return priceB - priceA;
       return 0;
     });
-  }, [filteredProducts, sortOption, selectedChannel]);
+  }, [filteredProducts, sortOption]);
 
   const handleAddToCart = (product: any, qty: number = 1) => {
     cartStore.addToCart(product, qty);
@@ -134,39 +123,17 @@ function ShopPage() {
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-secondary">
-              Storefront
+              Apka Trusted Stop
             </p>
             <h1 className="font-display text-3xl sm:text-4xl font-normal text-foreground">
               All Products
             </h1>
+            <p className="mt-1 text-xs text-muted-foreground">
+              100% pure kiryana, sahi daam, fast PostEx Courier delivery across Pakistan.
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <div className="inline-flex border border-border bg-card p-0.5 text-[10px] uppercase tracking-[0.18em]">
-              <button
-                type="button"
-                onClick={() => setSelectedChannel("all")}
-                className={`px-3.5 py-1.5 ${
-                  selectedChannel !== "wholesale"
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground"
-                }`}
-              >
-                Retail
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedChannel("wholesale")}
-                className={`px-3.5 py-1.5 ${
-                  selectedChannel === "wholesale"
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground"
-                }`}
-              >
-                Wholesale
-              </button>
-            </div>
-
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
@@ -217,7 +184,6 @@ function ShopPage() {
               onQuickView={handleQuickView}
               onToggleWishlist={toggleWishlist}
               wishlist={wishlist}
-              showWholesalePrimary={selectedChannel === "wholesale"}
             />
           ))}
         </div>

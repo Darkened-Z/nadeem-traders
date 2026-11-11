@@ -29,21 +29,21 @@ function TermsPage() {
           <div className="space-y-2">
             <h3 className="font-display text-base font-bold text-foreground">1. Acceptance of Terms</h3>
             <p>
-              By browsing and placing retail or wholesale orders on Nadeem Traders, you agree to these commercial terms. All orders are subject to stock availability and commodity market verification.
+              By browsing and placing orders on Nadeem Traders (Apka Trusted Stop), you agree to these terms. All orders are subject to stock availability and commodity quality inspection.
             </p>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-display text-base font-bold text-foreground">2. Retail & Wholesale Pricing</h3>
+            <h3 className="font-display text-base font-bold text-foreground">2. Transparent Pricing</h3>
             <p>
-              Wholesale unit prices apply automatically when the quantity of an eligible item meets or exceeds its stated minimum bulk threshold. Commercial quotes for 25kg–50kg sacks are valid for 48 hours due to daily mandi fluctuations.
+              All prices shown on the store are genuine, single-tier direct commodity prices with no hidden markup or deceptive markdowns.
             </p>
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-display text-base font-bold text-foreground">3. Cash on Delivery Verification</h3>
+            <h3 className="font-display text-base font-bold text-foreground">3. PostEx Courier Cash on Delivery</h3>
             <p>
-              Customers placing Cash-on-Delivery orders must provide an accurate street address and reachable mobile number. Repeated refusal of dispatched COD parcels may result in account suspension.
+              Orders are dispatched via PostEx Courier. Customers must provide an accurate street address and active mobile number for SMS tracking. Payment is collected upon doorstep receipt.
             </p>
           </div>
         </div>

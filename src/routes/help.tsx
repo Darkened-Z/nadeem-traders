@@ -16,24 +16,24 @@ function HelpPage() {
   const { categories, products, currentUser } = useStoreData();
   const faqs = [
     {
-      q: "How do wholesale bulk rates work in the shopping cart?",
-      a: "Every eligible product displays both a retail pack price and a minimum bulk quantity (typically 5 to 12 units). As soon as your quantity in the cart reaches that threshold, the unit price automatically switches to the lower wholesale mandi rate.",
+      q: "How does delivery via PostEx Courier work?",
+      a: "All orders placed on Nadeem Traders (Apka Trusted Stop) are dispatched via PostEx Courier. You receive tracking updates via SMS, and pay in cash only when your order arrives safely at your doorstep (Cash on Delivery).",
     },
     {
-      q: "How is my session secured when signing in?",
-      a: "We support Google OAuth 2.0 and 6-digit Email OTP verification. Your session token is stored in an HTTP-only cookie and backed by our PostgreSQL sessions ledger so you can manage active devices from your dashboard.",
+      q: "Do I need to create an account or log in to place an order?",
+      a: "No! You can shop and checkout directly as a guest in just 30 seconds. Just enter your name, phone number, and address.",
     },
     {
-      q: "Do you ship bulk wholesale sacks to all cities in Pakistan?",
-      a: "Yes. Retail parcels and wholesale cartons/sacks are dispatched daily from our central Punjab warehouse via courier and truck bilty logistics across Punjab, Sindh, KPK, and Balochistan.",
+      q: "Do you deliver to all cities in Pakistan?",
+      a: "Yes. Parcels are dispatched daily from our Punjab hub via PostEx Courier across Punjab, Sindh, KPK, Islamabad, and Balochistan.",
     },
     {
-      q: "What payment methods are accepted?",
-      a: "All retail orders placed on the storefront support Cash on Delivery (COD) so you can inspect your items at your doorstep. Commercial bulk orders can also be settled via bank transfer.",
+      q: "Can I place or track orders on WhatsApp?",
+      a: "Absolutely! Tap our WhatsApp widget at the bottom-right corner to speak directly with our team, verify stock, or get personalized assistance.",
     },
     {
-      q: "How do welcome reward points work?",
-      a: "New accounts receive 100 welcome reward points upon verification. You can track your points balance and active discount coupons inside your customer dashboard.",
+      q: "How do you ensure 100% pure kiryana without adulteration?",
+      a: "We procure agricultural commodities directly from verified regional mandis and mills. Every batch of dry fruits, spices, and pulses is triple-cleaned and sealed in food-grade packaging before dispatch.",
     },
   ];
 

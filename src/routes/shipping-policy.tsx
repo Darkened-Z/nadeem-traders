@@ -27,9 +27,9 @@ function ShippingPolicyPage() {
           </div>
 
           <div className="space-y-2">
-            <h3 className="font-display text-base font-bold text-foreground">1. Dispatch Schedule</h3>
+            <h3 className="font-display text-base font-bold text-foreground">1. PostEx Courier Dispatch</h3>
             <p>
-              Standard retail orders are packed and handed over to courier partners within 24 hours. Orders above Rs. 2,000 qualify for free standard delivery across major cities.
+              All orders are packed and handed over to our official courier partner, <strong>PostEx Courier</strong>, within 24 hours. Tracked Cash on Delivery (COD) is available nationwide with SMS order alerts.
             </p>
           </div>
 

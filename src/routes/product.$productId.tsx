@@ -6,6 +6,9 @@ import {
   Minus,
   Loader2,
   ChevronRight,
+  Truck,
+  ShieldCheck,
+  CheckCircle2,
 } from "lucide-react";
 import { recordRecentlyViewedDb } from "../lib/actions";
 import { toast } from "sonner";
@@ -19,8 +22,8 @@ import {
 export const Route = createFileRoute("/product/$productId")({
   head: () => ({
     meta: [
-      { title: "Product Details | Nadeem Traders" },
-      { name: "description", content: "View retail and wholesale rates." },
+      { title: "Product Details | Nadeem Traders — Apka Trusted Stop" },
+      { name: "description", content: "100% pure authentic commodities. Fast PostEx Courier delivery across Pakistan." },
     ],
   }),
   component: ProductDetailsPage,
@@ -83,9 +86,7 @@ function ProductDetailsPage() {
     );
   }
 
-  const isWholesaleAvailable = !!product.wholesale_price;
-  const isBulkRateApplied = isWholesaleAvailable && qty >= (product.wholesale_min_qty || 5);
-  const activePrice = isBulkRateApplied ? product.wholesale_price : product.price;
+  const activePrice = product.price;
   const isWishlisted = wishlist.some((w) => w.id === product.id);
 
   return (
@@ -137,9 +138,15 @@ function ProductDetailsPage() {
 
           <div className="flex flex-col justify-between space-y-6">
             <div className="space-y-4">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">
-                {product.category_name}
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-[0.25em] text-secondary font-semibold">
+                  {product.category_name}
+                </span>
+                <span className="text-muted-foreground/60">·</span>
+                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Apka Trusted Stop
+                </span>
+              </div>
 
               <h1 className="font-display text-3xl sm:text-4xl font-normal text-foreground">
                 {product.name}
@@ -149,40 +156,33 @@ function ProductDetailsPage() {
                 {product.brand} &nbsp;|&nbsp; {product.weight}
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-                <div
-                  onClick={() => setQty(1)}
-                  className={`cursor-pointer border p-4 transition ${
-                    !isBulkRateApplied
-                      ? "border-foreground bg-background"
-                      : "border-border text-muted-foreground"
-                  }`}
-                >
-                  <span className="text-[10px] uppercase tracking-wider block">
-                    Retail Price
-                  </span>
-                  <div className="mt-1 font-display text-2xl font-medium text-foreground">
-                    Rs. {Number(product.price).toLocaleString()}
-                  </div>
+              {/* Clean Single Price */}
+              <div className="pt-2">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground block">
+                  Price
+                </span>
+                <div className="mt-1 font-display text-4xl font-normal text-foreground">
+                  Rs. {Number(product.price).toLocaleString()}
                 </div>
+              </div>
 
-                {isWholesaleAvailable && (
-                  <div
-                    onClick={() => setQty(product.wholesale_min_qty || 5)}
-                    className={`cursor-pointer border p-4 transition ${
-                      isBulkRateApplied
-                        ? "border-foreground bg-background"
-                        : "border-border text-muted-foreground"
-                    }`}
-                  >
-                    <span className="text-[10px] uppercase tracking-wider text-secondary block">
-                      Wholesale ({product.wholesale_min_qty || 5}+ units)
-                    </span>
-                    <div className="mt-1 font-display text-2xl font-medium text-foreground">
-                      Rs. {Number(product.wholesale_price).toLocaleString()}
-                    </div>
-                  </div>
-                )}
+              {/* PostEx Courier Badge & Gen-Z Microcopy */}
+              <div className="border border-border/80 bg-muted/40 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                  <Truck className="h-4 w-4 text-primary shrink-0" />
+                  <span>Delivered via PostEx Courier · Cash on Delivery</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Fast tracked doorstep delivery across Pakistan. 100% pure authentic kiryana, no mid stuff. <strong className="text-foreground">Apka Trusted Stop</strong>.
+                </p>
+                <div className="flex items-center gap-4 pt-1 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1 text-emerald-700">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Mandi Verified
+                  </span>
+                  <span className="flex items-center gap-1 text-primary">
+                    <ShieldCheck className="h-3.5 w-3.5" /> Food-grade Sealed
+                  </span>
+                </div>
               </div>
             </div>
 

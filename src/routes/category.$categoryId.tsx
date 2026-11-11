@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { ChevronRight, Search, X } from "lucide-react";
+import { ChevronRight, Search, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { cartStore } from "../lib/cart-store";
 import { recordRecentlyViewedDb } from "../lib/actions";
@@ -11,14 +11,88 @@ import {
   getCategoryMeta,
 } from "../components/store-layout";
 
+interface CategoryTheme {
+  bgHero: string;
+  borderColor: string;
+  badgeBg: string;
+  badgeText: string;
+  pillBorder: string;
+  accentHex: string;
+  genzTagline: string;
+  vibe: string;
+}
+
+const CATEGORY_THEMES: Record<string, CategoryTheme> = {
+  "dry-fruits": {
+    bgHero: "bg-[#FAF5EC]", // warm almond cream
+    borderColor: "border-[#E5D5C0]",
+    badgeBg: "bg-[#78350F]/10",
+    badgeText: "text-[#78350F]",
+    pillBorder: "border-[#78350F]/30",
+    accentHex: "#78350F",
+    genzTagline: "Crunchy, pure & zero compromise · Apka Trusted Stop",
+    vibe: "Handpicked premium almonds, cashews & seeds. Fresh harvest only.",
+  },
+  spices: {
+    bgHero: "bg-[#FFF0F0]", // vibrant paprika / kashmiri red tint
+    borderColor: "border-[#FFC9C4]",
+    badgeBg: "bg-[#991B1B]/10",
+    badgeText: "text-[#991B1B]",
+    pillBorder: "border-[#991B1B]/30",
+    accentHex: "#991B1B",
+    genzTagline: "Asli khushboo, no fake color, fr fr · Apka Trusted Stop",
+    vibe: "Freshly ground whole spices with authentic color and pungent aroma.",
+  },
+  "pulses-lentils": {
+    bgHero: "bg-[#F0FAF2]", // organic soothing green
+    borderColor: "border-[#C5E8CE]",
+    badgeBg: "bg-[#166534]/10",
+    badgeText: "text-[#166534]",
+    pillBorder: "border-[#166534]/30",
+    accentHex: "#166534",
+    genzTagline: "High protein, triple cleaned · Apka Trusted Stop",
+    vibe: "Unpolished, stone-free pulses directly from fertile Punjab plains.",
+  },
+  "rice-grains": {
+    bgHero: "bg-[#FEF8EA]", // golden kainat wheat
+    borderColor: "border-[#FDE5A8]",
+    badgeBg: "bg-[#92400E]/10",
+    badgeText: "text-[#92400E]",
+    pillBorder: "border-[#92400E]/30",
+    accentHex: "#92400E",
+    genzTagline: "Aged 1121 Super Kainat, pure luxury grains · Apka Trusted Stop",
+    vibe: "Long-grain aromatic basmati that elongates to double its size upon cooking.",
+  },
+  "cooking-oils": {
+    bgHero: "bg-[#FEFCE8]", // sunny sunflower gold
+    borderColor: "border-[#FDE047]",
+    badgeBg: "bg-[#854D0E]/10",
+    badgeText: "text-[#854D0E]",
+    pillBorder: "border-[#854D0E]/30",
+    accentHex: "#854D0E",
+    genzTagline: "Light, cholesterol-free & healthy · Apka Trusted Stop",
+    vibe: "Double-refined premium cooking oil for crisp frying and light digestion.",
+  },
+  "sugar-salt": {
+    bgHero: "bg-[#FDF2F8]", // crystalline himalayan pink rose
+    borderColor: "border-[#FBCFE8]",
+    badgeBg: "bg-[#9D174D]/10",
+    badgeText: "text-[#9D174D]",
+    pillBorder: "border-[#9D174D]/30",
+    accentHex: "#9D174D",
+    genzTagline: "84+ natural minerals, 100% Himalayan pink · Apka Trusted Stop",
+    vibe: "Authentic Khewra rock pink salt and pure sulfur-free granulated white sugar.",
+  },
+};
+
 export const Route = createFileRoute("/category/$categoryId")({
   head: () => ({
     meta: [
-      { title: "Category | Nadeem Traders" },
+      { title: "Category | Nadeem Traders — Apka Trusted Stop" },
       {
         name: "description",
         content:
-          "Browse spices, basmati rice, pulses, dry fruits, and cooking oils by category.",
+          "Browse spices, basmati rice, pulses, dry fruits, and cooking oils. Fast PostEx Courier delivery across Pakistan.",
       },
     ],
   }),
@@ -31,7 +105,6 @@ function CategoryPage() {
 
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [pricingMode, setPricingMode] = useState<"retail" | "wholesale">("retail");
   const [sortBy, setSortBy] = useState("featured");
 
   const category = useMemo(() => {
@@ -70,14 +143,14 @@ function CategoryPage() {
 
   const sortedProducts = useMemo(() => {
     return [...filteredProducts].sort((a, b) => {
-      const priceA = pricingMode === "wholesale" && a.wholesale_price ? a.wholesale_price : a.price;
-      const priceB = pricingMode === "wholesale" && b.wholesale_price ? b.wholesale_price : b.price;
+      const priceA = a.price;
+      const priceB = b.price;
       if (sortBy === "price-low") return priceA - priceB;
       if (sortBy === "price-high") return priceB - priceA;
       if (sortBy === "title-az") return a.name.localeCompare(b.name);
       return 0;
     });
-  }, [filteredProducts, sortBy, pricingMode]);
+  }, [filteredProducts, sortBy]);
 
   const handleAddToCart = (product: any, qty: number = 1) => {
     cartStore.addToCart(product, qty);
@@ -109,6 +182,16 @@ function CategoryPage() {
 
   const activeCategory = category || categories[0];
   const meta = getCategoryMeta(activeCategory.name);
+  const theme = CATEGORY_THEMES[meta.slug] || {
+    bgHero: "bg-[#F1ECE1]",
+    borderColor: "border-[#E5DEC9]",
+    badgeBg: "bg-[#C5A56E]/15",
+    badgeText: "text-[#8C6D37]",
+    pillBorder: "border-[#C5A56E]/40",
+    accentHex: "#8C6D37",
+    genzTagline: "Apka Trusted Stop — 100% Asli Kiryana",
+    vibe: meta.description,
+  };
   const otherCategories = categories.filter((c) => c.id !== activeCategory.id);
 
   return (
@@ -120,7 +203,8 @@ function CategoryPage() {
       quickViewProduct={quickViewProduct}
       setQuickViewProduct={setQuickViewProduct}
     >
-      <section className="border-b border-border bg-[#F1ECE1]">
+      {/* Category Hero with Bespoke Color Palette */}
+      <section className={`border-b ${theme.borderColor} ${theme.bgHero} transition-colors duration-500`}>
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-8 grid gap-8 lg:grid-cols-12 items-center">
           <div className="lg:col-span-6 space-y-4 animate-fade-up">
             <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -135,16 +219,21 @@ function CategoryPage() {
               <span className="text-foreground font-semibold">{activeCategory.name}</span>
             </nav>
 
+            <div className="inline-flex items-center gap-2 border px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.22em]" style={{ borderColor: theme.accentHex + "40", backgroundColor: theme.accentHex + "12", color: theme.accentHex }}>
+              <Sparkles className="h-3 w-3" />
+              <span>{theme.genzTagline}</span>
+            </div>
+
             <h1 className="font-display text-4xl sm:text-5xl font-normal text-foreground leading-none">
               {activeCategory.name}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
-              {meta.description}
+              {theme.vibe}
             </p>
           </div>
 
           <div className="lg:col-span-6">
-            <div className="aspect-[16/9] w-full overflow-hidden border border-border bg-muted">
+            <div className={`aspect-[16/9] w-full overflow-hidden border ${theme.borderColor} bg-muted shadow-sm`}>
               {activeCategory.image_url && (
                 <img
                   src={activeCategory.image_url}
@@ -158,42 +247,18 @@ function CategoryPage() {
         </div>
       </section>
 
+      {/* Sub-bar with Search & Sorting (Clean, No Wholesale/Retail Switcher) */}
       <section className="border-b border-border bg-background">
         <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-8 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
-            <div className="inline-flex border border-border bg-card p-0.5 text-[10px] uppercase tracking-[0.18em]">
-              <button
-                type="button"
-                onClick={() => setPricingMode("retail")}
-                className={`px-3 py-1.5 transition ${
-                  pricingMode === "retail"
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Retail
-              </button>
-              <button
-                type="button"
-                onClick={() => setPricingMode("wholesale")}
-                className={`px-3 py-1.5 transition ${
-                  pricingMode === "wholesale"
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Wholesale
-              </button>
-            </div>
-
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search ${activeCategory.name}...`}
-                className="border border-border bg-card pl-8 pr-6 py-1.5 text-xs focus:border-foreground focus:outline-none w-44 sm:w-56"
+                placeholder={`Search in ${activeCategory.name}...`}
+                className="border border-border bg-card pl-8 pr-6 py-1.5 text-xs focus:border-foreground focus:outline-none w-52 sm:w-64"
               />
               {searchQuery && (
                 <button
@@ -209,7 +274,7 @@ function CategoryPage() {
 
           <div className="flex items-center gap-5 text-xs">
             <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              {sortedProducts.length} {sortedProducts.length === 1 ? "Item" : "Items"}
+              {sortedProducts.length} {sortedProducts.length === 1 ? "Product" : "Products"}
             </span>
 
             <select
@@ -236,14 +301,13 @@ function CategoryPage() {
               onQuickView={handleQuickView}
               onToggleWishlist={toggleWishlist}
               wishlist={wishlist}
-              showWholesalePrimary={pricingMode === "wholesale"}
             />
           ))}
         </div>
 
         <div className="border-t border-border pt-10 space-y-3">
           <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">
-            Other Categories
+            Other Collections · Apka Trusted Stop
           </p>
           <div className="flex flex-wrap gap-2">
             {otherCategories.map((c) => (

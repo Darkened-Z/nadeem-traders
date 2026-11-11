@@ -5,8 +5,8 @@ import { StoreLayout, useStoreData } from "../components/store-layout";
 export const Route = createFileRoute("/refund-policy")({
   head: () => ({
     meta: [
-      { title: "Refund & Return Policy — Nadeem Traders" },
-      { name: "description", content: "Returns and refund policy for grocery products and bulk wholesale grains." },
+      { title: "Refund & Return Policy — Nadeem Traders | Apka Trusted Stop" },
+      { name: "description", content: "Returns and refund policy for grocery products and agricultural commodities — Apka Trusted Stop." },
     ],
   }),
   component: RefundPage,

@@ -168,11 +168,11 @@ function DashboardPage() {
           setStats(st);
           await loadTabData(user.id, "overview");
         } else {
-          window.location.href = "/login?redirect=/dashboard";
+          window.location.href = "/shop";
         }
       } catch (err) {
         console.error(err);
-        window.location.href = "/login?redirect=/dashboard";
+        window.location.href = "/shop";
       } finally {
         setLoading(false);
       }

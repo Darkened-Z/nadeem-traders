@@ -56,7 +56,7 @@ function BrandsPage() {
             Shop by Brand
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Select a producer or distributor below to filter catalog items.
+            Explore authentic Pakistani kitchen producers and verified brands — Apka Trusted Stop.
           </p>
         </div>
 

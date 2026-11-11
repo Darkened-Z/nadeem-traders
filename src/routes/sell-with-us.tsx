@@ -40,7 +40,7 @@ function SellWithUsPage() {
             Partner as a Verified Supplier
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Are you a rice mill, spice processor, orchard grower, or regional distributor? Apply to distribute your commodities through Nadeem Traders.
+            Are you an authentic rice mill, spice processor, or orchard grower? Supply your commodities directly through Nadeem Traders — Apka Trusted Stop.
           </p>
         </div>
 

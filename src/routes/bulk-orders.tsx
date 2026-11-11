@@ -7,11 +7,11 @@ import { StoreLayout, useStoreData } from "../components/store-layout";
 export const Route = createFileRoute("/bulk-orders")({
   head: () => ({
     meta: [
-      { title: "Bulk & Corporate Wholesale Orders — Nadeem Traders" },
+      { title: "Bulk & Institutional Orders — Nadeem Traders | Apka Trusted Stop" },
       {
         name: "description",
         content:
-          "Request commercial quotes for 25kg–50kg sacks of basmati rice, pulses, spices, and edible oils for hotels, restaurants, and retail stores.",
+          "Request commercial bulk quotes for 25kg–50kg sacks of basmati rice, pulses, spices, and edible oils. Apka Trusted Stop.",
       },
     ],
   }),
@@ -49,13 +49,13 @@ function BulkOrdersPage() {
           <div className="lg:col-span-5 space-y-6">
             <div>
               <span className="text-xs font-bold uppercase tracking-widest text-primary">
-                B2B & HoReCa Desk
+                Bulk Desk · Apka Trusted Stop
               </span>
               <h1 className="mt-1 font-display text-3xl sm:text-4xl font-bold text-foreground">
-                Commercial & Bulk Wholesale Orders
+                Institutional &amp; Bulk Orders
               </h1>
               <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Supplying restaurants, banquet halls, bakeries, hostels, and karyana merchants with 25kg and 50kg mandi sacks at direct mill rates.
+                Supplying restaurants, banquet halls, bakeries, hostels, and kitchens with 25kg and 50kg mandi sacks at direct rates.
               </p>
             </div>
 

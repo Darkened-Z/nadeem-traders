@@ -51,13 +51,13 @@ function CategoriesDirectoryPage() {
       <section className="border-b border-border bg-[#F1ECE1] py-14 sm:py-20 text-center px-4">
         <div className="mx-auto max-w-2xl space-y-3 animate-fade-up">
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-secondary">
-            Nadeem Traders
+            Apka Trusted Stop
           </p>
           <h1 className="font-display text-4xl sm:text-5xl font-normal tracking-tight text-foreground">
             All Categories
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Select a category below to browse products in retail and wholesale quantities.
+            Select a category below to explore 100% authentic kitchen commodities — Apka Trusted Stop.
           </p>
         </div>
       </section>

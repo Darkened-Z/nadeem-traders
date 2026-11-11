@@ -41,27 +41,27 @@ export interface CategoryMeta {
 export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   "Dry Fruits": {
     slug: "dry-fruits",
-    description: "Almonds, cashews, pumpkin seeds, and dried nuts available in retail and wholesale packs.",
+    description: "Premium almonds, cashews, pumpkin seeds, and hand-picked dry fruits from Apka Trusted Stop.",
   },
   Spices: {
     slug: "spices",
-    description: "Whole and ground culinary spices including red chilli, turmeric, and cumin.",
+    description: "Whole and finely ground aromatic spices including Kashmiri chilli, turmeric, and cumin. 100% pure kiryana.",
   },
   "Pulses & Lentils": {
     slug: "pulses-lentils",
-    description: "Cleaned split lentils and chickpeas including masoor dal and chana dal.",
+    description: "Triple-cleaned split lentils and chickpeas including masoor dal and chana dal directly from source.",
   },
   "Rice & Grains": {
     slug: "rice-grains",
-    description: "Basmati rice, flour, and staple household grains in retail and bulk bags.",
+    description: "Aged Super Kainat basmati rice and staple grains with authentic fragrance and extra-long grain length.",
   },
   "Cooking Oils": {
     slug: "cooking-oils",
-    description: "Refined sunflower oil, cooking oils, and ghee for daily cooking.",
+    description: "Light, double-refined sunflower cooking oils and pure cooking essentials for every home.",
   },
   "Sugar & Salt": {
     slug: "sugar-salt",
-    description: "White granulated sugar and pink salt in standard and wholesale quantities.",
+    description: "Pure white granulated sugar and mineral-rich Himalayan pink salt. Clean, unadulterated quality.",
   },
 };
 
@@ -70,7 +70,7 @@ export function getCategoryMeta(name: string): CategoryMeta {
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   return {
     slug,
-    description: `Browse ${name.toLowerCase()} in retail and wholesale quantities.`,
+    description: `Premium quality ${name.toLowerCase()} from Apka Trusted Stop.`,
   };
 }
 
@@ -426,7 +426,6 @@ export function ModernProductCard({
   onQuickView,
   onToggleWishlist,
   wishlist = [],
-  showWholesalePrimary = false,
 }: {
   product: any;
   onAddToCart: (p: any, qty?: number) => void;
@@ -439,16 +438,13 @@ export function ModernProductCard({
   const [imgError, setImgError] = useState(false);
   const isWishlisted = wishlist.some((item) => item.id === p.id);
 
-  const hasWholesale = !!p.wholesale_price && p.wholesale_price < p.price;
-  const displayWholesale = showWholesalePrimary && hasWholesale;
-  const activePrice = displayWholesale ? p.wholesale_price : p.price;
+  const activePrice = p.price;
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (!p.stock) return;
-    const qty = displayWholesale ? p.wholesale_min_qty || 5 : 1;
-    onAddToCart(p, qty);
+    onAddToCart(p, 1);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
   };
@@ -457,8 +453,7 @@ export function ModernProductCard({
     e.preventDefault();
     e.stopPropagation();
     if (!p.stock) return;
-    const qty = displayWholesale ? p.wholesale_min_qty || 5 : 1;
-    onAddToCart(p, qty);
+    onAddToCart(p, 1);
     openCartDrawer();
   };
 
@@ -556,14 +551,9 @@ export function ModernProductCard({
 
         <div className="mt-2.5 pt-1 border-t border-border/40">
           <div className="text-xs">
-            <span className="text-foreground font-medium">
+            <span className="text-foreground font-semibold">
               Rs. {Number(activePrice).toLocaleString()}
             </span>
-            {hasWholesale && !displayWholesale && (
-              <span className="ml-2 text-[11px] text-muted-foreground">
-                (Wholesale Rs. {Number(p.wholesale_price).toLocaleString()})
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -657,19 +647,10 @@ export function StoreLayout({
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   cart.forEach((item) => {
-    const actualPrice =
-      item.wholesale_price && item.quantity >= item.wholesale_min_qty
-        ? item.wholesale_price
-        : item.price;
-    subtotal += actualPrice * item.quantity;
+    subtotal += item.price * item.quantity;
   });
 
   const handleAddToCart = (product: any, qty: number = 1) => {
-    if (!currentUser) {
-      toast.error("Please sign in to add items to your bag.");
-      window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
-      return;
-    }
     cartStore.addToCart(product, qty);
     toast.success(`Added ${qty}× ${product.name} to your bag`);
   };
@@ -678,7 +659,7 @@ export function StoreLayout({
     e.preventDefault();
     if (cart.length === 0) return;
     if (!checkoutForm.name || !checkoutForm.email || !checkoutForm.address) {
-      toast.error("Please complete all required delivery fields.");
+      toast.error("Please complete all required fields.");
       return;
     }
 
@@ -690,28 +671,28 @@ export function StoreLayout({
         customer_email: checkoutForm.email,
         customer_phone: checkoutForm.phone,
         shipping_address: checkoutForm.address,
+        shipping_carrier: "PostEx Courier",
+        payment_method: "Cash on Delivery",
         total_amount: subtotal,
         items: cart.map((item) => {
-          const appliedPrice =
-            item.wholesale_price && item.quantity >= item.wholesale_min_qty
-              ? item.wholesale_price
-              : item.price;
           return {
             product_id: item.id,
             product_name: item.name,
             quantity: item.quantity,
-            price: appliedPrice,
+            price: item.price,
           };
         }),
       };
 
       const result = await createOrder({ data: orderData });
       setCreatedOrderId(result.id);
-      try {
-        await clearCartDb({ data: { userId: currentUser.id } });
-      } catch {}
+      if (currentUser?.id) {
+        try {
+          await clearCartDb({ data: { userId: currentUser.id } });
+        } catch {}
+      }
       cartStore.clearCartLocal();
-      toast.success(`Order #${result.id} confirmed`);
+      toast.success(`Order #${result.id} confirmed via PostEx Courier`);
     } catch (err) {
       console.error(err);
       toast.error("Could not place order. Please try again.");
@@ -729,7 +710,16 @@ export function StoreLayout({
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* Single Clean Header (No Top Announcement Bar Above Header) */}
+      {/* Top Trending Gen-Z Microcopy Bar */}
+      <div className="bg-[#141311] py-2 px-4 text-center text-[10px] sm:text-[11px] font-medium tracking-[0.2em] uppercase text-[#E6E1D6] border-b border-white/10">
+        <span>
+          No Cap, 100% Asli Kiryana &nbsp;·&nbsp;{" "}
+          <strong className="text-[#C5A56E] font-semibold">Apka Trusted Stop</strong>{" "}
+          &nbsp;·&nbsp; Fast Doorstep Delivery via PostEx Courier
+        </span>
+      </div>
+
+      {/* Single Clean Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-8">
           {/* Left: Menu + Search */}
@@ -755,39 +745,24 @@ export function StoreLayout({
             </button>
           </div>
 
-          {/* Center: Brand Wordmark */}
+          {/* Center: Brand Wordmark + Apka Trusted Stop */}
           <div className="text-center w-1/3 shrink-0">
-            <Link to="/" className="inline-block">
+            <Link to="/" className="inline-block group">
               <span className="font-display text-2xl sm:text-3xl font-normal tracking-[0.18em] uppercase text-foreground block leading-none">
                 Nadeem Traders
+              </span>
+              <span className="text-[9px] uppercase tracking-[0.28em] text-secondary font-semibold block mt-1">
+                Apka Trusted Stop
               </span>
             </Link>
           </div>
 
-          {/* Right: Sign In + Bag */}
-          <div className="flex items-center justify-end gap-5 text-xs w-1/3">
-            {currentUser ? (
-              <Link
-                to="/dashboard"
-                className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] text-foreground hover:text-secondary transition-colors"
-              >
-                <User className="h-4 w-4 stroke-[1.5]" />
-                <span className="hidden sm:inline">{currentUser.name?.split(" ")[0]}</span>
-              </Link>
-            ) : (
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.16em] text-foreground hover:text-secondary transition-colors"
-              >
-                <User className="h-4 w-4 stroke-[1.5]" />
-                <span className="hidden sm:inline">Sign In</span>
-              </Link>
-            )}
-
+          {/* Right: Bag (No Log In button) */}
+          <div className="flex items-center justify-end text-xs w-1/3">
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-foreground hover:text-secondary transition-colors"
+              className="inline-flex items-center gap-2 border border-border/80 bg-card px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all"
               aria-label="Your Shopping Bag"
             >
               <ShoppingBag className="h-4 w-4 stroke-[1.5]" />
@@ -979,8 +954,11 @@ export function StoreLayout({
               <span className="font-display text-2xl tracking-[0.18em] uppercase text-white block">
                 Nadeem Traders
               </span>
+              <span className="text-[10px] uppercase tracking-[0.25em] text-[#C5A56E] font-semibold block mt-1">
+                Apka Trusted Stop
+              </span>
               <p className="mt-3 text-xs text-[#A39E93] leading-relaxed">
-                Spices, grains, pulses, dry fruits, and cooking essentials in retail and wholesale quantities.
+                Pure spices, aromatic grains, unpolished pulses, dry fruits, and cooking essentials. Fast tracked delivery via PostEx Courier.
               </p>
             </div>
 
@@ -1103,9 +1081,7 @@ export function StoreLayout({
                   </div>
                 ) : (
                   cart.map((item) => {
-                    const isWholesaleApplied =
-                      item.wholesale_price && item.quantity >= item.wholesale_min_qty;
-                    const activePrice = isWholesaleApplied ? item.wholesale_price! : item.price;
+                    const activePrice = item.price;
 
                     return (
                       <div key={item.id} className="flex gap-4 border-b border-border pb-5">
@@ -1291,8 +1267,24 @@ export function StoreLayout({
                       rows={3}
                       value={checkoutForm.address}
                       onChange={(e) => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
+                      placeholder="House/Shop #, Street, Area, City"
                       className="mt-1.5 w-full border border-border bg-card px-3.5 py-2.5 text-xs focus:border-foreground focus:outline-none resize-none"
                     />
+                  </div>
+
+                  {/* Automatic PostEx Courier Delivery - No delivery selection needed */}
+                  <div className="border border-border/80 bg-muted/40 p-3 space-y-1">
+                    <div className="flex items-center justify-between text-xs font-semibold text-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <Truck className="h-4 w-4 text-primary" /> Delivery: PostEx Courier
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5">
+                        Cash on Delivery (COD)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Dispatched automatically via <strong>PostEx Courier</strong> with real-time SMS tracking directly to your doorstep.
+                    </p>
                   </div>
 
                   <div className="flex items-baseline justify-between border-t border-border pt-4">
@@ -1365,43 +1357,10 @@ export function StoreLayout({
                   {activeQuickView.brand} &nbsp;|&nbsp; {activeQuickView.weight}
                 </p>
 
-                <div className="space-y-2 pt-3">
-                  <span className="block text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                    Select Option
-                  </span>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setQuickViewQty(1)}
-                      className={`border p-3 text-left transition ${
-                        quickViewQty < (activeQuickView.wholesale_min_qty || 5)
-                          ? "border-foreground bg-card"
-                          : "border-border text-muted-foreground"
-                      }`}
-                    >
-                      <span className="block text-[10px] uppercase tracking-wider">Retail</span>
-                      <span className="font-display text-lg font-medium text-foreground">
-                        Rs. {activeQuickView.price}
-                      </span>
-                    </button>
-                    {activeQuickView.wholesale_price && (
-                      <button
-                        type="button"
-                        onClick={() => setQuickViewQty(activeQuickView.wholesale_min_qty || 5)}
-                        className={`border p-3 text-left transition ${
-                          quickViewQty >= (activeQuickView.wholesale_min_qty || 5)
-                            ? "border-foreground bg-card"
-                            : "border-border text-muted-foreground"
-                        }`}
-                      >
-                        <span className="block text-[10px] uppercase tracking-wider text-secondary">
-                          Wholesale ({activeQuickView.wholesale_min_qty}+)
-                        </span>
-                        <span className="font-display text-lg font-medium text-foreground">
-                          Rs. {activeQuickView.wholesale_price}
-                        </span>
-                      </button>
-                    )}
+                <div className="pt-2">
+                  <span className="block text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Price</span>
+                  <div className="mt-1 font-display text-3xl font-normal text-foreground">
+                    Rs. {Number(activeQuickView.price).toLocaleString()}
                   </div>
                 </div>
               </div>
@@ -1426,13 +1385,7 @@ export function StoreLayout({
                     </button>
                   </div>
                   <span className="font-display text-2xl font-medium text-foreground">
-                    Rs.{" "}
-                    {(
-                      (activeQuickView.wholesale_price &&
-                      quickViewQty >= (activeQuickView.wholesale_min_qty || 5)
-                        ? activeQuickView.wholesale_price
-                        : activeQuickView.price) * quickViewQty
-                    ).toLocaleString()}
+                    Rs. {(activeQuickView.price * quickViewQty).toLocaleString()}
                   </span>
                 </div>
 
@@ -1473,6 +1426,28 @@ export function StoreLayout({
           </div>
         </div>
       )}
+
+      {/* Floating WhatsApp Contact Widget (Apka Trusted Stop) */}
+      <aside aria-label="WhatsApp Support" className="fixed bottom-6 right-6 z-40">
+        <a
+          href="https://wa.me/923000000000?text=Hello%20Nadeem%20Traders,%20I%20am%20shopping%20on%20Apka%20Trusted%20Stop%20and%20need%20assistance."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-3 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 border border-white/20"
+          aria-label="Chat on WhatsApp with Apka Trusted Stop support"
+        >
+          <svg
+            className="h-5 w-5 fill-current"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+          </svg>
+          <span className="text-xs font-semibold tracking-wide hidden sm:inline">
+            WhatsApp · Apka Trusted Stop
+          </span>
+        </a>
+      </aside>
     </div>
   );
 }

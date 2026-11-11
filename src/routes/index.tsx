@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Truck, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { recordRecentlyViewedDb } from "../lib/actions";
 import { cartStore } from "../lib/cart-store";
@@ -14,11 +14,11 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nadeem Traders | Retail & Wholesale Marketplace" },
+      { title: "Nadeem Traders — Apka Trusted Stop | 100% Asli Kiryana" },
       {
         name: "description",
         content:
-          "Spices, basmati rice, pulses, dry fruits, cooking oils, and sugar & salt in retail and wholesale quantities.",
+          "Apka Trusted Stop for pure spices, aged kainat basmati rice, organic pulses, fresh dry fruits, and cooking oils. Fast PostEx Courier delivery across Pakistan.",
       },
     ],
   }),
@@ -28,7 +28,6 @@ export const Route = createFileRoute("/")({
 function HomePage() {
   const { categories, products, currentUser, wishlist, toggleWishlist } = useStoreData();
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
-  const [pricingTab, setPricingTab] = useState<"retail" | "wholesale">("retail");
 
   const handleAddToCart = (product: any, qty: number = 1) => {
     cartStore.addToCart(product, qty);
@@ -50,30 +49,33 @@ function HomePage() {
       quickViewProduct={quickViewProduct}
       setQuickViewProduct={setQuickViewProduct}
     >
-      {/* 1. Clean Editorial Hero */}
-      <section className="relative min-h-[520px] lg:min-h-[600px] flex items-center justify-center overflow-hidden bg-[#141311] text-white text-center px-4 py-20">
+      {/* 1. Gen-Z Grabbing Hero Section */}
+      <section className="relative min-h-[540px] lg:min-h-[620px] flex items-center justify-center overflow-hidden bg-[#141311] text-white text-center px-4 py-20">
         <video
           src="/promo.mp4"
           autoPlay
           muted
           loop
           playsInline
-          className="absolute inset-0 h-full w-full object-cover opacity-55"
+          className="absolute inset-0 h-full w-full object-cover opacity-50"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/45 to-black/75" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/80" />
 
         <div className="relative z-10 mx-auto max-w-3xl space-y-6 animate-fade-up">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-[#C5A56E]">
-            Nadeem Traders
-          </p>
+          <div className="inline-flex items-center gap-2 border border-[#C5A56E]/40 bg-[#C5A56E]/10 px-4 py-1.5 rounded-full">
+            <Sparkles className="h-3.5 w-3.5 text-[#C5A56E]" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#E6CE9C]">
+              Apka Trusted Stop &nbsp;·&nbsp; Fr Fr Pure Quality
+            </span>
+          </div>
 
           <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight leading-[1.06] text-[#F9F6F0]">
-            Spices, Grains &amp; <br className="hidden sm:inline" />
-            <span className="italic font-normal">Daily Essentials</span>
+            Sahi Daam, No Drama. <br />
+            <span className="italic font-normal text-[#E6CE9C]">Apka Trusted Stop.</span>
           </h1>
 
           <p className="mx-auto max-w-xl text-xs sm:text-sm text-[#E6E1D6]/90 leading-relaxed font-light">
-            Dry fruits, culinary spices, pulses, basmati rice, and cooking oils available in retail packs and wholesale quantities.
+            Direct mandi se aapke kitchen tak, no cap. Hand-picked dry fruits, authentic aromatic spices, pure pulses &amp; aged kainat basmati rice. Zero mid stuff, pure commodities only.
           </p>
 
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
@@ -87,57 +89,75 @@ function HomePage() {
               to="/shop"
               className="border border-[#F9F6F0]/60 text-[#F9F6F0] px-8 py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] hover:border-white hover:bg-white/10 transition-colors"
             >
-              View All Products
+              Explore Catalog
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 2. Featured Selection */}
+      {/* Trust Highlights Strip with PostEx Courier & Gen-Z Microcopy */}
+      <section className="border-b border-border bg-card">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-8 grid grid-cols-2 lg:grid-cols-4 gap-6 text-center sm:text-left">
+          <div className="flex items-center gap-3 justify-center sm:justify-start">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-display text-sm font-semibold text-foreground">Apka Trusted Stop</p>
+              <p className="text-[11px] text-muted-foreground">Pakistan&apos;s verified kiryana source</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 justify-center sm:justify-start">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
+              <Truck className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-display text-sm font-semibold text-foreground">PostEx Courier</p>
+              <p className="text-[11px] text-muted-foreground">Fast doorstep COD delivery</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 justify-center sm:justify-start">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-600">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-display text-sm font-semibold text-foreground">100% Asli Kiryana</p>
+              <p className="text-[11px] text-muted-foreground">Big W quality, zero mixing</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 justify-center sm:justify-start">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary/15 text-secondary">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-display text-sm font-semibold text-foreground">Direct Mandi Rates</p>
+              <p className="text-[11px] text-muted-foreground">No middlemen, fair pricing</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. Featured Selection (Clean Single Pricing, No Retail/Wholesale tabs) */}
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-8">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6 mb-10">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-secondary">
-              Catalog
+              Apka Trusted Stop
             </p>
             <h2 className="mt-1.5 font-display text-3xl sm:text-4xl font-normal text-foreground">
               Featured Products
             </h2>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="inline-flex border border-border bg-card p-0.5 text-[11px] uppercase tracking-[0.16em]">
-              <button
-                type="button"
-                onClick={() => setPricingTab("retail")}
-                className={`px-3.5 py-1.5 transition ${
-                  pricingTab === "retail"
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Retail
-              </button>
-              <button
-                type="button"
-                onClick={() => setPricingTab("wholesale")}
-                className={`px-3.5 py-1.5 transition ${
-                  pricingTab === "wholesale"
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Wholesale
-              </button>
-            </div>
-
-            <Link
-              to="/shop"
-              className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground underline underline-offset-8 hover:text-secondary transition-colors"
-            >
-              View All Products
-            </Link>
-          </div>
+          <Link
+            to="/shop"
+            className="text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground underline underline-offset-8 hover:text-secondary transition-colors"
+          >
+            View All Products →
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
@@ -149,7 +169,6 @@ function HomePage() {
               onQuickView={handleQuickView}
               onToggleWishlist={toggleWishlist}
               wishlist={wishlist}
-              showWholesalePrimary={pricingTab === "wholesale"}
             />
           ))}
         </div>
@@ -225,7 +244,6 @@ function HomePage() {
                       onQuickView={handleQuickView}
                       onToggleWishlist={toggleWishlist}
                       wishlist={wishlist}
-                      showWholesalePrimary={pricingTab === "wholesale"}
                     />
                   ))}
                 </div>

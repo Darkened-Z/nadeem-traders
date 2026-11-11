@@ -20,32 +20,32 @@ function DeliveryInfoPage() {
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 space-y-10">
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-primary">
-            Logistics & Dispatch
+            Logistics & Dispatch · Apka Trusted Stop
           </span>
           <h1 className="font-display text-3xl font-bold text-foreground">
-            Delivery Information
+            Delivery via PostEx Courier
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
-            Nadeem Traders dispatches retail parcels and bulk wholesale sacks daily across Pakistan with moisture-resistant packaging.
+            Nadeem Traders partners with <strong>PostEx Courier</strong> to provide fast, tracked Cash on Delivery (COD) across every city and town in Pakistan. No delivery selection required — automated doorstep dispatch.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {
-              icon: MapPin,
-              title: "Nationwide Coverage",
-              desc: "Direct courier and freight bilty delivery across Punjab, Sindh, KPK, Islamabad, and Balochistan.",
+              icon: Truck,
+              title: "PostEx Courier Logistics",
+              desc: "Automated booking and door-to-door tracking with instant SMS notifications upon dispatch.",
             },
             {
               icon: Clock,
               title: "Dispatch Timelines",
-              desc: "Same-day dispatch on orders before 2:00 PM. Major Punjab cities arrive in 24–48 hours; nationwide in 2–4 business days.",
+              desc: "Orders confirmed before 2:00 PM ship same day. Punjab deliveries in 24–48 hours; nationwide in 2–4 business days.",
             },
             {
               icon: ShieldCheck,
               title: "Moisture-Sealed Packing",
-              desc: "Spices and dry fruits are heat-sealed in food-grade pouches; grains and pulses ship in woven polypropylene sacks.",
+              desc: "Spices and dry fruits are heat-sealed in food-grade pouches; grains and pulses ship in durable woven sacks.",
             },
           ].map((c) => {
             const Icon = c.icon;
