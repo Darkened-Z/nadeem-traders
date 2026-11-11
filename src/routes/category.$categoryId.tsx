@@ -1,9 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { ChevronRight, Search, X, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
-import { cartStore } from "../lib/cart-store";
-import { recordRecentlyViewedDb } from "../lib/actions";
+import { ChevronLeft, Search, X } from "lucide-react";
 import {
   StoreLayout,
   ModernProductCard,
@@ -11,88 +8,13 @@ import {
   getCategoryMeta,
 } from "../components/store-layout";
 
-interface CategoryTheme {
-  bgHero: string;
-  borderColor: string;
-  badgeBg: string;
-  badgeText: string;
-  pillBorder: string;
-  accentHex: string;
-  genzTagline: string;
-  vibe: string;
-}
-
-const CATEGORY_THEMES: Record<string, CategoryTheme> = {
-  "dry-fruits": {
-    bgHero: "bg-[#FAF5EC]", // warm almond cream
-    borderColor: "border-[#E5D5C0]",
-    badgeBg: "bg-[#78350F]/10",
-    badgeText: "text-[#78350F]",
-    pillBorder: "border-[#78350F]/30",
-    accentHex: "#78350F",
-    genzTagline: "100% Pure & Fresh Harvest · Apka Trusted Stop",
-    vibe: "Handpicked premium almonds, cashews & seeds. Fresh harvest only.",
-  },
-  spices: {
-    bgHero: "bg-[#FFF0F0]", // vibrant paprika / kashmiri red tint
-    borderColor: "border-[#FFC9C4]",
-    badgeBg: "bg-[#991B1B]/10",
-    badgeText: "text-[#991B1B]",
-    pillBorder: "border-[#991B1B]/30",
-    accentHex: "#991B1B",
-    genzTagline: "100% Pure Aroma, Zero Artificial Color · Apka Trusted Stop",
-    vibe: "Freshly ground whole spices with authentic color and pungent aroma.",
-  },
-  "pulses-lentils": {
-    bgHero: "bg-[#F0FAF2]", // organic soothing green
-    borderColor: "border-[#C5E8CE]",
-    badgeBg: "bg-[#166534]/10",
-    badgeText: "text-[#166534]",
-    pillBorder: "border-[#166534]/30",
-    accentHex: "#166534",
-    genzTagline: "High Protein, Triple Cleaned · Apka Trusted Stop",
-    vibe: "Unpolished, stone-free pulses directly from fertile Punjab plains.",
-  },
-  "rice-grains": {
-    bgHero: "bg-[#FEF8EA]", // golden kainat wheat
-    borderColor: "border-[#FDE5A8]",
-    badgeBg: "bg-[#92400E]/10",
-    badgeText: "text-[#92400E]",
-    pillBorder: "border-[#92400E]/30",
-    accentHex: "#92400E",
-    genzTagline: "Aged Super Kainat 1121 Basmati · Apka Trusted Stop",
-    vibe: "Long-grain aromatic basmati that elongates to double its size upon cooking.",
-  },
-  "cooking-oils": {
-    bgHero: "bg-[#FEFCE8]", // sunny sunflower gold
-    borderColor: "border-[#FDE047]",
-    badgeBg: "bg-[#854D0E]/10",
-    badgeText: "text-[#854D0E]",
-    pillBorder: "border-[#854D0E]/30",
-    accentHex: "#854D0E",
-    genzTagline: "Light, Double-Refined Pure Oil · Apka Trusted Stop",
-    vibe: "Double-refined premium cooking oil for crisp frying and light digestion.",
-  },
-  "sugar-salt": {
-    bgHero: "bg-[#FDF2F8]", // crystalline himalayan pink rose
-    borderColor: "border-[#FBCFE8]",
-    badgeBg: "bg-[#9D174D]/10",
-    badgeText: "text-[#9D174D]",
-    pillBorder: "border-[#9D174D]/30",
-    accentHex: "#9D174D",
-    genzTagline: "100% Pure Himalayan Pink Salt · Apka Trusted Stop",
-    vibe: "Authentic Khewra rock pink salt and pure sulfur-free granulated white sugar.",
-  },
-};
-
 export const Route = createFileRoute("/category/$categoryId")({
   head: () => ({
     meta: [
-      { title: "Category | Nadeem Traders — Apka Trusted Stop" },
+      { title: "Category | Nadeem Traders" },
       {
         name: "description",
-        content:
-          "Browse spices, basmati rice, pulses, dry fruits, and cooking oils. Fast PostEx Courier delivery across Pakistan.",
+        content: "Dry fruits, spices, pulses, rice and cooking oils. Cash on delivery across Pakistan.",
       },
     ],
   }),
@@ -101,9 +23,7 @@ export const Route = createFileRoute("/category/$categoryId")({
 
 function CategoryPage() {
   const { categoryId } = Route.useParams() as any;
-  const { categories, products, currentUser, wishlist, toggleWishlist, isLoading } = useStoreData();
-
-  const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
+  const { categories, products, currentUser, isLoading } = useStoreData();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("featured");
 
@@ -113,68 +33,38 @@ function CategoryPage() {
     return (
       categories.find((c) => !Number.isNaN(numId) && c.id === numId) ||
       categories.find(
-        (c) =>
-          c.name.toLowerCase() === raw ||
-          getCategoryMeta(c.name).slug === raw ||
-          c.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === raw
+        (c) => c.name.toLowerCase() === raw || getCategoryMeta(c.name).slug === raw,
       ) ||
       null
     );
   }, [categories, categoryId]);
 
-  const categoryProducts = useMemo(() => {
-    if (!category) return [];
-    return products.filter(
-      (p) =>
-        p.category_id === category.id ||
-        (p.category_name && p.category_name.toLowerCase() === category.name.toLowerCase())
-    );
-  }, [products, category]);
-
-  const filteredProducts = useMemo(() => {
-    return categoryProducts.filter((p) => {
-      return (
-        !searchQuery.trim() ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.brand.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    });
-  }, [categoryProducts, searchQuery]);
-
   const sortedProducts = useMemo(() => {
-    return [...filteredProducts].sort((a, b) => {
-      const priceA = a.price;
-      const priceB = b.price;
-      if (sortBy === "price-low") return priceA - priceB;
-      if (sortBy === "price-high") return priceB - priceA;
-      if (sortBy === "title-az") return a.name.localeCompare(b.name);
-      return 0;
-    });
-  }, [filteredProducts, sortBy]);
-
-  const handleAddToCart = (product: any, qty: number = 1) => {
-    cartStore.addToCart(product, qty);
-    toast.success(`Added ${qty}× ${product.name} to your bag`);
-  };
-
-  const handleQuickView = (product: any) => {
-    setQuickViewProduct(product);
-    recordRecentlyViewedDb({ data: { productId: product.id } }).catch(() => {});
-  };
+    if (!category) return [];
+    const q = searchQuery.trim().toLowerCase();
+    const list = products.filter(
+      (p) =>
+        (p.category_id === category.id ||
+          (p.category_name && p.category_name.toLowerCase() === category.name.toLowerCase())) &&
+        (!q || p.name.toLowerCase().includes(q)),
+    );
+    if (sortBy === "price-low") list.sort((a, b) => a.price - b.price);
+    if (sortBy === "price-high") list.sort((a, b) => b.price - a.price);
+    if (sortBy === "title-az") list.sort((a, b) => a.name.localeCompare(b.name));
+    return list;
+  }, [products, category, searchQuery, sortBy]);
 
   if (!category && !isLoading) {
     return (
       <StoreLayout categories={categories} products={products} currentUser={currentUser}>
-        <div className="mx-auto max-w-xl px-4 py-24 text-center space-y-4">
-          <h1 className="font-display text-4xl font-normal text-foreground">Category Not Found</h1>
-          <div className="pt-4">
-            <Link
-              to="/categories"
-              className="bg-primary px-7 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-foreground"
-            >
-              Browse Categories
-            </Link>
-          </div>
+        <div className="mx-auto max-w-xl px-4 py-24 text-center">
+          <h1 className="font-display text-4xl font-semibold">Category nahi mili</h1>
+          <Link
+            to="/categories"
+            className="mt-6 inline-block bg-foreground px-7 py-3 text-sm font-semibold text-background"
+          >
+            All categories
+          </Link>
         </div>
       </StoreLayout>
     );
@@ -182,139 +72,91 @@ function CategoryPage() {
 
   const activeCategory = category || categories[0];
   const meta = getCategoryMeta(activeCategory.name);
-  const theme = CATEGORY_THEMES[meta.slug] || {
-    bgHero: "bg-[#F1ECE1]",
-    borderColor: "border-[#E5DEC9]",
-    badgeBg: "bg-[#C5A56E]/15",
-    badgeText: "text-[#8C6D37]",
-    pillBorder: "border-[#C5A56E]/40",
-    accentHex: "#8C6D37",
-    genzTagline: "Apka Trusted Stop — 100% Asli Kiryana",
-    vibe: meta.description,
-  };
   const otherCategories = categories.filter((c) => c.id !== activeCategory.id);
 
   return (
-    <StoreLayout
-      categories={categories}
-      products={products}
-      currentUser={currentUser}
-      activeCategoryId={activeCategory.id}
-      quickViewProduct={quickViewProduct}
-      setQuickViewProduct={setQuickViewProduct}
-    >
-      {/* Category Hero with Bespoke Color Palette */}
-      <section className={`border-b ${theme.borderColor} ${theme.bgHero} transition-colors duration-500`}>
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-8 grid gap-8 lg:grid-cols-12 items-center">
-          <div className="lg:col-span-6 space-y-4 animate-fade-up">
-            <nav className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              <Link to="/" className="hover:text-foreground">
-                Home
-              </Link>
-              <ChevronRight className="h-3 w-3" />
-              <Link to="/categories" className="hover:text-foreground">
-                Categories
-              </Link>
-              <ChevronRight className="h-3 w-3" />
-              <span className="text-foreground font-semibold">{activeCategory.name}</span>
-            </nav>
-
-            <div className="inline-flex items-center gap-2 border px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.22em]" style={{ borderColor: theme.accentHex + "40", backgroundColor: theme.accentHex + "12", color: theme.accentHex }}>
-              <ShieldCheck className="h-3.5 w-3.5" />
-              <span>{theme.genzTagline}</span>
-            </div>
-
-            <h1 className="font-display text-4xl sm:text-5xl font-normal text-foreground leading-none">
+    <StoreLayout categories={categories} products={products} currentUser={currentUser}>
+      <section className="text-white" style={{ backgroundColor: meta.color }}>
+        <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-8 sm:px-6 sm:py-12 md:grid-cols-2">
+          <div>
+            <Link
+              to="/categories"
+              className="-ml-1 inline-flex items-center gap-1 text-sm text-white/75 hover:text-white"
+            >
+              <ChevronLeft className="h-4 w-4" /> Categories
+            </Link>
+            <h1 className="mt-3 font-display text-4xl font-semibold leading-none sm:text-6xl">
               {activeCategory.name}
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
-              {theme.vibe}
-            </p>
+            <p className="mt-3 max-w-md text-base leading-relaxed text-white/85">{meta.tagline}</p>
           </div>
-
-          <div className="lg:col-span-6">
-            <div className={`aspect-[16/9] w-full overflow-hidden border ${theme.borderColor} bg-muted shadow-sm`}>
-              {activeCategory.image_url && (
-                <img
-                  src={activeCategory.image_url}
-                  alt={activeCategory.name}
-                  onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
-                  className="h-full w-full object-cover"
-                />
-              )}
+          {activeCategory.image_url && (
+            <div className="hidden aspect-[16/10] overflow-hidden md:block">
+              <img src={activeCategory.image_url} alt="" className="h-full w-full object-cover" />
             </div>
-          </div>
+          )}
         </div>
       </section>
 
-      {/* Sub-bar with Search & Sorting (Clean, No Wholesale/Retail Switcher) */}
-      <section className="border-b border-border bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-8 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={`Search in ${activeCategory.name}...`}
-                className="border border-border bg-card pl-8 pr-6 py-1.5 text-xs focus:border-foreground focus:outline-none w-52 sm:w-64"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-5 text-xs">
-            <span className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              {sortedProducts.length} {sortedProducts.length === 1 ? "Product" : "Products"}
-            </span>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="border border-border bg-card px-3 py-1.5 text-[11px] uppercase tracking-[0.15em] text-foreground focus:outline-none"
-            >
-              <option value="featured">Sort: Featured</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="title-az">Alphabetical</option>
-            </select>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-8 space-y-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-          {sortedProducts.map((p) => (
-            <ModernProductCard
-              key={p.id}
-              product={p}
-              onAddToCart={handleAddToCart}
-              onQuickView={handleQuickView}
-              onToggleWishlist={toggleWishlist}
-              wishlist={wishlist}
+      <div className="border-b border-border">
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-3 sm:px-6">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={`Search ${activeCategory.name}`}
+              className="h-10 w-full border border-border bg-card pl-9 pr-9 text-base sm:text-sm focus:border-foreground focus:outline-none"
             />
-          ))}
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-1 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center text-muted-foreground"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            aria-label="Sort products"
+            className="h-10 shrink-0 border border-border bg-card px-2 text-sm focus:outline-none sm:ml-auto"
+          >
+            <option value="featured">Featured</option>
+            <option value="price-low">Price: low → high</option>
+            <option value="price-high">Price: high → low</option>
+            <option value="title-az">A → Z</option>
+          </select>
         </div>
+      </div>
 
-        <div className="border-t border-border pt-10 space-y-3">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">
-            Other Collections · Apka Trusted Stop
-          </p>
-          <div className="flex flex-wrap gap-2">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+        <p className="mb-5 text-sm text-muted-foreground">
+          {sortedProducts.length} {sortedProducts.length === 1 ? "product" : "products"}
+        </p>
+        {sortedProducts.length === 0 ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">Kuch nahi mila. Search badal ke dekho.</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4">
+            {sortedProducts.map((p) => (
+              <ModernProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        )}
+
+        <div className="mt-14 border-t border-border pt-8">
+          <h2 className="text-sm font-semibold">Aur dekho</h2>
+          <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
             {otherCategories.map((c) => (
               <Link
                 key={c.id}
                 to={`/category/${c.id}` as any}
-                className="border border-border bg-card px-4 py-2 text-[11px] uppercase tracking-[0.16em] text-foreground hover:border-foreground transition-colors"
+                className="shrink-0 px-4 py-2.5 text-sm font-medium text-white"
+                style={{ backgroundColor: getCategoryMeta(c.name).color }}
               >
                 {c.name}
               </Link>

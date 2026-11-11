@@ -6,7 +6,7 @@ export const Route = createFileRoute("/delivery-info")({
   head: () => ({
     meta: [
       { title: "Delivery Information — Nadeem Traders" },
-      { name: "description", content: "Details about shipping rates, wholesale timelines, and delivery areas in Pakistan." },
+      { name: "description", content: "Details about shipping rates, timelines, and delivery areas in Pakistan." },
     ],
   }),
   component: DeliveryInfoPage,
@@ -20,7 +20,7 @@ function DeliveryInfoPage() {
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 space-y-10">
         <div className="space-y-2">
           <span className="text-xs font-bold uppercase tracking-widest text-primary">
-            Logistics & Dispatch · Apka Trusted Stop
+            Delivery
           </span>
           <h1 className="font-display text-3xl font-bold text-foreground">
             Delivery via PostEx Courier

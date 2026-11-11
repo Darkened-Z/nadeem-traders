@@ -6,7 +6,7 @@ export const Route = createFileRoute("/help")({
   head: () => ({
     meta: [
       { title: "Help Center & FAQs — Nadeem Traders" },
-      { name: "description", content: "Frequently asked questions about ordering, bulk wholesale rates, and accounts." },
+      { name: "description", content: "Frequently asked questions about ordering, delivery, and payments." },
     ],
   }),
   component: HelpPage,
@@ -17,7 +17,7 @@ function HelpPage() {
   const faqs = [
     {
       q: "How does delivery via PostEx Courier work?",
-      a: "All orders placed on Nadeem Traders (Apka Trusted Stop) are dispatched via PostEx Courier. You receive tracking updates via SMS, and pay in cash only when your order arrives safely at your doorstep (Cash on Delivery).",
+      a: "All orders placed on Nadeem Traders are dispatched via PostEx Courier. You receive tracking updates via SMS, and pay in cash only when your order arrives safely at your doorstep (Cash on Delivery).",
     },
     {
       q: "Do I need to create an account or log in to place an order?",
@@ -48,7 +48,7 @@ function HelpPage() {
             Frequently Asked Questions
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Answers regarding wholesale tier pricing, shipping timelines, and account security.
+            Ordering, delivery aur payments — sab ke jawab.
           </p>
         </div>
 

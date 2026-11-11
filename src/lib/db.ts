@@ -7,6 +7,7 @@ export const sql = DATABASE_URL
   : (null as unknown as ReturnType<typeof postgres>);
 
 export async function initDb() {
+  if (!sql) return;
   console.log("Initializing database tables...");
   try {
     // 1. Users table

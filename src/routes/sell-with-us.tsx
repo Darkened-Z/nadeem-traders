@@ -8,7 +8,7 @@ export const Route = createFileRoute("/sell-with-us")({
   head: () => ({
     meta: [
       { title: "Supplier Onboarding — Nadeem Traders" },
-      { name: "description", content: "Partner with Nadeem Traders as an agricultural grower, mill, or distributor." },
+      { name: "description", content: "Partner with Nadeem Traders as an agricultural grower or mill." },
     ],
   }),
   component: SellWithUsPage,
@@ -40,7 +40,7 @@ function SellWithUsPage() {
             Partner as a Verified Supplier
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Are you an authentic rice mill, spice processor, or orchard grower? Supply your commodities directly through Nadeem Traders — Apka Trusted Stop.
+            Are you an authentic rice mill, spice processor, or orchard grower? Supply your commodities directly through Nadeem Traders.
           </p>
         </div>
 

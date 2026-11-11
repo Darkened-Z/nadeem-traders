@@ -29,7 +29,7 @@ function TermsPage() {
           <div className="space-y-2">
             <h3 className="font-display text-base font-bold text-foreground">1. Acceptance of Terms</h3>
             <p>
-              By browsing and placing orders on Nadeem Traders (Apka Trusted Stop), you agree to these terms. All orders are subject to stock availability and commodity quality inspection.
+              By browsing and placing orders on Nadeem Traders, you agree to these terms. All orders are subject to stock availability and commodity quality inspection.
             </p>
           </div>
 

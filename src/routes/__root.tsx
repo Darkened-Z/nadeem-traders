@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { type ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 
@@ -83,7 +84,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Nadeem Traders | Single-Origin Spices, Aged Grains & Wholesale Commodities" },
+      { title: "Nadeem Traders — Apka Trusted Stop" },
       {
         name: "description",
         content:
@@ -92,12 +93,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "Nadeem Traders" },
       {
         property: "og:title",
-        content: "Nadeem Traders | Single-Origin Spices, Aged Grains & Wholesale Commodities",
+        content: "Nadeem Traders — Apka Trusted Stop",
       },
       {
         property: "og:description",
         content:
-          "Born from the earth, refined by craft. Retail and wholesale commodities across Pakistan.",
+          "Dry fruits, masalay, daal, chawal aur oil — mandi se seedha aapke kitchen tak. Cash on delivery across Pakistan.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -113,9 +114,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap",
       },
-    ],
-    scripts: [
-      { src: "https://accounts.google.com/gsi/client", async: true, defer: true },
     ],
   }),
   shellComponent: RootShell,
@@ -144,6 +142,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <Toaster position="top-center" />
     </QueryClientProvider>
   );
 }

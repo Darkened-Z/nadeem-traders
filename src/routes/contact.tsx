@@ -8,7 +8,7 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact Us — Nadeem Traders" },
-      { name: "description", content: "Reach out to Nadeem Traders for wholesale deliveries and inquiries." },
+      { name: "description", content: "Reach out to Nadeem Traders for orders and inquiries." },
     ],
   }),
   component: ContactPage,
@@ -35,7 +35,7 @@ function ContactPage() {
         <div className="lg:col-span-5 space-y-6">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-primary">
-              Customer & Wholesale Support
+              Customer Support
             </span>
             <h1 className="mt-1 font-display text-3xl font-bold text-foreground">Contact Us</h1>
             <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">

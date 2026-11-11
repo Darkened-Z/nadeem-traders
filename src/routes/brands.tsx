@@ -1,103 +1,54 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { Award } from "lucide-react";
-import { toast } from "sonner";
-import { cartStore } from "../lib/cart-store";
-import {
-  StoreLayout,
-  ModernProductCard,
-  useStoreData,
-} from "../components/store-layout";
+import { StoreLayout, ModernProductCard, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/brands")({
   head: () => ({
     meta: [
-      { title: "Partner Brands — Nadeem Traders" },
-      { name: "description", content: "Explore products filtered by authentic Pakistani brands." },
+      { title: "Brands | Nadeem Traders" },
+      { name: "description", content: "Shop products by brand." },
     ],
   }),
   component: BrandsPage,
 });
 
 function BrandsPage() {
-  const { categories, products, brands, currentUser, wishlist, toggleWishlist } = useStoreData();
+  const { categories, products, brands, currentUser } = useStoreData();
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-  const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
 
-  const brandNames = useMemo(() => {
-    const fromDb = brands.map((b) => b.name);
-    const fromProds = products.map((p) => p.brand);
-    return Array.from(new Set([...fromDb, ...fromProds]));
-  }, [brands, products]);
+  const brandNames = useMemo(
+    () => Array.from(new Set([...brands.map((b) => b.name), ...products.map((p) => p.brand)])),
+    [brands, products],
+  );
 
-  const filteredProducts = selectedBrand
-    ? products.filter((p) => p.brand === selectedBrand)
-    : products;
-
-  const handleAddToCart = (product: any, qty: number = 1) => {
-    cartStore.addToCart(product, qty);
-    toast.success(`Added ${qty}× ${product.name} to cart`);
-  };
+  const filteredProducts = selectedBrand ? products.filter((p) => p.brand === selectedBrand) : products;
+  const chip = (active: boolean) =>
+    `shrink-0 px-4 py-2 text-sm font-medium ${active ? "bg-foreground text-background" : "border border-border bg-card"}`;
 
   return (
-    <StoreLayout
-      categories={categories}
-      products={products}
-      currentUser={currentUser}
-      quickViewProduct={quickViewProduct}
-      setQuickViewProduct={setQuickViewProduct}
-    >
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 space-y-8">
-        <div>
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-primary">
-            <Award className="h-3.5 w-3.5" /> Partner Producers
-          </span>
-          <h1 className="mt-1 font-display text-3xl font-bold text-foreground">
-            Shop by Brand
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Explore authentic Pakistani kitchen producers and verified brands — Apka Trusted Stop.
-          </p>
-        </div>
+    <StoreLayout categories={categories} products={products} currentUser={currentUser}>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+        <h1 className="font-display text-4xl font-semibold sm:text-5xl">Shop by brand</h1>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setSelectedBrand(null)}
-            className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
-              selectedBrand === null
-                ? "bg-primary text-primary-foreground"
-                : "border border-border bg-card text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            All Brands ({products.length})
+        <div className="-mx-4 mt-6 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
+          <button type="button" onClick={() => setSelectedBrand(null)} className={chip(selectedBrand === null)}>
+            All
           </button>
           {brandNames.map((b) => (
             <button
               key={b}
               type="button"
               onClick={() => setSelectedBrand(selectedBrand === b ? null : b)}
-              className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
-                selectedBrand === b
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border bg-card text-muted-foreground hover:text-foreground"
-              }`}
+              className={chip(selectedBrand === b)}
             >
               {b}
             </button>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="mt-7 grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4">
           {filteredProducts.map((p) => (
-            <ModernProductCard
-              key={p.id}
-              product={p}
-              onAddToCart={handleAddToCart}
-              onQuickView={setQuickViewProduct}
-              onToggleWishlist={toggleWishlist}
-              wishlist={wishlist}
-            />
+            <ModernProductCard key={p.id} product={p} />
           ))}
         </div>
       </div>
