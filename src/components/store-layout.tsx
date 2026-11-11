@@ -453,6 +453,15 @@ export function ModernProductCard({
     setTimeout(() => setJustAdded(false), 1200);
   };
 
+  const handleQuickBuy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!p.stock) return;
+    const qty = displayWholesale ? p.wholesale_min_qty || 5 : 1;
+    onAddToCart(p, qty);
+    openCartDrawer();
+  };
+
   return (
     <div className="group flex flex-col">
       {/* Tall 4:5 Portrait Image Frame */}
@@ -507,23 +516,17 @@ export function ModernProductCard({
 
         {p.stock && (
           <div className="absolute inset-x-0 bottom-0 flex translate-y-full opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 bg-background/95 backdrop-blur-xs border-t border-border">
-            {onQuickView && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onQuickView(p);
-                }}
-                className="flex-1 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center"
-              >
-                Quick Buy
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleQuickBuy}
+              className="flex-1 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center"
+            >
+              Quick Buy
+            </button>
             <button
               type="button"
               onClick={handleAdd}
-              className={`${onQuickView ? "border-l border-border px-3.5" : "flex-1"} py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center gap-1.5`}
+              className="border-l border-border px-3.5 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center gap-1.5"
             >
               {justAdded ? (
                 <>
@@ -551,7 +554,7 @@ export function ModernProductCard({
           </p>
         </div>
 
-        <div className="mt-2.5 flex items-baseline justify-between gap-2 pt-1 border-t border-border/40">
+        <div className="mt-2.5 pt-1 border-t border-border/40">
           <div className="text-xs">
             <span className="text-foreground font-medium">
               Rs. {Number(activePrice).toLocaleString()}
@@ -560,28 +563,6 @@ export function ModernProductCard({
               <span className="ml-2 text-[11px] text-muted-foreground">
                 (Wholesale Rs. {Number(p.wholesale_price).toLocaleString()})
               </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link
-              to={`/product/${p.id}` as any}
-              className="text-[11px] font-medium underline underline-offset-4 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Details
-            </Link>
-            {onQuickView && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onQuickView(p);
-                }}
-                className="bg-secondary/15 hover:bg-secondary text-secondary hover:text-secondary-foreground px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors"
-              >
-                Quick Buy
-              </button>
             )}
           </div>
         </div>
