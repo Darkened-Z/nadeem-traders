@@ -232,7 +232,7 @@ export function ModernProductCard({ product }: { product: any }) {
 export function CategoryTile({ category }: { category: any }) {
   const meta = getCategoryMeta(category.name);
   return (
-    <Link to={`/category/${category.id}` as any} className="group flex flex-col overflow-hidden">
+    <Link to={`/category/${category.id}` as any} className="group flex w-full flex-col overflow-hidden">
       <div className="aspect-[4/3] overflow-hidden bg-muted">
         {category.image_url && (
           <img
@@ -251,6 +251,62 @@ export function CategoryTile({ category }: { category: any }) {
         <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
       </div>
     </Link>
+  );
+}
+
+const railClass =
+  "-mx-4 flex snap-x snap-mandatory scroll-pl-4 gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0";
+
+export function ProductRail({ products }: { products: any[] }) {
+  return (
+    <div className={`${railClass} sm:grid-cols-3 sm:gap-y-8 lg:grid-cols-4`}>
+      {products.map((item) => (
+        <div key={item.id} className="w-[42%] shrink-0 snap-start sm:w-auto">
+          <ModernProductCard product={item} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function CategoryRail({ categories }: { categories: any[] }) {
+  return (
+    <div className={`${railClass} lg:grid-cols-3`}>
+      {categories.map((cat) => (
+        <div key={cat.id} className="flex w-[40%] shrink-0 snap-start sm:w-auto">
+          <CategoryTile category={cat} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function SectionHeader({
+  title,
+  subtitle,
+  href,
+  color,
+}: {
+  title: string;
+  subtitle?: string;
+  href?: string;
+  color?: string;
+}) {
+  return (
+    <div className="mb-4 flex items-end justify-between gap-4 sm:mb-6">
+      <div className="min-w-0">
+        <h2 className="flex items-center gap-2.5 font-display text-[1.75rem] font-semibold leading-tight sm:text-4xl">
+          {color && <span className="h-3.5 w-3.5 shrink-0" style={{ backgroundColor: color }} />}
+          {title}
+        </h2>
+        {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
+      </div>
+      {href && (
+        <Link to={href as any} className="shrink-0 pb-1 text-sm font-semibold underline underline-offset-4">
+          See all
+        </Link>
+      )}
+    </div>
   );
 }
 

@@ -5,7 +5,7 @@ import { recordRecentlyViewedDb } from "../lib/actions";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import {
   StoreLayout,
-  ModernProductCard,
+  ProductRail,
   useStoreData,
   getCategoryMeta,
   addToBag,
@@ -174,10 +174,8 @@ function ProductDetailsPage() {
         {relatedProducts.length > 0 && (
           <div className="mt-14 border-t border-border pt-8">
             <h2 className="font-display text-3xl font-semibold">Isse bhi try karo</h2>
-            <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 lg:grid-cols-4">
-              {relatedProducts.map((rp) => (
-                <ModernProductCard key={rp.id} product={rp} />
-              ))}
+            <div className="mt-6">
+              <ProductRail products={relatedProducts} />
             </div>
           </div>
         )}

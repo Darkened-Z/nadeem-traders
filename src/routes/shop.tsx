@@ -4,6 +4,8 @@ import { Search, X } from "lucide-react";
 import {
   StoreLayout,
   ModernProductCard,
+  ProductRail,
+  SectionHeader,
   useStoreData,
   getCategoryMeta,
 } from "../components/store-layout";
@@ -52,6 +54,8 @@ function ShopPage() {
     if (sortOption === "price-desc") list.sort((a, b) => b.price - a.price);
     return list;
   }, [products, searchQuery, selectedCategory, selectedBrand, sortOption]);
+
+  const isBrowsing = !searchQuery.trim() && selectedCategory === null && selectedBrand === null;
 
   const resetFilters = () => {
     setSearchQuery("");
@@ -127,7 +131,21 @@ function ShopPage() {
           })}
         </div>
 
-        {sortedProducts.length === 0 ? (
+        {isBrowsing ? (
+          <div className="mt-8 space-y-12">
+            {categories.map((c) => {
+              const items = sortedProducts.filter((p) => p.category_id === c.id);
+              if (items.length === 0) return null;
+              const meta = getCategoryMeta(c.name);
+              return (
+                <section key={c.id}>
+                  <SectionHeader title={c.name} subtitle={meta.tagline} href={`/category/${c.id}`} color={meta.color} />
+                  <ProductRail products={items} />
+                </section>
+              );
+            })}
+          </div>
+        ) : sortedProducts.length === 0 ? (
           <div className="py-20 text-center">
             <p className="font-display text-2xl">Kuch nahi mila</p>
             <button

@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Fragment } from "react";
 import {
   StoreLayout,
-  ModernProductCard,
-  CategoryTile,
+  ProductRail,
+  CategoryRail,
+  SectionHeader,
   useStoreData,
+  getCategoryMeta,
+  WHATSAPP_NUMBER,
 } from "../components/store-layout";
 
 export const Route = createFileRoute("/")({
@@ -20,12 +24,26 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
+const STEPS = [
+  { title: "Bag mein daalo", body: "Jo chahiye, Add dabao. Koi account, koi login nahi." },
+  { title: "Order place karo", body: "Naam, number, address — bas. 30 second ka kaam." },
+  { title: "Darwaze pe paise do", body: "Maal check karo, phir cash do. Simple." },
+];
+
 function HomePage() {
   const { categories, products, currentUser } = useStoreData();
 
+  const trending = categories
+    .map((c) => products.find((p) => p.category_id === c.id))
+    .filter(Boolean);
+
+  const categoryRows = categories
+    .map((c) => ({ category: c, items: products.filter((p) => p.category_id === c.id) }))
+    .filter((row) => row.items.length > 0);
+
   return (
     <StoreLayout categories={categories} products={products} currentUser={currentUser}>
-      <section className="relative flex min-h-[460px] items-end overflow-hidden bg-[#141311] text-white sm:min-h-[580px] sm:items-center">
+      <section className="relative flex min-h-[440px] items-end overflow-hidden bg-[#141311] text-white sm:min-h-[580px] sm:items-center">
         <video
           src="/promo.mp4"
           autoPlay
@@ -62,48 +80,97 @@ function HomePage() {
       </section>
 
       <div className="border-b border-border">
-        <ul className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-border px-4 text-sm sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6">
-          <li className="py-3.5 sm:px-5 sm:first:pl-0">
-            <strong className="font-semibold">Cash on delivery</strong>
-            <span className="text-muted-foreground"> — paise tab, jab maal haath mein ho</span>
-          </li>
-          <li className="py-3.5 sm:px-5">
-            <strong className="font-semibold">Pakistan bhar mein delivery</strong>
-            <span className="text-muted-foreground"> — har sheher, har gali</span>
-          </li>
-          <li className="py-3.5 sm:px-5">
-            <strong className="font-semibold">Mandi se direct</strong>
-            <span className="text-muted-foreground"> — no middlemen, no markup</span>
-          </li>
+        <ul className="mx-auto grid max-w-7xl grid-cols-3 divide-x divide-border px-1 py-3.5 text-center sm:px-6 sm:text-left">
+          {[
+            ["Cash on delivery", "paise baad mein"],
+            ["Pakistan bhar mein", "har sheher"],
+            ["Mandi se direct", "no middlemen"],
+          ].map(([head, sub]) => (
+            <li key={head} className="px-2 sm:px-5 sm:first:pl-0">
+              <strong className="block text-[13px] font-semibold leading-tight sm:inline sm:text-sm">{head}</strong>
+              <span className="block text-xs text-muted-foreground sm:inline sm:text-sm">
+                <span className="hidden sm:inline"> · </span>
+                {sub}
+              </span>
+            </li>
+          ))}
         </ul>
       </div>
 
-      <section id="categories" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
-        <h2 className="font-display text-3xl font-semibold sm:text-4xl">Shop by category</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Apna section chuno.</p>
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-          {categories.map((cat) => (
-            <CategoryTile key={cat.id} category={cat} />
-          ))}
-        </div>
-      </section>
+      <div className="mx-auto max-w-7xl space-y-12 px-4 py-10 sm:space-y-16 sm:px-6 sm:py-14">
+        <section>
+          <SectionHeader title="Shop by category" subtitle="Apna section chuno." href="/categories" />
+          <CategoryRail categories={categories} />
+        </section>
 
-      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="font-display text-3xl font-semibold sm:text-4xl">Trending rn</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Jo sab le ja rahe hain.</p>
-          </div>
-          <Link to="/shop" className="shrink-0 text-sm font-semibold underline underline-offset-4">
-            View all
-          </Link>
-        </div>
-        <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4">
-          {products.slice(0, 8).map((p) => (
-            <ModernProductCard key={p.id} product={p} />
-          ))}
-        </div>
-      </section>
+        <section>
+          <SectionHeader title="Trending rn" subtitle="Jo sab le ja rahe hain." href="/shop" />
+          <ProductRail products={trending} />
+        </section>
+
+        {categoryRows.map(({ category, items }, idx) => {
+          const meta = getCategoryMeta(category.name);
+          return (
+            <Fragment key={category.id}>
+              <section>
+                <SectionHeader
+                  title={category.name}
+                  subtitle={meta.tagline}
+                  href={`/category/${category.id}`}
+                  color={meta.color}
+                />
+                <ProductRail products={items} />
+              </section>
+              {idx === 1 && <WhatsAppBand />}
+            </Fragment>
+          );
+        })}
+
+        <section className="border-t border-border pt-10">
+          <h2 className="font-display text-[1.75rem] font-semibold sm:text-4xl">Order kaise karein?</h2>
+          <ol className="mt-6 grid gap-6 sm:grid-cols-3 sm:gap-8">
+            {STEPS.map((step, i) => (
+              <li key={step.title} className="flex gap-4">
+                <span className="w-7 shrink-0 font-display text-5xl font-semibold leading-none text-muted-foreground/50">
+                  {i + 1}
+                </span>
+                <div>
+                  <h3 className="text-base font-semibold">{step.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
     </StoreLayout>
+  );
+}
+
+function WhatsAppBand() {
+  const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    "Assalam o Alaikum! Mujhe yeh saman chahiye:",
+  )}`;
+  return (
+    <section className="-mx-4 bg-[#141311] px-4 py-10 text-white sm:mx-0 sm:px-10 sm:py-12">
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
+            Lambi list hai? WhatsApp kar do.
+          </h2>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-white/70">
+            Ration list ki photo ya message bhejo — hum sab pack karke ghar bhej denge.
+          </p>
+        </div>
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 bg-[#25D366] px-7 py-3.5 text-center text-sm font-semibold text-[#0B3D1F]"
+        >
+          Order on WhatsApp
+        </a>
+      </div>
+    </section>
   );
 }
