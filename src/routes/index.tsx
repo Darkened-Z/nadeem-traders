@@ -89,8 +89,131 @@ function HomePage() {
         </Fragment>
       ))}
 
-      <section className="stack-section relative bg-background">
-       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+      <OrderSteps />
+    </StoreLayout>
+  );
+}
+
+const STEP_IMAGES = ["/hero/slide-1.jpg", "/hero/slide-2.jpg", "/hero/slide-5.jpg"];
+
+function OrderSteps() {
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
+  return reducedMotion ? <StepsSimple /> : <StepsShowcase />;
+}
+
+function StepsShowcase() {
+  const containerRef = useRef<HTMLElement>(null);
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const rect = el.getBoundingClientRect();
+      const headerH = window.innerWidth >= 640 ? 64 : 56;
+      const travel = rect.height - (window.innerHeight - headerH);
+      const p = Math.min(1, Math.max(0, (headerH - rect.top) / travel));
+      el.style.setProperty("--p", p.toFixed(4));
+      STEPS.forEach((_, i) => {
+        el.style.setProperty(`--s${i}`, Math.min(1, Math.max(0, p * STEPS.length - i)).toFixed(4));
+      });
+      setStep(Math.min(STEPS.length - 1, Math.floor(p * STEPS.length)));
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
+
+  const current = STEPS[step];
+
+  return (
+    <section ref={containerRef} className="relative h-[320vh] bg-[#141311] text-white" aria-label="Order Kaise Karein?">
+      <div className="sticky top-14 h-[calc(100svh-3.5rem)] overflow-hidden sm:top-16 sm:h-[calc(100svh-4rem)]">
+        {STEP_IMAGES.map((src, i) => (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            loading="lazy"
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${i === step ? "opacity-100" : "opacity-0"}`}
+            style={{ transform: "scale(calc(1.02 + var(--p, 0) * 0.18))" }}
+          />
+        ))}
+        <div className="absolute inset-0 bg-[#141311]/75" />
+
+        <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-between px-4 py-8 sm:px-6 sm:py-12">
+          <div>
+            <div className="flex items-baseline justify-between gap-4">
+              <h2 className="font-display text-3xl font-semibold sm:text-5xl">Order Kaise Karein?</h2>
+              <span className="hidden shrink-0 text-sm font-semibold text-[#E6CE9C] sm:inline">3 Steps. Bas.</span>
+            </div>
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              {STEPS.map((s, i) => (
+                <span key={s.title} className="block h-1 bg-white/20">
+                  <span
+                    className="block h-full origin-left bg-[#E6CE9C]"
+                    style={{ transform: `scaleX(var(--s${i}, 0))` }}
+                  />
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid items-end gap-x-10 gap-y-4 lg:grid-cols-[1fr_auto]">
+            <div className="flex items-end gap-5 sm:gap-8">
+              <span
+                key={`n${step}`}
+                className="animate-step-num font-display text-[9rem] font-bold leading-[0.78] lining-nums text-[#E6CE9C] sm:text-[14rem] lg:text-[18rem]"
+              >
+                {step + 1}
+              </span>
+              <div key={`t${step}`} className="animate-fade-up pb-2 sm:pb-6">
+                <h3 className="font-display text-4xl font-semibold leading-[1.05] sm:text-6xl">{current.title}</h3>
+                <p className="mt-3 max-w-md text-base leading-relaxed text-white/80 sm:text-lg">{current.body}</p>
+              </div>
+            </div>
+
+            <ol className="hidden space-y-3 pb-6 lg:block">
+              {STEPS.map((s, i) => (
+                <li
+                  key={s.title}
+                  className={`flex items-center gap-3 text-lg font-semibold transition-colors duration-500 ${i === step ? "text-white" : "text-white/35"}`}
+                >
+                  <span className="w-6 font-display text-2xl lining-nums">{i + 1}</span>
+                  {s.title}
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <p
+            className={`text-sm text-white/60 transition-opacity duration-500 ${step === 0 ? "opacity-100" : "opacity-0"}`}
+          >
+            Scroll Karo ↓
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function StepsSimple() {
+  return (
+    <section className="stack-section relative bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
         <h2 data-reveal className="font-display text-[1.75rem] font-semibold sm:text-4xl">Order Kaise Karein?</h2>
         <ol className="mt-6 grid gap-6 sm:grid-cols-3 sm:gap-8">
           {STEPS.map((step, i) => (
@@ -105,9 +228,8 @@ function HomePage() {
             </li>
           ))}
         </ol>
-       </div>
-      </section>
-    </StoreLayout>
+      </div>
+    </section>
   );
 }
 
