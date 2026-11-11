@@ -6,6 +6,7 @@ import {
   ModernProductCard,
   useStoreData,
   getCategoryMeta,
+  categoryTint,
 } from "../components/store-layout";
 
 export const Route = createFileRoute("/category/$categoryId")({
@@ -76,19 +77,22 @@ function CategoryPage() {
 
   return (
     <StoreLayout categories={categories} products={products} currentUser={currentUser}>
-      <section className="text-white" style={{ backgroundColor: meta.color }}>
+      <section style={{ backgroundColor: categoryTint(meta.color) }}>
         <div className="mx-auto grid max-w-7xl items-center gap-8 px-4 py-8 sm:px-6 sm:py-12 md:grid-cols-2">
           <div>
             <Link
               to="/categories"
-              className="-ml-1 inline-flex items-center gap-1 text-sm text-white/75 hover:text-white"
+              className="-ml-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
             >
               <ChevronLeft className="h-4 w-4" /> Categories
             </Link>
-            <h1 className="mt-3 font-display text-4xl font-semibold leading-none sm:text-6xl">
+            <h1
+              className="mt-3 font-display text-4xl font-semibold leading-none sm:text-6xl"
+              style={{ color: meta.color }}
+            >
               {activeCategory.name}
             </h1>
-            <p className="mt-3 max-w-md text-base leading-relaxed text-white/85">{meta.tagline}</p>
+            <p className="mt-3 max-w-md text-base leading-relaxed text-muted-foreground">{meta.tagline}</p>
           </div>
           {activeCategory.image_url && (
             <div className="hidden aspect-[16/10] overflow-hidden md:block">

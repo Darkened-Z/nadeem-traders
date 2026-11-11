@@ -9,6 +9,7 @@ import {
   SectionHeader,
   useStoreData,
   WHATSAPP_NUMBER,
+  stagger,
 } from "../components/store-layout";
 
 export const Route = createFileRoute("/")({
@@ -58,6 +59,8 @@ function HomePage() {
           {PERKS.map(([head, sub], i) => (
             <li
               key={head}
+              data-reveal
+              style={stagger(i)}
               className={`py-3.5 ${i % 2 === 0 ? "pr-3" : "border-l border-border pl-3"} ${i < 2 ? "border-b border-border lg:border-b-0" : ""} lg:border-l lg:px-5 lg:first:border-l-0 lg:first:pl-0`}
             >
               <strong className="block text-[13px] font-semibold leading-tight sm:text-sm">{head}</strong>
@@ -87,15 +90,15 @@ function HomePage() {
       ))}
 
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
-        <h2 className="font-display text-[1.75rem] font-semibold sm:text-4xl">Order Kaise Karein?</h2>
+        <h2 data-reveal className="font-display text-[1.75rem] font-semibold sm:text-4xl">Order Kaise Karein?</h2>
         <ol className="mt-6 grid gap-6 sm:grid-cols-3 sm:gap-8">
           {STEPS.map((step, i) => (
-            <li key={step.title} className="flex gap-4">
-              <span className="w-7 shrink-0 font-display text-5xl font-semibold leading-none text-muted-foreground/50">
+            <li key={step.title} data-reveal style={stagger(i)} className="flex items-start gap-4">
+              <span className="w-12 shrink-0 font-display text-7xl font-bold leading-[0.8] lining-nums text-foreground sm:text-8xl sm:w-14">
                 {i + 1}
               </span>
-              <div>
-                <h3 className="text-base font-semibold">{step.title}</h3>
+              <div className="pt-1">
+                <h3 className="text-lg font-semibold">{step.title}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
               </div>
             </li>
@@ -190,14 +193,14 @@ function Hero() {
 
       <div className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 pb-10 sm:-mt-20 sm:px-6 lg:mt-0 lg:flex lg:h-full lg:items-center lg:pb-0">
         <div className="lg:max-w-[46%]">
-          <p className="text-sm font-semibold text-[#E6CE9C]">Apka Trusted Stop</p>
-          <h1 className="mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] sm:text-6xl xl:text-7xl">
+          <p className="animate-fade-up text-sm font-semibold text-[#E6CE9C]">Apka Trusted Stop</p>
+          <h1 style={{ animationDelay: "120ms" }} className="animate-fade-up mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] sm:text-6xl xl:text-7xl">
             Asli Maal. Mandi Rates. No Cap.
           </h1>
-          <p className="mt-4 max-w-md text-base leading-relaxed text-white/80">
-            Dry Fruits, Masalay, Daal, Chawal — Seedha Mandi Se Aapke Kitchen Tak. Zero Milawat, Zero Scenes.
+          <p style={{ animationDelay: "240ms" }} className="animate-fade-up mt-4 max-w-md text-base leading-relaxed text-white/80">
+            Dry Fruits, Masalay, Daal, Chawal — Seedha Mandi Se Aapke Kitchen Tak. Zero Milawat, Full Bharosa.
           </p>
-          <div className="mt-7 flex gap-3">
+          <div style={{ animationDelay: "360ms" }} className="animate-fade-up mt-7 flex gap-3">
             <Link
               to="/shop"
               className="flex-1 bg-white py-3.5 text-center text-sm font-semibold text-[#141311] sm:flex-none sm:px-8"
@@ -212,7 +215,7 @@ function Hero() {
             </Link>
           </div>
 
-          <div className="mt-9 lg:mt-12">
+          <div style={{ animationDelay: "480ms" }} className="animate-fade-up mt-9 lg:mt-12">
             <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Aaj Ki Mandi</p>
             <div className="mt-3 flex gap-2.5 lg:gap-3">
               {HERO_SLIDES.map((slide, i) => {
@@ -256,17 +259,18 @@ function Hero() {
 
 function WhatsAppBand() {
   const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    "Assalam o Alaikum! Mujhe yeh saman chahiye:",
+    "Assalam o Alaikum! Mujhe poore mahine ka ration chahiye, rate pe baat karni hai. Meri list:",
   )}`;
   return (
     <section className="bg-[#141311] text-white">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-14">
+      <div data-reveal className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-14">
         <div>
           <h2 className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
-            Lambi List Hai? WhatsApp Kar Do.
+            Pura Mahina Guzaarna Hai?
           </h2>
-          <p className="mt-2 max-w-md text-sm leading-relaxed text-white/70">
-            Ration List Ki Photo Ya Message Bhejo — Hum Sab Pack Karke Ghar Bhej Denge.
+          <p className="mt-2 max-w-lg text-sm leading-relaxed text-white/75">
+            Poore Mahine Ka Ration Ek Saath Lo, Paise Bhi Munasib. List WhatsApp Karo Ya Baat Karke Apni Marzi Ka
+            Rate Lagwao — <strong className="font-semibold text-white">Jitna Zyada Saman, Utna Behtar Rate.</strong>
           </p>
         </div>
         <a
@@ -275,7 +279,7 @@ function WhatsAppBand() {
           rel="noopener noreferrer"
           className="shrink-0 bg-[#25D366] px-7 py-3.5 text-center text-sm font-semibold text-[#0B3D1F]"
         >
-          Order On WhatsApp
+          WhatsApp Pe Rate Fix Karo
         </a>
       </div>
     </section>
