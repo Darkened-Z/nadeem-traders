@@ -51,36 +51,7 @@ function HomePage() {
 
   return (
     <StoreLayout categories={categories} products={products} currentUser={currentUser}>
-      <section className="bg-[#141311] text-white">
-        <div className="mx-auto grid max-w-7xl items-center gap-6 pb-10 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:gap-14 lg:py-14">
-          <div className="order-2 px-4 sm:px-0 lg:order-1">
-            <p className="text-sm font-semibold text-[#E6CE9C]">Apka Trusted Stop</p>
-            <h1 className="mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] sm:text-6xl xl:text-7xl">
-              Asli Maal. Mandi Rates. No Cap.
-            </h1>
-            <p className="mt-4 max-w-lg text-base leading-relaxed text-white/80">
-              Dry Fruits, Masalay, Daal, Chawal — Seedha Mandi Se Aapke Kitchen Tak. Zero Milawat, Zero Scenes.
-            </p>
-            <div className="mt-7 flex gap-3">
-              <Link
-                to="/shop"
-                className="flex-1 bg-white py-3.5 text-center text-sm font-semibold text-[#141311] sm:flex-none sm:px-8"
-              >
-                Shop Now
-              </Link>
-              <Link
-                to="/categories"
-                className="flex-1 border border-white/60 py-3.5 text-center text-sm font-semibold text-white sm:flex-none sm:px-8"
-              >
-                Categories
-              </Link>
-            </div>
-          </div>
-          <div className="order-1 lg:order-2">
-            <HeroSlideshow />
-          </div>
-        </div>
-      </section>
+      <Hero />
 
       <div className="border-b border-border">
         <ul className="mx-auto grid max-w-7xl grid-cols-2 px-4 sm:px-6 lg:grid-cols-4">
@@ -143,81 +114,143 @@ const HERO_SLIDES = [
   { image: "/hero/slide-5.jpg", label: "Pulses & Grains", line: "Bori Se Seedha Aapke Ghar", href: "/category/pulses-lentils", color: "#8A6100" },
 ];
 
-function HeroSlideshow() {
+const SLIDE_MS = 5000;
+
+function Hero() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const count = HERO_SLIDES.length;
 
   useEffect(() => {
-    if (paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = setTimeout(() => setActive((i) => (i + 1) % count), 4500);
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
+
+  useEffect(() => {
+    if (paused || reducedMotion) return;
+    const timer = setTimeout(() => setActive((i) => (i + 1) % count), SLIDE_MS);
     return () => clearTimeout(timer);
-  }, [active, paused, count]);
+  }, [active, paused, reducedMotion, count]);
 
   const go = (delta: number) => setActive((i) => (i + delta + count) % count);
+  const current = HERO_SLIDES[active];
 
   return (
-    <div
-      className="relative aspect-[4/3] overflow-hidden bg-[#2a2622] lg:aspect-square"
+    <section
+      className="relative overflow-hidden bg-[#141311] text-white lg:h-[min(86vh,760px)] lg:min-h-[600px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      onTouchStart={(e) => (touchStartX.current = e.touches[0].clientX)}
-      onTouchEnd={(e) => {
-        if (touchStartX.current === null) return;
-        const dx = e.changedTouches[0].clientX - touchStartX.current;
-        if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
-        touchStartX.current = null;
-      }}
-      aria-roledescription="carousel"
-      aria-label="Featured categories"
     >
-      {HERO_SLIDES.map((slide, i) => {
-        const isActive = i === active;
-        return (
-          <Link
-            key={slide.image}
-            to={slide.href as any}
-            aria-hidden={!isActive}
-            tabIndex={isActive ? 0 : -1}
-            className={`absolute inset-0 transition-opacity duration-700 ${isActive ? "opacity-100" : "pointer-events-none opacity-0"}`}
-          >
-            <img
-              src={slide.image}
-              alt={slide.line}
-              loading={i === 0 ? "eager" : "lazy"}
-              fetchPriority={i === 0 ? "high" : "auto"}
-              className={`h-full w-full object-cover transition-transform duration-[5000ms] ease-out ${isActive ? "scale-110" : "scale-100"}`}
-            />
-            <div
-              className="absolute bottom-0 left-0 flex items-center gap-3 px-4 py-3 sm:px-5 sm:py-4"
-              style={{ backgroundColor: slide.color }}
+      <div
+        className="hero-fade relative aspect-[4/3] sm:aspect-[16/9] lg:absolute lg:inset-y-0 lg:right-0 lg:aspect-auto lg:w-[64%]"
+        onTouchStart={(e) => (touchStartX.current = e.touches[0].clientX)}
+        onTouchEnd={(e) => {
+          if (touchStartX.current === null) return;
+          const dx = e.changedTouches[0].clientX - touchStartX.current;
+          if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+          touchStartX.current = null;
+        }}
+        aria-roledescription="carousel"
+        aria-label="Featured"
+      >
+        {HERO_SLIDES.map((slide, i) => {
+          const isActive = i === active;
+          return (
+            <Link
+              key={slide.image}
+              to={slide.href as any}
+              aria-hidden={!isActive}
+              tabIndex={isActive ? 0 : -1}
+              className={`absolute inset-0 transition-opacity duration-1000 ${isActive ? "opacity-100" : "pointer-events-none opacity-0"}`}
             >
-              <div>
-                <p className="text-xs font-semibold text-white/80">{slide.label}</p>
-                <p className="text-base font-semibold leading-tight sm:text-lg">{slide.line}</p>
-              </div>
-              <ArrowRight className="h-5 w-5 shrink-0" />
-            </div>
-          </Link>
-        );
-      })}
+              <img
+                src={slide.image}
+                alt={slide.line}
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchPriority={i === 0 ? "high" : "auto"}
+                className={`h-full w-full object-cover transition-transform duration-[6000ms] ease-out ${isActive ? "scale-110" : "scale-100"}`}
+              />
+            </Link>
+          );
+        })}
 
-      <div className="absolute right-3 top-3 flex gap-1.5 sm:right-4 sm:top-4">
-        {HERO_SLIDES.map((slide, i) => (
-          <button
-            key={slide.image}
-            type="button"
-            onClick={() => setActive(i)}
-            aria-label={`Show slide ${i + 1}: ${slide.label}`}
-            aria-current={i === active}
-            className="grid h-6 place-items-center"
-          >
-            <span className={`block h-1 transition-all ${i === active ? "w-7 bg-white" : "w-3.5 bg-white/50"}`} />
-          </button>
-        ))}
+        <Link
+          to={current.href as any}
+          className="absolute left-3 top-3 flex items-center gap-3 px-3.5 py-2.5 text-white transition-colors duration-500 lg:bottom-10 lg:left-auto lg:right-10 lg:top-auto lg:px-5 lg:py-4"
+          style={{ backgroundColor: current.color }}
+        >
+          <div>
+            <p className="text-[11px] font-semibold text-white/80 lg:text-xs">{current.label}</p>
+            <p className="text-sm font-semibold leading-tight lg:text-lg">{current.line}</p>
+          </div>
+          <ArrowRight className="h-4 w-4 shrink-0 lg:h-5 lg:w-5" />
+        </Link>
       </div>
-    </div>
+
+      <div className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 pb-10 sm:-mt-20 sm:px-6 lg:mt-0 lg:flex lg:h-full lg:items-center lg:pb-0">
+        <div className="lg:max-w-[46%]">
+          <p className="text-sm font-semibold text-[#E6CE9C]">Apka Trusted Stop</p>
+          <h1 className="mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] sm:text-6xl xl:text-7xl">
+            Asli Maal. Mandi Rates. No Cap.
+          </h1>
+          <p className="mt-4 max-w-md text-base leading-relaxed text-white/80">
+            Dry Fruits, Masalay, Daal, Chawal — Seedha Mandi Se Aapke Kitchen Tak. Zero Milawat, Zero Scenes.
+          </p>
+          <div className="mt-7 flex gap-3">
+            <Link
+              to="/shop"
+              className="flex-1 bg-white py-3.5 text-center text-sm font-semibold text-[#141311] sm:flex-none sm:px-8"
+            >
+              Shop Now
+            </Link>
+            <Link
+              to="/categories"
+              className="flex-1 border border-white/60 py-3.5 text-center text-sm font-semibold text-white sm:flex-none sm:px-8"
+            >
+              Categories
+            </Link>
+          </div>
+
+          <div className="mt-9 lg:mt-12">
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Aaj Ki Mandi</p>
+            <div className="mt-3 flex gap-2.5 lg:gap-3">
+              {HERO_SLIDES.map((slide, i) => {
+                const isActive = i === active;
+                return (
+                  <button
+                    key={slide.image}
+                    type="button"
+                    onClick={() => setActive(i)}
+                    aria-label={`Show slide ${i + 1}: ${slide.label}`}
+                    aria-current={isActive}
+                    className="group w-full max-w-[76px] text-left"
+                  >
+                    <span
+                      className={`block aspect-square overflow-hidden transition-opacity ${isActive ? "opacity-100" : "opacity-45 group-hover:opacity-80"}`}
+                    >
+                      <img src={slide.image.replace("slide-", "thumb-")} alt="" className="h-full w-full object-cover" />
+                    </span>
+                    <span className="mt-2 block h-0.5 w-full bg-white/15">
+                      {isActive && (
+                        <span
+                          key={active}
+                          className="hero-progress block h-full bg-white"
+                          style={{
+                            animationDuration: `${SLIDE_MS}ms`,
+                            animationPlayState: paused || reducedMotion ? "paused" : "running",
+                          }}
+                        />
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
