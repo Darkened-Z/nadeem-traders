@@ -50,7 +50,7 @@ function ProductDetailsPage() {
     return (
       <StoreLayout categories={categories} products={products} currentUser={currentUser}>
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
-          <h1 className="font-display text-3xl font-semibold">Product nahi mila</h1>
+          <h1 className="font-display text-3xl font-semibold">Product Nahi Mila</h1>
           <Link
             to="/shop"
             className="mt-6 inline-block bg-foreground px-6 py-3 text-sm font-semibold text-background"
@@ -142,7 +142,7 @@ function ProductDetailsPage() {
                 disabled={!product.stock}
                 className="h-12 border border-foreground text-sm font-semibold disabled:opacity-40"
               >
-                {product.stock ? "Add to bag" : "Out of stock"}
+                {product.stock ? "Add To Bag" : "Out Of Stock"}
               </button>
               <button
                 type="button"
@@ -150,22 +150,26 @@ function ProductDetailsPage() {
                 disabled={!product.stock}
                 className="h-12 bg-foreground text-sm font-semibold text-background disabled:opacity-40"
               >
-                Buy now
+                Buy Now
               </button>
             </div>
 
             <ul className="mt-8 space-y-3 border-t border-border pt-6 text-sm">
               <li>
-                <strong className="font-semibold">Cash on delivery.</strong>{" "}
-                <span className="text-muted-foreground">Pehle maal dekho, phir paise do.</span>
+                <strong className="font-semibold">No Prepayment, No Dhoka.</strong>{" "}
+                <span className="text-muted-foreground">Paise Sirf Delivery Pe.</span>
               </li>
               <li>
-                <strong className="font-semibold">Nationwide delivery.</strong>{" "}
-                <span className="text-muted-foreground">Tracking SMS dispatch hote hi.</span>
+                <strong className="font-semibold">Pakistan Bhar Mein Delivery.</strong>{" "}
+                <span className="text-muted-foreground">Tracking SMS Dispatch Hote Hi.</span>
               </li>
               <li>
-                <strong className="font-semibold">Mandi se direct.</strong>{" "}
-                <span className="text-muted-foreground">Saaf, sealed, zero milawat.</span>
+                <strong className="font-semibold">Faisalabad Mein?</strong>{" "}
+                <span className="text-muted-foreground">InDrive Ya Yango Se Seedha Ghar.</span>
+              </li>
+              <li>
+                <strong className="font-semibold">Mandi Se Direct.</strong>{" "}
+                <span className="text-muted-foreground">Saaf, Sealed, Zero Milawat.</span>
               </li>
             </ul>
           </div>
@@ -173,7 +177,7 @@ function ProductDetailsPage() {
 
         {relatedProducts.length > 0 && (
           <div className="mt-14 border-t border-border pt-8">
-            <h2 className="font-display text-3xl font-semibold">Isse bhi try karo</h2>
+            <h2 className="font-display text-3xl font-semibold">Isse Bhi Try Karo</h2>
             <div className="mt-6">
               <ProductRail products={relatedProducts} />
             </div>

@@ -4,8 +4,7 @@ import { Search, X } from "lucide-react";
 import {
   StoreLayout,
   ModernProductCard,
-  ProductRail,
-  SectionHeader,
+  CategorySection,
   useStoreData,
   getCategoryMeta,
 } from "../components/store-layout";
@@ -68,8 +67,8 @@ function ShopPage() {
   return (
     <StoreLayout categories={categories} products={products} currentUser={currentUser}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
-        <h1 className="font-display text-4xl font-semibold sm:text-5xl">All products</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Sab kuch, ek jagah. Mandi rates, no cap.</p>
+        <h1 className="font-display text-4xl font-semibold sm:text-5xl">All Products</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Sab Kuch, Ek Jagah. Mandi Rates, No Cap.</p>
 
         <div className="mt-6 flex items-center gap-2">
           <div className="relative min-w-0 flex-1 sm:max-w-sm">
@@ -131,39 +130,32 @@ function ShopPage() {
           })}
         </div>
 
-        {isBrowsing ? (
-          <div className="mt-8 space-y-12">
-            {categories.map((c) => {
-              const items = sortedProducts.filter((p) => p.category_id === c.id);
-              if (items.length === 0) return null;
-              const meta = getCategoryMeta(c.name);
-              return (
-                <section key={c.id}>
-                  <SectionHeader title={c.name} subtitle={meta.tagline} href={`/category/${c.id}`} color={meta.color} />
-                  <ProductRail products={items} />
-                </section>
-              );
-            })}
-          </div>
-        ) : sortedProducts.length === 0 ? (
-          <div className="py-20 text-center">
-            <p className="font-display text-2xl">Kuch nahi mila</p>
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="mt-4 text-sm font-semibold underline underline-offset-4"
-            >
-              Clear filters
-            </button>
-          </div>
-        ) : (
-          <div className="mt-7 grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4">
-            {sortedProducts.map((p) => (
-              <ModernProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        )}
+        {!isBrowsing &&
+          (sortedProducts.length === 0 ? (
+            <div className="py-20 text-center">
+              <p className="font-display text-2xl">Kuch Nahi Mila</p>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-4 text-sm font-semibold underline underline-offset-4"
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <div className="mt-7 grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4">
+              {sortedProducts.map((p) => (
+                <ModernProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          ))}
       </div>
+
+      {isBrowsing &&
+        categories.map((c) => {
+          const items = sortedProducts.filter((p) => p.category_id === c.id);
+          return items.length > 0 ? <CategorySection key={c.id} category={c} items={items} /> : null;
+        })}
     </StoreLayout>
   );
 }

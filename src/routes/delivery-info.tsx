@@ -30,12 +30,17 @@ function DeliveryInfoPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {[
             {
               icon: Truck,
               title: "PostEx Courier Logistics",
               desc: "Automated booking and door-to-door tracking with instant SMS notifications upon dispatch.",
+            },
+            {
+              icon: MapPin,
+              title: "Faisalabad Local Delivery",
+              desc: "Within Faisalabad we deliver through InDrive or Yango — straight from our shop to your door.",
             },
             {
               icon: Clock,

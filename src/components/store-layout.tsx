@@ -31,32 +31,32 @@ export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   "Dry Fruits": {
     slug: "dry-fruits",
     color: "#6B4226",
-    tagline: "Snack game strong. Badaam, kaju aur seeds — sab fresh batch.",
+    tagline: "Snack Game Strong. Badaam, Kaju Aur Seeds — Sab Fresh Batch.",
   },
   Spices: {
     slug: "spices",
     color: "#A1281C",
-    tagline: "Masala jo actually hit kare. Zero artificial rang.",
+    tagline: "Masala Jo Actually Hit Kare. Zero Artificial Rang.",
   },
   "Pulses & Lentils": {
     slug: "pulses-lentils",
     color: "#2F6B3A",
-    tagline: "Protein era, daal edition. Triple-cleaned, kankar-free.",
+    tagline: "Protein Era, Daal Edition. Triple-Cleaned, Kankar-Free.",
   },
   "Rice & Grains": {
     slug: "rice-grains",
     color: "#1E3A5F",
-    tagline: "Lambi grain, full khushboo. Biryani ka main character.",
+    tagline: "Lambi Grain, Full Khushboo. Biryani Ka Main Character.",
   },
   "Cooking Oils": {
     slug: "cooking-oils",
     color: "#8A6100",
-    tagline: "Light oil, heavy flavour. Double-refined, no compromise.",
+    tagline: "Light Oil, Heavy Flavour. Double-Refined, No Compromise.",
   },
   "Sugar & Salt": {
     slug: "sugar-salt",
     color: "#A3485F",
-    tagline: "Basics, but make it pure. Khewra pink salt aur saaf cheeni.",
+    tagline: "Basics, But Make It Pure. Khewra Pink Salt Aur Saaf Cheeni.",
   },
 };
 
@@ -69,7 +69,7 @@ export function getCategoryMeta(name: string): CategoryMeta {
   return {
     slug,
     color: FALLBACK_COLORS[hash % FALLBACK_COLORS.length],
-    tagline: `Asli ${name.toLowerCase()}, sahi daam.`,
+    tagline: `Asli ${name}, Sahi Daam.`,
   };
 }
 
@@ -164,7 +164,7 @@ export function useStoreData() {
   return { categories, products, brands, currentUser, isLoading };
 }
 
-export function ModernProductCard({ product }: { product: any }) {
+export function ModernProductCard({ product, onDark = false }: { product: any; onDark?: boolean }) {
   const [justAdded, setJustAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -204,14 +204,14 @@ export function ModernProductCard({ product }: { product: any }) {
       <div className="flex flex-1 flex-col pt-2.5">
         <Link
           to={`/product/${product.id}` as any}
-          className="line-clamp-2 text-sm font-medium leading-snug text-foreground hover:underline underline-offset-2"
+          className={`line-clamp-2 text-sm font-medium leading-snug hover:underline underline-offset-2 ${onDark ? "text-white" : "text-foreground"}`}
         >
           {product.name}
         </Link>
-        <p className="mt-0.5 text-xs text-muted-foreground">{product.weight}</p>
+        <p className={`mt-0.5 text-xs ${onDark ? "text-white/70" : "text-muted-foreground"}`}>{product.weight}</p>
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
-          <span className="text-sm font-semibold text-foreground">
+          <span className={`text-sm font-semibold ${onDark ? "text-white" : "text-foreground"}`}>
             Rs. {Number(product.price).toLocaleString()}
           </span>
           <button
@@ -219,7 +219,11 @@ export function ModernProductCard({ product }: { product: any }) {
             onClick={handleAdd}
             disabled={!product.stock}
             aria-label={`Add ${product.name} to bag`}
-            className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 border border-foreground px-3 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
+            className={`inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 border px-3 text-xs font-semibold transition-colors disabled:opacity-40 ${
+              onDark
+                ? "border-white bg-white text-[#141311] hover:bg-transparent hover:text-white"
+                : "border-foreground text-foreground hover:bg-foreground hover:text-background"
+            }`}
           >
             {justAdded ? <Check className="h-4 w-4" /> : "Add"}
           </button>
@@ -257,15 +261,27 @@ export function CategoryTile({ category }: { category: any }) {
 const railClass =
   "-mx-4 flex snap-x snap-mandatory scroll-pl-4 gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0";
 
-export function ProductRail({ products }: { products: any[] }) {
+export function ProductRail({ products, onDark = false }: { products: any[]; onDark?: boolean }) {
   return (
     <div className={`${railClass} sm:grid-cols-3 sm:gap-y-8 lg:grid-cols-4`}>
       {products.map((item) => (
         <div key={item.id} className="w-[42%] shrink-0 snap-start sm:w-auto">
-          <ModernProductCard product={item} />
+          <ModernProductCard product={item} onDark={onDark} />
         </div>
       ))}
     </div>
+  );
+}
+
+export function CategorySection({ category, items }: { category: any; items: any[] }) {
+  const meta = getCategoryMeta(category.name);
+  return (
+    <section className="py-10 text-white sm:py-14" style={{ backgroundColor: meta.color }}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <SectionHeader title={category.name} subtitle={meta.tagline} href={`/category/${category.id}`} onDark />
+        <ProductRail products={items} onDark />
+      </div>
+    </section>
   );
 }
 
@@ -285,25 +301,24 @@ export function SectionHeader({
   title,
   subtitle,
   href,
-  color,
+  onDark = false,
 }: {
   title: string;
   subtitle?: string;
   href?: string;
-  color?: string;
+  onDark?: boolean;
 }) {
   return (
     <div className="mb-4 flex items-end justify-between gap-4 sm:mb-6">
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2.5 font-display text-[1.75rem] font-semibold leading-tight sm:text-4xl">
-          {color && <span className="h-3.5 w-3.5 shrink-0" style={{ backgroundColor: color }} />}
-          {title}
-        </h2>
-        {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
+        <h2 className="font-display text-[1.75rem] font-semibold leading-tight sm:text-4xl">{title}</h2>
+        {subtitle && (
+          <p className={`mt-0.5 text-sm ${onDark ? "text-white/80" : "text-muted-foreground"}`}>{subtitle}</p>
+        )}
       </div>
       {href && (
         <Link to={href as any} className="shrink-0 pb-1 text-sm font-semibold underline underline-offset-4">
-          See all
+          See All
         </Link>
       )}
     </div>
@@ -504,7 +519,7 @@ export function StoreLayout({
                   autoFocus
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Kya dhoond rahe ho? Daal, chawal, masala…"
+                  placeholder="Kya Dhoond Rahe Ho? Daal, Chawal, Masala…"
                   className="w-full bg-transparent text-base focus:outline-none"
                 />
                 <button
@@ -621,7 +636,7 @@ export function StoreLayout({
               </div>
               <p className="mt-2 text-sm text-[#C5A56E]">Apka Trusted Stop</p>
               <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#A39E93]">
-                Mandi se seedha aapke kitchen tak. Asli maal, sahi daam.
+                Mandi Se Seedha Aapke Kitchen Tak. Asli Maal, Sahi Daam.
               </p>
             </div>
 
@@ -642,7 +657,7 @@ export function StoreLayout({
               <h4 className="text-sm font-semibold text-white">Help</h4>
               <ul className="mt-3 space-y-2 text-sm text-[#A39E93]">
                 <li><Link to="/contact" className="hover:text-white">Contact</Link></li>
-                <li><Link to="/delivery-info" className="hover:text-white">Delivery info</Link></li>
+                <li><Link to="/delivery-info" className="hover:text-white">Delivery Info</Link></li>
                 <li><Link to="/help" className="hover:text-white">FAQ</Link></li>
                 <li><Link to="/refund-policy" className="hover:text-white">Refunds</Link></li>
               </ul>
@@ -651,15 +666,15 @@ export function StoreLayout({
             <div className="col-span-2 md:col-span-1">
               <h4 className="text-sm font-semibold text-white">Legal</h4>
               <ul className="mt-3 space-y-2 text-sm text-[#A39E93]">
-                <li><Link to="/privacy-policy" className="hover:text-white">Privacy policy</Link></li>
-                <li><Link to="/terms-of-use" className="hover:text-white">Terms of use</Link></li>
-                <li><Link to="/shipping-policy" className="hover:text-white">Shipping policy</Link></li>
+                <li><Link to="/privacy-policy" className="hover:text-white">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-use" className="hover:text-white">Terms Of Use</Link></li>
+                <li><Link to="/shipping-policy" className="hover:text-white">Shipping Policy</Link></li>
               </ul>
             </div>
           </div>
 
           <div className="mt-10 border-t border-white/10 pt-5 text-xs text-[#857F74]">
-            © {new Date().getFullYear()} Nadeem Traders. Cash on delivery across Pakistan.
+            © {new Date().getFullYear()} Nadeem Traders. Cash On Delivery Across Pakistan.
           </div>
         </div>
       </footer>
@@ -670,7 +685,7 @@ export function StoreLayout({
           <div className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-background animate-slide-in-right">
             <div className="flex h-14 sm:h-16 items-center justify-between border-b border-border px-4 sm:px-6">
               <h2 className="font-display text-2xl font-semibold">
-                Your bag <span className="text-base font-normal text-muted-foreground">({totalItems})</span>
+                Your Bag <span className="text-base font-normal text-muted-foreground">({totalItems})</span>
               </h2>
               <button
                 type="button"
@@ -685,8 +700,8 @@ export function StoreLayout({
             <div className="flex-1 overflow-y-auto px-4 sm:px-6">
               {cart.length === 0 ? (
                 <div className="flex h-72 flex-col items-center justify-center text-center">
-                  <p className="font-display text-2xl">Bag khaali hai</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Kuch acha sa daal do.</p>
+                  <p className="font-display text-2xl">Bag Khaali Hai</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Kuch Acha Sa Daal Do.</p>
                   <Link
                     to="/shop"
                     onClick={() => setIsCartOpen(false)}
@@ -795,7 +810,7 @@ export function StoreLayout({
                   onClick={closeCheckout}
                   className="mt-6 w-full bg-foreground py-3.5 text-sm font-semibold text-background sm:w-auto sm:px-10"
                 >
-                  Continue shopping
+                  Continue Shopping
                 </button>
               </div>
             ) : (
@@ -853,9 +868,14 @@ export function StoreLayout({
                     />
                   </label>
 
-                  <p className="text-sm text-muted-foreground">
-                    Cash on delivery — paise tab do jab maal haath mein ho. Shipped with PostEx, tracking via SMS.
-                  </p>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>
+                      <strong className="font-semibold text-foreground">No Prepayment, No Dhoka.</strong> Paise Sirf
+                      Delivery Pe.
+                    </p>
+                    <p>Pakistan Bhar Mein PostEx Se, Tracking SMS Pe.</p>
+                    <p>Faisalabad Mein Ho? InDrive Ya Yango Se Seedha Ghar.</p>
+                  </div>
 
                   <div className="flex items-baseline justify-between border-t border-border pt-4">
                     <span className="text-sm text-muted-foreground">Total</span>
@@ -867,7 +887,7 @@ export function StoreLayout({
                     disabled={isSubmittingOrder}
                     className="w-full bg-foreground py-3.5 text-sm font-semibold text-background disabled:opacity-50"
                   >
-                    {isSubmittingOrder ? "Placing order…" : "Place order"}
+                    {isSubmittingOrder ? "Placing order…" : "Place Order"}
                   </button>
                 </form>
               </>

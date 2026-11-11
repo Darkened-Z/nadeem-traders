@@ -58,7 +58,7 @@ function CategoryPage() {
     return (
       <StoreLayout categories={categories} products={products} currentUser={currentUser}>
         <div className="mx-auto max-w-xl px-4 py-24 text-center">
-          <h1 className="font-display text-4xl font-semibold">Category nahi mili</h1>
+          <h1 className="font-display text-4xl font-semibold">Category Nahi Mili</h1>
           <Link
             to="/categories"
             className="mt-6 inline-block bg-foreground px-7 py-3 text-sm font-semibold text-background"
@@ -139,7 +139,7 @@ function CategoryPage() {
           {sortedProducts.length} {sortedProducts.length === 1 ? "product" : "products"}
         </p>
         {sortedProducts.length === 0 ? (
-          <p className="py-12 text-center text-sm text-muted-foreground">Kuch nahi mila. Search badal ke dekho.</p>
+          <p className="py-12 text-center text-sm text-muted-foreground">Kuch Nahi Mila. Search Badal Ke Dekho.</p>
         ) : (
           <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4">
             {sortedProducts.map((p) => (
@@ -149,7 +149,7 @@ function CategoryPage() {
         )}
 
         <div className="mt-14 border-t border-border pt-8">
-          <h2 className="text-sm font-semibold">Aur dekho</h2>
+          <h2 className="text-sm font-semibold">Aur Dekho</h2>
           <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0">
             {otherCategories.map((c) => (
               <Link
