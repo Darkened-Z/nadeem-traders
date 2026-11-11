@@ -31,11 +31,6 @@ function HomePage() {
   const [pricingTab, setPricingTab] = useState<"retail" | "wholesale">("retail");
 
   const handleAddToCart = (product: any, qty: number = 1) => {
-    if (!currentUser) {
-      toast.error("Please sign in to add items to your bag.");
-      window.location.href = `/login?redirect=/`;
-      return;
-    }
     cartStore.addToCart(product, qty);
     toast.success(`Added ${qty}× ${product.name} to your bag`);
   };

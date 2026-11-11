@@ -10,6 +10,8 @@ import {
   X,
   Check,
   Menu,
+  Zap,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -23,7 +25,14 @@ import {
   clearCartDb,
   getUserAddresses,
 } from "../lib/actions";
-import { useCart, cartStore } from "../lib/cart-store";
+import {
+  useCart,
+  cartStore,
+  subscribeCartDrawer,
+  subscribeCheckoutModal,
+  openCartDrawer,
+  openCheckoutModal,
+} from "../lib/cart-store";
 
 export interface CategoryMeta {
   slug: string;
@@ -451,12 +460,6 @@ export function ModernProductCard({
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#F1ECE1] border border-border/70">
         <Link
           to={`/product/${p.id}` as any}
-          onClick={(e) => {
-            if (onQuickView) {
-              e.preventDefault();
-              onQuickView(p);
-            }
-          }}
           className="block h-full w-full"
         >
           {p.image_url && !imgError ? (
@@ -505,19 +508,6 @@ export function ModernProductCard({
 
         {p.stock && (
           <div className="absolute inset-x-0 bottom-0 flex translate-y-full opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100 bg-background/95 backdrop-blur-xs border-t border-border">
-            <button
-              type="button"
-              onClick={handleAdd}
-              className="flex-1 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center gap-1.5"
-            >
-              {justAdded ? (
-                <>
-                  <Check className="h-3.5 w-3.5" /> Added
-                </>
-              ) : (
-                <>+ Add to Bag</>
-              )}
-            </button>
             {onQuickView && (
               <button
                 type="button"
@@ -526,16 +516,29 @@ export function ModernProductCard({
                   e.stopPropagation();
                   onQuickView(p);
                 }}
-                className="border-l border-border px-4 py-3 text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground transition-colors"
+                className="flex-1 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center gap-1.5"
               >
-                Options
+                <Zap className="h-3.5 w-3.5 text-secondary" /> Quick Buy
               </button>
             )}
+            <button
+              type="button"
+              onClick={handleAdd}
+              className={`${onQuickView ? "border-l border-border px-3.5" : "flex-1"} py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center gap-1.5`}
+            >
+              {justAdded ? (
+                <>
+                  <Check className="h-3.5 w-3.5" /> Added
+                </>
+              ) : (
+                <>+ Bag</>
+              )}
+            </button>
           </div>
         )}
       </div>
 
-      {/* Clean Product Info Below Image (No Location/Origin Fluff, No Promo Strikethroughs) */}
+      {/* Clean Product Info Below Image */}
       <div className="pt-3.5 flex flex-1 flex-col justify-between">
         <div>
           <Link
@@ -549,7 +552,7 @@ export function ModernProductCard({
           </p>
         </div>
 
-        <div className="mt-2.5 flex items-baseline justify-between gap-2 pt-1">
+        <div className="mt-2.5 flex items-baseline justify-between gap-2 pt-1 border-t border-border/40">
           <div className="text-xs">
             <span className="text-foreground font-medium">
               Rs. {Number(activePrice).toLocaleString()}
@@ -561,21 +564,27 @@ export function ModernProductCard({
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              if (onQuickView) {
-                e.preventDefault();
-                e.stopPropagation();
-                onQuickView(p);
-              } else {
-                handleAdd(e);
-              }
-            }}
-            className="text-[11px] font-medium underline underline-offset-4 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Choose options
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/product/${p.id}` as any}
+              className="text-[11px] font-medium underline underline-offset-4 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Details
+            </Link>
+            {onQuickView && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onQuickView(p);
+                }}
+                className="inline-flex items-center gap-1 bg-secondary/15 hover:bg-secondary text-secondary hover:text-secondary-foreground px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors"
+              >
+                <Zap className="h-2.5 w-2.5" /> Quick Buy
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -607,6 +616,15 @@ export function StoreLayout({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [internalQuickView, setInternalQuickView] = useState<any | null>(null);
   const [quickViewQty, setQuickViewQty] = useState(1);
+
+  useEffect(() => {
+    const unsubCart = subscribeCartDrawer((open) => setIsCartOpen(open));
+    const unsubCheckout = subscribeCheckoutModal((open) => setIsCheckoutOpen(open));
+    return () => {
+      unsubCart();
+      unsubCheckout();
+    };
+  }, []);
 
   const activeQuickView = quickViewProduct !== undefined ? quickViewProduct : internalQuickView;
   const closeQuickView = () => {
@@ -679,11 +697,6 @@ export function StoreLayout({
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
-    if (!currentUser) {
-      toast.info("Please sign in to complete your order.");
-      window.location.href = `/login?mode=signup&redirect=${encodeURIComponent(window.location.pathname + "?checkout=true")}`;
-      return;
-    }
     if (!checkoutForm.name || !checkoutForm.email || !checkoutForm.address) {
       toast.error("Please complete all required delivery fields.");
       return;
@@ -692,7 +705,7 @@ export function StoreLayout({
     setIsSubmittingOrder(true);
     try {
       const orderData = {
-        user_id: currentUser.id,
+        user_id: currentUser?.id || null,
         customer_name: checkoutForm.name,
         customer_email: checkoutForm.email,
         customer_phone: checkoutForm.phone,
@@ -1187,12 +1200,7 @@ export function StoreLayout({
                     type="button"
                     onClick={() => {
                       setIsCartOpen(false);
-                      if (!currentUser) {
-                        toast.info("Please sign in to proceed to checkout.");
-                        window.location.href = `/login?mode=signup&redirect=${encodeURIComponent(window.location.pathname + "?checkout=true")}`;
-                      } else {
-                        setIsCheckoutOpen(true);
-                      }
+                      setIsCheckoutOpen(true);
                     }}
                     className="w-full bg-primary py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary-foreground hover:opacity-95 transition"
                   >
@@ -1362,9 +1370,14 @@ export function StoreLayout({
 
             <div className="p-8 flex flex-col justify-between space-y-6">
               <div className="space-y-3">
-                <p className="text-[10px] uppercase tracking-[0.25em] text-secondary">
-                  {activeQuickView.category_name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="border border-secondary/40 bg-secondary/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.25em] text-secondary">
+                    Quick Buy
+                  </span>
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+                    {activeQuickView.category_name}
+                  </p>
+                </div>
                 <h3 className="font-display text-3xl font-normal text-foreground leading-tight">
                   {activeQuickView.name}
                 </h3>
@@ -1443,16 +1456,38 @@ export function StoreLayout({
                   </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAddToCart(activeQuickView, quickViewQty);
-                    closeQuickView();
-                  }}
-                  className="w-full bg-primary py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary-foreground hover:opacity-95"
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleAddToCart(activeQuickView, quickViewQty);
+                      closeQuickView();
+                      setIsCheckoutOpen(true);
+                    }}
+                    className="w-full bg-secondary text-secondary-foreground py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] hover:opacity-95 flex items-center justify-center gap-2 transition"
+                  >
+                    <Zap className="h-3.5 w-3.5" /> Quick Buy &amp; Checkout
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleAddToCart(activeQuickView, quickViewQty);
+                      closeQuickView();
+                      setIsCartOpen(true);
+                    }}
+                    className="w-full border border-foreground bg-transparent py-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground hover:bg-foreground hover:text-background transition"
+                  >
+                    Add to Bag
+                  </button>
+                </div>
+
+                <Link
+                  to={`/product/${activeQuickView.id}` as any}
+                  onClick={closeQuickView}
+                  className="text-center text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-4 flex items-center justify-center gap-1.5 transition-colors pt-1"
                 >
-                  Add to Bag
-                </button>
+                  View Full Product Page &amp; Details <ArrowRight className="h-3 w-3" />
+                </Link>
               </div>
             </div>
           </div>

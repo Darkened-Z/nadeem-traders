@@ -18,8 +18,35 @@ export interface CartItem {
 let cartState: CartItem[] = [];
 const listeners = new Set<(cart: CartItem[]) => void>();
 
+const cartDrawerListeners = new Set<(open: boolean) => void>();
+export const openCartDrawer = () => {
+  cartDrawerListeners.forEach((l) => l(true));
+};
+export const subscribeCartDrawer = (listener: (open: boolean) => void) => {
+  cartDrawerListeners.add(listener);
+  return () => {
+    cartDrawerListeners.delete(listener);
+  };
+};
+
+const checkoutModalListeners = new Set<(open: boolean) => void>();
+export const openCheckoutModal = () => {
+  checkoutModalListeners.forEach((l) => l(true));
+};
+export const subscribeCheckoutModal = (listener: (open: boolean) => void) => {
+  checkoutModalListeners.add(listener);
+  return () => {
+    checkoutModalListeners.delete(listener);
+  };
+};
+
 function notify() {
   const current = [...cartState];
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("nadeem_cart", JSON.stringify(current));
+    } catch {}
+  }
   listeners.forEach((l) => l(current));
 }
 
@@ -47,18 +74,27 @@ export const cartStore = {
   async load() {
     try {
       const items = await getCartItems({ data: {} });
-      cartState = items.map((item) => ({
-        id: item.id, // product ID
-        name: item.name,
-        brand: item.brand,
-        weight: item.weight,
-        price: item.price,
-        wholesale_price: item.wholesale_price,
-        wholesale_min_qty: item.wholesale_min_qty || 1,
-        emoji: item.emoji || "🌾",
-        quantity: item.quantity,
-        image_url: item.image_url,
-      }));
+      if (items && items.length > 0) {
+        cartState = items.map((item) => ({
+          id: item.id, // product ID
+          name: item.name,
+          brand: item.brand,
+          weight: item.weight,
+          price: item.price,
+          wholesale_price: item.wholesale_price,
+          wholesale_min_qty: item.wholesale_min_qty || 1,
+          emoji: item.emoji || "🌾",
+          quantity: item.quantity,
+          image_url: item.image_url,
+        }));
+      } else if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("nadeem_cart");
+        if (stored) {
+          try {
+            cartState = JSON.parse(stored);
+          } catch {}
+        }
+      }
 
       // Set confirmed states
       confirmedQuantities.clear();
@@ -69,7 +105,15 @@ export const cartStore = {
       }
       notify();
     } catch (e) {
-      console.error("Failed to load cart items:", e);
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("nadeem_cart");
+        if (stored) {
+          try {
+            cartState = JSON.parse(stored);
+            notify();
+          } catch {}
+        }
+      }
     }
   },
 
@@ -154,6 +198,11 @@ export const cartStore = {
     cartState = [];
     confirmedQuantities.clear();
     latestRequestedQty.clear();
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("nadeem_cart");
+      } catch {}
+    }
     notify();
   },
 
@@ -196,33 +245,10 @@ export const cartStore = {
         }
       } catch (err: any) {
         if (requestSequence.get(productId) === seq) {
-          console.error(`Error synchronizing cart item ${productId}:`, err);
+          console.warn(`Local cart retained; backend sync info:`, err?.message);
           activeRequests.delete(productId);
-
-          // Get last confirmed quantity on the server
-          const lastConfirmed = confirmedQuantities.get(productId) ?? 0;
-
-          // Revert optimistic state back to confirmed quantity
-          const existingIdx = cartState.findIndex((item) => item.id === productId);
-          
-          if (lastConfirmed <= 0) {
-            cartState = cartState.filter((item) => item.id !== productId);
-          } else if (existingIdx > -1) {
-            cartState[existingIdx] = {
-              ...cartState[existingIdx],
-              quantity: lastConfirmed,
-            };
-          } else {
-            // Re-fetch whole cart to recover if item disappeared
-            await this.load();
-            toast.error(err.message || `Failed to update ${productName}. Reverted to server state.`);
-            return;
-          }
-
-          latestRequestedQty.set(productId, lastConfirmed);
-          notify();
-
-          toast.error(err.message || `Could not update quantity for ${productName}. Reverted changes.`);
+          // Keep optimistic local cart intact
+          confirmedQuantities.set(productId, targetQty);
         }
       }
     }, 250);

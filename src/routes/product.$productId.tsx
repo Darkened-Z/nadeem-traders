@@ -6,10 +6,11 @@ import {
   Minus,
   Loader2,
   ChevronRight,
+  Zap,
 } from "lucide-react";
 import { recordRecentlyViewedDb } from "../lib/actions";
 import { toast } from "sonner";
-import { cartStore } from "../lib/cart-store";
+import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import {
   StoreLayout,
   ModernProductCard,
@@ -32,6 +33,8 @@ function ProductDetailsPage() {
   const [qty, setQty] = useState(1);
   const [imgError, setImgError] = useState(false);
 
+  const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
+
   const product = products.find((p) => p.id === Number(productId)) || null;
   const relatedProducts = product
     ? products.filter((p) => p.category_id === product.category_id && p.id !== product.id).slice(0, 4)
@@ -44,13 +47,15 @@ function ProductDetailsPage() {
 
   const handleAddToCart = (item = product, quantity = qty) => {
     if (!item) return;
-    if (!currentUser) {
-      toast.error("Please sign in to add items to your bag.");
-      window.location.href = `/login?redirect=/product/${productId}`;
-      return;
-    }
     cartStore.addToCart(item, quantity);
     toast.success(`Added ${quantity}× ${item.name} to your bag`);
+  };
+
+  const handleQuickBuy = (item = product, quantity = qty) => {
+    if (!item) return;
+    cartStore.addToCart(item, quantity);
+    toast.success(`Starting quick checkout for ${quantity}× ${item.name}`);
+    openCheckoutModal();
   };
 
   if (isLoading && !product) {
@@ -90,6 +95,8 @@ function ProductDetailsPage() {
       products={products}
       currentUser={currentUser}
       activeCategoryId={product.category_id}
+      quickViewProduct={quickViewProduct}
+      setQuickViewProduct={setQuickViewProduct}
     >
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-8 space-y-16">
         <nav className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -205,14 +212,22 @@ function ProductDetailsPage() {
                 </span>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleQuickBuy(product, qty)}
+                  disabled={!product.stock}
+                  className="flex-1 bg-secondary text-secondary-foreground py-3.5 text-[11px] font-semibold uppercase tracking-[0.2em] hover:opacity-95 disabled:opacity-50 flex items-center justify-center gap-2 transition"
+                >
+                  <Zap className="h-3.5 w-3.5" /> Quick Buy
+                </button>
                 <button
                   type="button"
                   onClick={() => handleAddToCart(product, qty)}
                   disabled={!product.stock}
-                  className="flex-1 bg-primary py-3.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:opacity-95 disabled:opacity-50"
+                  className="flex-1 border border-foreground bg-primary py-3.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-foreground hover:opacity-95 disabled:opacity-50 transition"
                 >
-                  {product.stock ? "Add to Bag" : "Out of Stock"}
+                  {product.stock ? "+ Add to Bag" : "Out of Stock"}
                 </button>
                 <button
                   type="button"
@@ -238,6 +253,7 @@ function ProductDetailsPage() {
                   key={rp.id}
                   product={rp}
                   onAddToCart={(item, q) => handleAddToCart(item, q)}
+                  onQuickView={setQuickViewProduct}
                   onToggleWishlist={toggleWishlist}
                   wishlist={wishlist}
                 />

@@ -29,11 +29,6 @@ function OffersPage() {
   const displayList = discountedProducts.length > 0 ? discountedProducts : products;
 
   const handleAddToCart = (product: any, qty: number = 1) => {
-    if (!currentUser) {
-      toast.error("Please sign in to start shopping.");
-      window.location.href = `/login?redirect=/offers`;
-      return;
-    }
     cartStore.addToCart(product, qty);
     toast.success(`Added ${qty}× ${product.name} to cart`);
   };

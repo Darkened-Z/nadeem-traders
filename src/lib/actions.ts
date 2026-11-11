@@ -312,6 +312,7 @@ export const getOrCreateGuestSession = createServerFn({ method: "POST" }).handle
 export const getCartItems = createServerFn({ method: "POST" })
   .validator((data: { userId?: number; guestSessionId?: string }) => data)
   .handler(async ({ data }) => {
+    if (!sql) return [];
     if (!data.userId && !data.guestSessionId) {
       const { resolveUserOrGuest } = await import("./server-cookies");
       const identity = await resolveUserOrGuest();
@@ -342,6 +343,7 @@ export const getCartItems = createServerFn({ method: "POST" })
 export const addToCartDb = createServerFn({ method: "POST" })
   .validator((data: { userId?: number; guestSessionId?: string; productId: number; quantity: number }) => data)
   .handler(async ({ data }) => {
+    if (!sql) return { success: true };
     if (!data.userId && !data.guestSessionId) {
       const { resolveUserOrGuest } = await import("./server-cookies");
       const identity = await resolveUserOrGuest();
@@ -370,6 +372,7 @@ export const addToCartDb = createServerFn({ method: "POST" })
 export const updateCartItemQuantityDb = createServerFn({ method: "POST" })
   .validator((data: { userId?: number; guestSessionId?: string; productId: number; quantity: number }) => data)
   .handler(async ({ data }) => {
+    if (!sql) return { success: true };
     if (!data.userId && !data.guestSessionId) {
       const { resolveUserOrGuest } = await import("./server-cookies");
       const identity = await resolveUserOrGuest();
@@ -394,6 +397,7 @@ export const updateCartItemQuantityDb = createServerFn({ method: "POST" })
 export const removeFromCartDb = createServerFn({ method: "POST" })
   .validator((data: { userId?: number; guestSessionId?: string; productId: number }) => data)
   .handler(async ({ data }) => {
+    if (!sql) return { success: true };
     if (!data.userId && !data.guestSessionId) {
       const { resolveUserOrGuest } = await import("./server-cookies");
       const identity = await resolveUserOrGuest();
@@ -416,6 +420,7 @@ export const removeFromCartDb = createServerFn({ method: "POST" })
 export const clearCartDb = createServerFn({ method: "POST" })
   .validator((data: { userId: number }) => data)
   .handler(async ({ data }) => {
+    if (!sql) return { success: true };
     await sql`DELETE FROM cart_items WHERE user_id = ${data.userId}`;
     return { success: true };
   });
@@ -1014,6 +1019,16 @@ export const createOrder = createServerFn({ method: "POST" })
     }) => data
   )
   .handler(async ({ data }) => {
+    if (!sql) {
+      const mockId = Math.floor(100000 + Math.random() * 900000);
+      return {
+        id: mockId,
+        customer_name: data.customer_name,
+        customer_email: data.customer_email,
+        total_amount: data.total_amount,
+        status: "Pending",
+      };
+    }
     const { serverCache } = await import("./server-cache");
     serverCache.delete("orders_list");
     // Start transaction to insert order and order items

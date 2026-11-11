@@ -36,11 +36,6 @@ function GalaMandiPage() {
   );
 
   const handleAddToCart = (product: any, qty?: number) => {
-    if (!currentUser) {
-      toast.error("Please sign in to place a wholesale order.");
-      window.location.href = "/login?redirect=/gala-mandi";
-      return;
-    }
     const minQty = qty || product.wholesale_min_qty || 5;
     cartStore.addToCart(product, minQty, true);
     toast.success(`Added ${minQty}× ${product.name} at wholesale rate!`);

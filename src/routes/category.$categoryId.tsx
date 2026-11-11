@@ -80,11 +80,6 @@ function CategoryPage() {
   }, [filteredProducts, sortBy, pricingMode]);
 
   const handleAddToCart = (product: any, qty: number = 1) => {
-    if (!currentUser) {
-      toast.error("Please sign in to add items to your bag.");
-      window.location.href = `/login?redirect=/category/${categoryId}`;
-      return;
-    }
     cartStore.addToCart(product, qty);
     toast.success(`Added ${qty}× ${product.name} to your bag`);
   };
