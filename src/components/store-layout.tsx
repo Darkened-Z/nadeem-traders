@@ -277,7 +277,10 @@ export const categoryTint = (color: string) => `color-mix(in srgb, ${color} 20%,
 export function CategorySection({ category, items }: { category: any; items: any[] }) {
   const meta = getCategoryMeta(category.name);
   return (
-    <section className="py-10 sm:py-14" style={{ backgroundColor: categoryTint(meta.color) }}>
+    <section
+      className="stack-section sticky top-14 py-10 sm:top-16 sm:py-14"
+      style={{ backgroundColor: categoryTint(meta.color) }}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <SectionHeader
           title={category.name}
@@ -361,6 +364,14 @@ export function StoreLayout({
       unsubCart();
       unsubCheckout();
     };
+  }, []);
+
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const [bagBump, setBagBump] = useState(0);
@@ -509,7 +520,12 @@ export function StoreLayout({
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background">
+      <header
+        className={`sticky top-0 z-40 border-b border-border bg-background transition-shadow duration-300 ${
+          scrolled ? "shadow-[0_8px_24px_-14px_rgba(20,19,17,0.35)]" : ""
+        }`}
+      >
+        <div className="scroll-progress absolute inset-x-0 -bottom-px h-0.5 bg-[#C5A56E]" aria-hidden="true" />
         <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center gap-2 px-3 sm:px-6">
           <button
             type="button"
@@ -681,7 +697,7 @@ export function StoreLayout({
 
       <main className="flex-1">{children}</main>
 
-      <footer className="bg-[#141311] text-[#E6E1D6]">
+      <footer className="relative bg-[#141311] text-[#E6E1D6]">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div className="col-span-2 md:col-span-1">

@@ -89,7 +89,8 @@ function HomePage() {
         </Fragment>
       ))}
 
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+      <section className="stack-section relative bg-background">
+       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
         <h2 data-reveal className="font-display text-[1.75rem] font-semibold sm:text-4xl">Order Kaise Karein?</h2>
         <ol className="mt-6 grid gap-6 sm:grid-cols-3 sm:gap-8">
           {STEPS.map((step, i) => (
@@ -104,6 +105,7 @@ function HomePage() {
             </li>
           ))}
         </ol>
+       </div>
       </section>
     </StoreLayout>
   );
@@ -157,6 +159,7 @@ function Hero() {
         aria-roledescription="carousel"
         aria-label="Featured"
       >
+       <div className="hero-parallax-img absolute inset-0 lg:-top-24">
         {HERO_SLIDES.map((slide, i) => {
           const isActive = i === active;
           return (
@@ -177,6 +180,7 @@ function Hero() {
             </Link>
           );
         })}
+       </div>
 
         <Link
           to={current.href as any}
@@ -192,7 +196,7 @@ function Hero() {
       </div>
 
       <div className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 pb-10 sm:-mt-20 sm:px-6 lg:mt-0 lg:flex lg:h-full lg:items-center lg:pb-0">
-        <div className="lg:max-w-[46%]">
+        <div className="hero-parallax-text lg:max-w-[46%]">
           <p className="animate-fade-up text-sm font-semibold text-[#E6CE9C]">Apka Trusted Stop</p>
           <h1 style={{ animationDelay: "120ms" }} className="animate-fade-up mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] sm:text-6xl xl:text-7xl">
             Asli Maal. Mandi Rates. No Cap.
@@ -203,13 +207,14 @@ function Hero() {
           <div style={{ animationDelay: "360ms" }} className="animate-fade-up mt-7 flex gap-3">
             <Link
               to="/shop"
-              className="flex-1 bg-white py-3.5 text-center text-sm font-semibold text-[#141311] sm:flex-none sm:px-8"
+              className="btn-swipe flex-1 bg-white py-3.5 text-center text-sm font-semibold text-[#141311] sm:flex-none sm:px-8"
             >
               Shop Now
             </Link>
             <Link
               to="/categories"
-              className="flex-1 border border-white/60 py-3.5 text-center text-sm font-semibold text-white sm:flex-none sm:px-8"
+              className="btn-swipe flex-1 border border-white/60 py-3.5 text-center text-sm font-semibold text-white sm:flex-none sm:px-8"
+              style={{ "--swipe": "#fff" } as React.CSSProperties}
             >
               Categories
             </Link>
@@ -262,7 +267,7 @@ function WhatsAppBand() {
     "Assalam o Alaikum! Mujhe poore mahine ka ration chahiye, rate pe baat karni hai. Meri list:",
   )}`;
   return (
-    <section className="bg-[#141311] text-white">
+    <section className="stack-section sticky top-14 bg-[#141311] text-white sm:top-16">
       <div data-reveal className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-14">
         <div>
           <h2 className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
@@ -277,7 +282,8 @@ function WhatsAppBand() {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 bg-[#25D366] px-7 py-3.5 text-center text-sm font-semibold text-[#0B3D1F]"
+          className="btn-swipe shrink-0 bg-[#25D366] px-7 py-3.5 text-center text-sm font-semibold text-[#0B3D1F]"
+          style={{ "--swipe": "#fff", "--swipe-fg": "#0B3D1F" } as React.CSSProperties}
         >
           WhatsApp Pe Rate Fix Karo
         </a>

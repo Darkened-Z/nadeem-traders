@@ -227,7 +227,96 @@
   animation: ringPulse 1.6s ease-out 2.5s 4;
 }
 
+.reveal-on [data-reveal] img {
+  transition:
+    transform 1.1s cubic-bezier(0.16, 1, 0.3, 1),
+    scale 0.5s ease-out;
+}
+.reveal-on [data-reveal]:not(.revealed) img {
+  transform: scale(1.1);
+}
+
+.btn-swipe {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: color 0.35s ease;
+}
+.btn-swipe::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--swipe, #e6ce9c);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+}
+@media (hover: hover) {
+  .btn-swipe:hover::before {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  .btn-swipe:hover {
+    color: var(--swipe-fg, #141311);
+  }
+}
+
+.stack-section {
+  box-shadow: 0 -18px 40px -24px rgba(20, 19, 17, 0.35);
+}
+
+.scroll-progress {
+  display: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .scroll-progress {
+    display: block;
+    transform-origin: left;
+    animation: growX linear both;
+    animation-timeline: scroll(root);
+  }
+  @keyframes growX {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+
+  @media (min-width: 1024px) {
+    .hero-parallax-text {
+      animation: heroTextOut linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 520px;
+    }
+    @keyframes heroTextOut {
+      to { transform: translateY(-70px); opacity: 0.15; }
+    }
+
+    .hero-parallax-img {
+      animation: heroImgDrift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 700px;
+    }
+    @keyframes heroImgDrift {
+      to { transform: translateY(90px) scale(1.04); }
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .reveal-on [data-reveal]:not(.revealed) img {
+    transform: none;
+  }
+  .hero-parallax-text,
+  .hero-parallax-img {
+    animation: none !important;
+  }
+  .scroll-progress {
+    display: none !important;
+  }
+  .btn-swipe::before {
+    transition: none;
+  }
   .reveal-on [data-reveal]:not(.revealed) {
     opacity: 1;
     transform: none;
