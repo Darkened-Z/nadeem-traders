@@ -767,6 +767,30 @@ export const getCustomerAuditLogs = createServerFn({ method: "POST" })
     `;
   });
 
+const PRODUCT_IMAGE_FALLBACKS: Record<string, string> = {
+  "Premium Almonds": "/products/almonds.jpg",
+  "Pumpkin Seeds": "/products/pumpkin-seeds.jpg",
+  "Kashmiri Red Chilli": "/products/red-chilli.jpg",
+  "Haldi Powder": "/products/haldi-powder.jpg",
+  "Masoor Dal": "/products/masoor-dal.jpg",
+  "Chana Dal": "/products/chana-dal.jpg",
+  "Super Kainat Rice": "/products/kainat-rice.jpg",
+  "Cashews Premium": "/products/cashews.jpg",
+  "Zeera (Cumin)": "/products/zeera.jpg",
+  "Sunflower Oil": "/products/sunflower-oil.jpg",
+  "Pink Salt": "/products/pink-salt.jpg",
+  "White Sugar": "/products/white-sugar.jpg",
+};
+
+const CATEGORY_IMAGE_FALLBACKS: Record<string, string> = {
+  "Dry Fruits": "/categories/dry-fruits.jpg",
+  "Spices": "/categories/spices.jpg",
+  "Pulses & Lentils": "/categories/pulses-lentils.jpg",
+  "Rice & Grains": "/categories/rice-grains.jpg",
+  "Cooking Oils": "/categories/cooking-oils.jpg",
+  "Sugar & Salt": "/categories/sugar-salt.jpg",
+};
+
 // 1. Categories
 const MOCK_CATEGORIES = [
   { id: 1, name: "Dry Fruits", icon: "🥜", image_url: "/categories/dry-fruits.jpg" },
@@ -805,8 +829,15 @@ export const getCategories = createServerFn({ method: "GET" }).handler(
     const cached = serverCache.get("categories");
     if (cached) return cached;
     const res = await sql`SELECT * FROM categories ORDER BY name ASC`;
-    serverCache.set("categories", res);
-    return res;
+    const mapped = (res as any[]).map((c) => {
+      if (!c.image_url || c.image_url.includes("wikimedia")) {
+        const fb = CATEGORY_IMAGE_FALLBACKS[c.name];
+        if (fb) return { ...c, image_url: fb };
+      }
+      return c;
+    });
+    serverCache.set("categories", mapped);
+    return mapped;
   }
 );
 
@@ -859,8 +890,15 @@ export const getProducts = createServerFn({ method: "GET" }).handler(
       LEFT JOIN categories c ON p.category_id = c.id
       ORDER BY p.id DESC
     `;
-    serverCache.set("products", res);
-    return res;
+    const mapped = (res as any[]).map((p) => {
+      if (!p.image_url || p.image_url.includes("wikimedia")) {
+        const fb = PRODUCT_IMAGE_FALLBACKS[p.name];
+        if (fb) return { ...p, image_url: fb };
+      }
+      return p;
+    });
+    serverCache.set("products", mapped);
+    return mapped;
   }
 );
 

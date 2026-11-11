@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { ChevronRight, Search, X, Sparkles } from "lucide-react";
+import { ChevronRight, Search, X, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { cartStore } from "../lib/cart-store";
 import { recordRecentlyViewedDb } from "../lib/actions";
@@ -30,7 +30,7 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     badgeText: "text-[#78350F]",
     pillBorder: "border-[#78350F]/30",
     accentHex: "#78350F",
-    genzTagline: "Crunchy, pure & zero compromise · Apka Trusted Stop",
+    genzTagline: "100% Pure & Fresh Harvest · Apka Trusted Stop",
     vibe: "Handpicked premium almonds, cashews & seeds. Fresh harvest only.",
   },
   spices: {
@@ -40,7 +40,7 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     badgeText: "text-[#991B1B]",
     pillBorder: "border-[#991B1B]/30",
     accentHex: "#991B1B",
-    genzTagline: "Asli khushboo, no fake color, fr fr · Apka Trusted Stop",
+    genzTagline: "100% Pure Aroma, Zero Artificial Color · Apka Trusted Stop",
     vibe: "Freshly ground whole spices with authentic color and pungent aroma.",
   },
   "pulses-lentils": {
@@ -50,7 +50,7 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     badgeText: "text-[#166534]",
     pillBorder: "border-[#166534]/30",
     accentHex: "#166534",
-    genzTagline: "High protein, triple cleaned · Apka Trusted Stop",
+    genzTagline: "High Protein, Triple Cleaned · Apka Trusted Stop",
     vibe: "Unpolished, stone-free pulses directly from fertile Punjab plains.",
   },
   "rice-grains": {
@@ -60,7 +60,7 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     badgeText: "text-[#92400E]",
     pillBorder: "border-[#92400E]/30",
     accentHex: "#92400E",
-    genzTagline: "Aged 1121 Super Kainat, pure luxury grains · Apka Trusted Stop",
+    genzTagline: "Aged Super Kainat 1121 Basmati · Apka Trusted Stop",
     vibe: "Long-grain aromatic basmati that elongates to double its size upon cooking.",
   },
   "cooking-oils": {
@@ -70,7 +70,7 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     badgeText: "text-[#854D0E]",
     pillBorder: "border-[#854D0E]/30",
     accentHex: "#854D0E",
-    genzTagline: "Light, cholesterol-free & healthy · Apka Trusted Stop",
+    genzTagline: "Light, Double-Refined Pure Oil · Apka Trusted Stop",
     vibe: "Double-refined premium cooking oil for crisp frying and light digestion.",
   },
   "sugar-salt": {
@@ -80,7 +80,7 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     badgeText: "text-[#9D174D]",
     pillBorder: "border-[#9D174D]/30",
     accentHex: "#9D174D",
-    genzTagline: "84+ natural minerals, 100% Himalayan pink · Apka Trusted Stop",
+    genzTagline: "100% Pure Himalayan Pink Salt · Apka Trusted Stop",
     vibe: "Authentic Khewra rock pink salt and pure sulfur-free granulated white sugar.",
   },
 };
@@ -220,7 +220,7 @@ function CategoryPage() {
             </nav>
 
             <div className="inline-flex items-center gap-2 border px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.22em]" style={{ borderColor: theme.accentHex + "40", backgroundColor: theme.accentHex + "12", color: theme.accentHex }}>
-              <Sparkles className="h-3 w-3" />
+              <ShieldCheck className="h-3.5 w-3.5" />
               <span>{theme.genzTagline}</span>
             </div>
 

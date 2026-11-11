@@ -132,7 +132,16 @@ function ProductDetailsPage() {
                 className="h-full w-full object-cover"
               />
             ) : (
-              <span className="text-8xl">{product.emoji || "🌾"}</span>
+              <div className="flex flex-col items-center justify-center p-8 text-center space-y-3 bg-[#F4EFE6] w-full h-full">
+                <img
+                  src="/LOGO.png"
+                  alt="Nadeem Traders"
+                  className="h-24 w-24 object-contain opacity-80"
+                />
+                <span className="text-[10px] uppercase tracking-[0.25em] text-[#C5A56E] font-semibold">
+                  100% Purity Guaranteed · Apka Trusted Stop
+                </span>
+              </div>
             )}
           </div>
 
@@ -173,7 +182,7 @@ function ProductDetailsPage() {
                   <span>Delivered via PostEx Courier · Cash on Delivery</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Fast tracked doorstep delivery across Pakistan. 100% pure authentic kiryana, no mid stuff. <strong className="text-foreground">Apka Trusted Stop</strong>.
+                  Fast tracked doorstep delivery across Pakistan. 100% pure authentic kiryana, guaranteed purity. <strong className="text-foreground">Apka Trusted Stop</strong>.
                 </p>
                 <div className="flex items-center gap-4 pt-1 text-[11px] text-muted-foreground">
                   <span className="flex items-center gap-1 text-emerald-700">

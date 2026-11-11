@@ -461,7 +461,7 @@ export function ModernProductCard({
   return (
     <div className="group flex flex-col">
       {/* Tall 4:5 Portrait Image Frame */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#F1ECE1] border border-border/70">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#F4EFE6] border border-border/70">
         <Link
           to={`/product/${p.id}` as any}
           className="block h-full w-full"
@@ -475,8 +475,15 @@ export function ModernProductCard({
               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-[#F1ECE1]">
-              <span className="text-5xl select-none">{p.emoji || "🌾"}</span>
+            <div className="flex flex-col h-full w-full items-center justify-center bg-[#F4EFE6] p-4 text-center">
+              <img
+                src="/LOGO.png"
+                alt="Nadeem Traders"
+                className="h-16 w-16 object-contain opacity-75 mb-2"
+              />
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[#C5A56E] font-semibold">
+                100% Purity Guaranteed
+              </span>
             </div>
           )}
         </Link>
@@ -711,10 +718,10 @@ export function StoreLayout({
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* Top Trending Gen-Z Microcopy Bar */}
+      {/* Top Purity & Courier Announcement Bar */}
       <div className="bg-[#141311] py-2 px-4 text-center text-[10px] sm:text-[11px] font-medium tracking-[0.2em] uppercase text-[#E6E1D6] border-b border-white/10">
         <span>
-          No Cap, 100% Asli Kiryana &nbsp;·&nbsp;{" "}
+          100% Purity Guaranteed &nbsp;·&nbsp;{" "}
           <strong className="text-[#C5A56E] font-semibold">Apka Trusted Stop</strong>{" "}
           &nbsp;·&nbsp; Fast Doorstep Delivery via PostEx Courier
         </span>
@@ -746,15 +753,22 @@ export function StoreLayout({
             </button>
           </div>
 
-          {/* Center: Brand Wordmark + Apka Trusted Stop */}
+          {/* Center: Brand Logo + Wordmark + Apka Trusted Stop */}
           <div className="text-center w-1/3 shrink-0">
-            <Link to="/" className="inline-block group">
-              <span className="font-display text-2xl sm:text-3xl font-normal tracking-[0.18em] uppercase text-foreground block leading-none">
-                Nadeem Traders
-              </span>
-              <span className="text-[9px] uppercase tracking-[0.28em] text-secondary font-semibold block mt-1">
-                Apka Trusted Stop
-              </span>
+            <Link to="/" className="inline-flex items-center gap-2.5 sm:gap-3 group justify-center">
+              <img
+                src="/LOGO.png"
+                alt="Nadeem Traders"
+                className="h-8 w-8 sm:h-10 sm:w-10 object-contain shrink-0"
+              />
+              <div className="text-left sm:text-center">
+                <span className="font-display text-xl sm:text-2xl lg:text-3xl font-normal tracking-[0.16em] uppercase text-foreground block leading-none">
+                  Nadeem Traders
+                </span>
+                <span className="text-[9px] uppercase tracking-[0.28em] text-[#C5A56E] font-semibold block mt-1">
+                  100% Purity · Apka Trusted Stop
+                </span>
+              </div>
             </Link>
           </div>
 
@@ -936,8 +950,12 @@ export function StoreLayout({
                 </div>
               </div>
 
-              <div className="border-t border-border pt-6 mt-8 text-[11px] text-muted-foreground">
-                <p className="font-medium text-foreground">Nadeem Traders</p>
+              <div className="border-t border-border pt-6 mt-8 flex items-center gap-3 text-[11px] text-muted-foreground">
+                <img src="/LOGO.png" alt="Nadeem Traders" className="h-8 w-8 object-contain" />
+                <div>
+                  <p className="font-semibold text-foreground tracking-wide">Nadeem Traders</p>
+                  <p className="text-[10px] text-[#C5A56E]">100% Purity · Apka Trusted Stop</p>
+                </div>
               </div>
             </div>
           </div>
@@ -952,13 +970,18 @@ export function StoreLayout({
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-8">
           <div className="grid gap-10 md:grid-cols-4">
             <div>
-              <span className="font-display text-2xl tracking-[0.18em] uppercase text-white block">
-                Nadeem Traders
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.25em] text-[#C5A56E] font-semibold block mt-1">
-                Apka Trusted Stop
-              </span>
-              <p className="mt-3 text-xs text-[#A39E93] leading-relaxed">
+              <Link to="/" className="inline-flex items-center gap-3 mb-3">
+                <img src="/LOGO.png" alt="Nadeem Traders" className="h-10 w-10 object-contain" />
+                <div>
+                  <span className="font-display text-2xl tracking-[0.18em] uppercase text-white block leading-none">
+                    Nadeem Traders
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.25em] text-[#C5A56E] font-semibold block mt-1">
+                    Apka Trusted Stop
+                  </span>
+                </div>
+              </Link>
+              <p className="text-xs text-[#A39E93] leading-relaxed">
                 Pure spices, aromatic grains, unpolished pulses, dry fruits, and cooking essentials. Fast tracked delivery via PostEx Courier.
               </p>
             </div>
@@ -1090,8 +1113,8 @@ export function StoreLayout({
                           {item.image_url ? (
                             <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center text-2xl">
-                              {item.emoji || "🌾"}
+                            <div className="flex h-full w-full items-center justify-center p-2 bg-[#F4EFE6]">
+                              <img src="/LOGO.png" alt="Nadeem Traders" className="h-8 w-8 object-contain opacity-75" />
                             </div>
                           )}
                         </div>
@@ -1327,7 +1350,7 @@ export function StoreLayout({
               <X className="h-4 w-4" />
             </button>
 
-            <div className="aspect-[4/5] bg-muted overflow-hidden">
+            <div className="aspect-[4/5] bg-muted overflow-hidden flex items-center justify-center">
               {activeQuickView.image_url ? (
                 <img
                   src={activeQuickView.image_url}
@@ -1335,8 +1358,15 @@ export function StoreLayout({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-7xl">
-                  {activeQuickView.emoji || "🌾"}
+                <div className="flex flex-col h-full w-full items-center justify-center p-6 text-center space-y-3 bg-[#F4EFE6]">
+                  <img
+                    src="/LOGO.png"
+                    alt="Nadeem Traders"
+                    className="h-20 w-20 object-contain opacity-75"
+                  />
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-[#C5A56E] font-semibold">
+                    100% Purity · Apka Trusted Stop
+                  </span>
                 </div>
               )}
             </div>

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, Truck, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { recordRecentlyViewedDb } from "../lib/actions";
 import { cartStore } from "../lib/cart-store";
@@ -63,19 +63,19 @@ function HomePage() {
 
         <div className="relative z-10 mx-auto max-w-3xl space-y-6 animate-fade-up">
           <div className="inline-flex items-center gap-2 border border-[#C5A56E]/40 bg-[#C5A56E]/10 px-4 py-1.5 rounded-full">
-            <Sparkles className="h-3.5 w-3.5 text-[#C5A56E]" />
+            <ShieldCheck className="h-3.5 w-3.5 text-[#C5A56E]" />
             <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#E6CE9C]">
-              Apka Trusted Stop &nbsp;·&nbsp; Fr Fr Pure Quality
+              100% Purity Guaranteed &nbsp;·&nbsp; Apka Trusted Stop
             </span>
           </div>
 
           <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight leading-[1.06] text-[#F9F6F0]">
-            Sahi Daam, No Drama. <br />
+            Pure Commodities. <br />
             <span className="italic font-normal text-[#E6CE9C]">Apka Trusted Stop.</span>
           </h1>
 
           <p className="mx-auto max-w-xl text-xs sm:text-sm text-[#E6E1D6]/90 leading-relaxed font-light">
-            Direct mandi se aapke kitchen tak, no cap. Hand-picked dry fruits, authentic aromatic spices, pure pulses &amp; aged kainat basmati rice. Zero mid stuff, pure commodities only.
+            Direct mandi se pure kitchen tak. Hand-picked dry fruits, unadulterated aromatic spices, triple-cleaned pulses &amp; aged Super Kainat basmati rice. 100% purity guaranteed.
           </p>
 
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
@@ -91,51 +91,6 @@ function HomePage() {
             >
               Explore Catalog
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Highlights Strip with PostEx Courier & Gen-Z Microcopy */}
-      <section className="border-b border-border bg-card">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-8 grid grid-cols-2 lg:grid-cols-4 gap-6 text-center sm:text-left">
-          <div className="flex items-center gap-3 justify-center sm:justify-start">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-display text-sm font-semibold text-foreground">Apka Trusted Stop</p>
-              <p className="text-[11px] text-muted-foreground">Pakistan&apos;s verified kiryana source</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 justify-center sm:justify-start">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600">
-              <Truck className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-display text-sm font-semibold text-foreground">PostEx Courier</p>
-              <p className="text-[11px] text-muted-foreground">Fast doorstep COD delivery</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 justify-center sm:justify-start">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-600">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-display text-sm font-semibold text-foreground">100% Asli Kiryana</p>
-              <p className="text-[11px] text-muted-foreground">Big W quality, zero mixing</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 justify-center sm:justify-start">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary/15 text-secondary">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-display text-sm font-semibold text-foreground">Direct Mandi Rates</p>
-              <p className="text-[11px] text-muted-foreground">No middlemen, fair pricing</p>
-            </div>
           </div>
         </div>
       </section>
