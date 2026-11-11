@@ -10,7 +10,6 @@ import {
   X,
   Check,
   Menu,
-  Zap,
   ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -516,9 +515,9 @@ export function ModernProductCard({
                   e.stopPropagation();
                   onQuickView(p);
                 }}
-                className="flex-1 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground hover:bg-primary hover:text-primary-foreground transition-colors flex items-center justify-center"
               >
-                <Zap className="h-3.5 w-3.5 text-secondary" /> Quick Buy
+                Quick Buy
               </button>
             )}
             <button
@@ -579,9 +578,9 @@ export function ModernProductCard({
                   e.stopPropagation();
                   onQuickView(p);
                 }}
-                className="inline-flex items-center gap-1 bg-secondary/15 hover:bg-secondary text-secondary hover:text-secondary-foreground px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors"
+                className="bg-secondary/15 hover:bg-secondary text-secondary hover:text-secondary-foreground px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] transition-colors"
               >
-                <Zap className="h-2.5 w-2.5" /> Quick Buy
+                Quick Buy
               </button>
             )}
           </div>
@@ -1464,9 +1463,9 @@ export function StoreLayout({
                       closeQuickView();
                       setIsCheckoutOpen(true);
                     }}
-                    className="w-full bg-secondary text-secondary-foreground py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] hover:opacity-95 flex items-center justify-center gap-2 transition"
+                    className="w-full bg-secondary text-secondary-foreground py-3.5 text-[11px] font-semibold uppercase tracking-[0.22em] hover:opacity-95 flex items-center justify-center transition"
                   >
-                    <Zap className="h-3.5 w-3.5" /> Quick Buy &amp; Checkout
+                    Quick Buy &amp; Checkout
                   </button>
                   <button
                     type="button"

@@ -6,7 +6,6 @@ import {
   Minus,
   Loader2,
   ChevronRight,
-  Zap,
 } from "lucide-react";
 import { recordRecentlyViewedDb } from "../lib/actions";
 import { toast } from "sonner";
@@ -217,9 +216,9 @@ function ProductDetailsPage() {
                   type="button"
                   onClick={() => handleQuickBuy(product, qty)}
                   disabled={!product.stock}
-                  className="flex-1 bg-secondary text-secondary-foreground py-3.5 text-[11px] font-semibold uppercase tracking-[0.2em] hover:opacity-95 disabled:opacity-50 flex items-center justify-center gap-2 transition"
+                  className="flex-1 bg-secondary text-secondary-foreground py-3.5 text-[11px] font-semibold uppercase tracking-[0.2em] hover:opacity-95 disabled:opacity-50 flex items-center justify-center transition"
                 >
-                  <Zap className="h-3.5 w-3.5" /> Quick Buy
+                  Quick Buy
                 </button>
                 <button
                   type="button"

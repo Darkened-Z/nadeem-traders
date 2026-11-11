@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { 
   Leaf, ArrowLeft, Loader2, ShieldCheck, ShoppingBag, 
-  Clock, Sparkles, Check, ChevronRight, Lock, Mail, Key 
+  Clock, Sparkles, Check, ChevronRight, Lock, Mail, Key, Truck 
 } from "lucide-react";
 import { 
   loginWithGoogleCredential, sendVerificationEmail, verifyEmailCodeAndLogin 
@@ -249,21 +249,26 @@ function LoginPage() {
           {/* Features cards */}
           <div className="space-y-3.5 max-w-md">
             {[
-              { icon: "🌿", title: "Farm Fresh Products", desc: "Directly sourced from Punjab and Sindh orchards and fields." },
-              { icon: "🚚", title: "Fast Delivery Across Pakistan", desc: "Sameday or nextday logistics to major retail centers." },
-              { icon: "🔒", title: "Secure Shopping & Payments", desc: "Safe Google OAuth authentication & COD verification." }
-            ].map((item, idx) => (
-              <div 
-                key={idx} 
-                className="group flex items-start gap-4 p-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-soft hover:-translate-y-0.5 hover:bg-white/10 transition duration-300 hover:border-emerald-300/30"
-              >
-                <span className="text-2xl shrink-0">{item.icon}</span>
-                <div className="text-left">
-                  <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition">{item.title}</h4>
-                  <p className="text-[10px] sm:text-xs text-slate-200/80 mt-0.5 leading-relaxed">{item.desc}</p>
+              { icon: Leaf, title: "Farm Fresh Products", desc: "Directly sourced from Punjab and Sindh orchards and fields." },
+              { icon: Truck, title: "Fast Delivery Across Pakistan", desc: "Sameday or nextday logistics to major retail centers." },
+              { icon: ShieldCheck, title: "Secure Shopping & Payments", desc: "Safe Google OAuth authentication & COD verification." }
+            ].map((item, idx) => {
+              const IconComp = item.icon;
+              return (
+                <div 
+                  key={idx} 
+                  className="group flex items-start gap-4 p-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md shadow-soft hover:-translate-y-0.5 hover:bg-white/10 transition duration-300 hover:border-emerald-300/30"
+                >
+                  <div className="grid h-8 w-8 place-items-center rounded-lg bg-white/10 text-emerald-300 shrink-0">
+                    <IconComp className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-emerald-300 transition">{item.title}</h4>
+                    <p className="text-[10px] sm:text-xs text-slate-200/80 mt-0.5 leading-relaxed">{item.desc}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
