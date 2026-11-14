@@ -344,11 +344,15 @@ export async function initDb() {
 
     // Normalize commodity names
     try {
-      await sql`UPDATE products SET name = 'Walnuts (Akhrot)', name_ur = 'اخروٹ' WHERE name ILIKE '%Without Cap%'`;
-      await sql`UPDATE products SET name = 'Black Pepper (Kaali Mirch)', name_ur = 'کالی مرچ' WHERE name ILIKE '%black pepper%'`;
+      await sql`UPDATE products SET name = 'Walnuts', name_ur = 'اخروٹ' WHERE name ILIKE '%Without Cap%' OR name ILIKE '%walnut%' OR name ILIKE '%akhrot%'`;
+      await sql`UPDATE products SET name = 'Black Pepper', name_ur = 'کالی مرچ' WHERE name ILIKE '%black pepper%' OR name ILIKE '%kaali mirch%'`;
       await sql`UPDATE products SET name = 'Garam Masala', name_ur = 'گرم مصالحہ' WHERE name ILIKE '%garam masala%'`;
-      await sql`UPDATE products SET name = 'Pistachios (Pista)', name_ur = 'پستہ' WHERE name ILIKE '%pista%'`;
-      await sql`UPDATE products SET name = 'Cashews (Kaju)', name_ur = 'کاجو' WHERE name ILIKE '%kaju%roasted%'`;
+      await sql`UPDATE products SET name = 'Pistachios', name_ur = 'پستہ' WHERE name ILIKE '%pista%' OR name ILIKE '%pistachio%'`;
+      await sql`UPDATE products SET name = 'Cashews', name_ur = 'کاجو' WHERE name ILIKE '%kaju%' OR name ILIKE '%cashew%'`;
+      await sql`UPDATE products SET name = 'Chilli Flakes', name_ur = 'دڑا مرچ' WHERE name ILIKE '%dara mirch%' OR name ILIKE '%chilli flakes%'`;
+      await sql`UPDATE products SET name = 'Round Red Chilli', name_ur = 'گول مرچ' WHERE name ILIKE '%gol mirch%'`;
+      await sql`UPDATE products SET name = 'Cumin Seeds', name_ur = 'زیرہ' WHERE name ILIKE '%zeera%' OR name ILIKE '%cumin%'`;
+      await sql`UPDATE products SET name_ur = 'جئی' WHERE name ILIKE '%oats%'`;
     } catch {}
 
     await seedCatalogIfEmpty();

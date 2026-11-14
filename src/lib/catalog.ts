@@ -19,9 +19,9 @@ type Seed = [
 const ITEMS: Seed[] = [
   ["Almonds", "بادام", "USA", 1, "almonds", 1800, "500g"],
   ["Cashew Nuts", "کاجو", "Vietnam", 1, "cashews", 950, "250g"],
-  ["Pistachios (Pista)", "پستہ", "Iran", 1, "pista", 1450, "250g"],
-  ["Walnuts (Akhrot)", "اخروٹ", "China", 1, "walnuts", 980, "250g"],
-  ["Cashews (Kaju)", "کاجو", "Vietnam", 1, "kaju-roasted", 950, "250g"],
+  ["Pistachios", "پستہ", "Iran", 1, "pista", 1450, "250g"],
+  ["Walnuts", "اخروٹ", "China", 1, "walnuts", 980, "250g"],
+  ["Cashews", "کاجو", "Vietnam", 1, "kaju-roasted", 950, "250g"],
   ["Kishmish", "کشمش", "Afghanistan", 1, "kishmish", 380, "250g"],
 
   ["Sunflower Seeds", "سورج مکھی کے بیج", "USA", 2, "sunflower-seeds", 450, "250g"],
@@ -33,17 +33,17 @@ const ITEMS: Seed[] = [
 
   ["Red Chilli", "لال مرچ", "Sindh, Pakistan", 3, "red-chilli", 320, "200g"],
   ["Turmeric", "ہلدی", "Changa Manga, Pakistan", 3, "haldi-powder", 180, "200g"],
-  ["Chilli Flakes (Dara Mirch)", "دڑا مرچ", "Sindh, Pakistan", 3, "chilli-flakes", 290, "200g"],
-  ["Gol Mirch (Round Red Chilli)", "گول مرچ", "Sindh, Pakistan", 3, "gol-mirch", 340, "200g"],
+  ["Chilli Flakes", "دڑا مرچ", "Sindh, Pakistan", 3, "chilli-flakes", 290, "200g"],
+  ["Round Red Chilli", "گول مرچ", "Sindh, Pakistan", 3, "gol-mirch", 340, "200g"],
 
-  ["Black Pepper (Kaali Mirch)", "کالی مرچ", "Brazil", 4, "black-pepper", 480, "100g"],
+  ["Black Pepper", "کالی مرچ", "Brazil", 4, "black-pepper", 480, "100g"],
   ["Garam Masala", "گرم مصالحہ", null, 4, "garam-masala", 380, "100g"],
-  ["Zeera (Cumin)", "زیرہ", "India", 4, "zeera", 160, "100g"],
+  ["Cumin Seeds", "زیرہ", "India", 4, "zeera", 160, "100g"],
   ["Green Cardamom", "سبز الائچی", "Guatemala", 4, "green-cardamom", 890, "50g"],
   ["Black Cardamom", "کالی الائچی", "India", 4, "black-cardamom", 620, "100g"],
   ["Cloves", "لونگ", "Indonesia", 4, "cloves", 490, "50g"],
 
-  ["Oats", "جئی (اوٹس)", "Pakistan", 5, "oats", 380, "500g"],
+  ["Oats", "جئی", "Pakistan", 5, "oats", 380, "500g"],
   ["Ispaghol Chilka", "اسپغول چھلکا", "India", 5, "ispaghol", 450, "100g"],
 ];
 
@@ -54,47 +54,67 @@ export interface ProductClassification {
 }
 
 export const PRODUCT_CLASSIFICATIONS: Record<string, ProductClassification[]> = {
-  // Walnuts (Akhrot)
+  // Walnuts
   walnuts: [
-    { id: "kernels", name: "Kernels / Shelled (Giri)", name_ur: "اخروٹ گری" },
-    { id: "inshell", name: "In-Shell (Kaghzi)", name_ur: "کاغذی اخروٹ (چھلکے والا)" },
+    { id: "kernels", name: "Kernels / Shelled", name_ur: "اخروٹ گری" },
+    { id: "inshell", name: "In-Shell / Whole", name_ur: "ثابت اخروٹ" },
   ],
-  // Black Pepper (Kaali Mirch)
+  // Black Pepper
   "black-pepper": [
-    { id: "whole", name: "Whole / Sabut", name_ur: "ثابت کالی مرچ" },
-    { id: "powder", name: "Powder / Ground", name_ur: "پسی ہوئی کالی مرچ" },
+    { id: "whole", name: "Whole", name_ur: "ثابت کالی مرچ" },
+    { id: "powder", name: "Ground Powder", name_ur: "پسی ہوئی کالی مرچ" },
   ],
   // Garam Masala
   "garam-masala": [
-    { id: "whole", name: "Whole / Sabut", name_ur: "ثابت گرم مصالحہ" },
-    { id: "powder", name: "Powder / Ground", name_ur: "پسا ہوا گرم مصالحہ" },
+    { id: "whole", name: "Whole Masala", name_ur: "ثابت گرم مصالحہ" },
+    { id: "powder", name: "Ground Powder", name_ur: "پسا ہوا گرم مصالحہ" },
   ],
-  // Red Chilli (Laal Mirch)
+  // Red Chilli
   "red-chilli": [
-    { id: "powder", name: "Powder / Pisi Hui", name_ur: "پسی ہوئی لال مرچ" },
-    { id: "whole", name: "Whole / Sabut (Dandi Cut)", name_ur: "ثابت لال مرچ" },
+    { id: "powder", name: "Powder", name_ur: "پسی ہوئی لال مرچ" },
+    { id: "whole", name: "Whole (Stem Cut)", name_ur: "ثابت لال مرچ" },
   ],
-  // Turmeric (Haldi)
+  // Turmeric
   turmeric: [
     { id: "powder", name: "Powder", name_ur: "ہلدی پاؤڈر" },
-    { id: "whole", name: "Whole / Sabut Ganth", name_ur: "ثابت گانٹھ" },
+    { id: "whole", name: "Whole Root", name_ur: "ثابت گانٹھ" },
   ],
-  // Pistachios (Pista)
+  // Pistachios
   pista: [
-    { id: "inshell", name: "In-Shell (Chilke Wala)", name_ur: "چھلکے والا پستہ" },
-    { id: "kernels", name: "Kernels / Maghaz (Giri)", name_ur: "پستہ مغز (گری)" },
+    { id: "inshell", name: "In-Shell", name_ur: "چھلکے والا پستہ" },
+    { id: "kernels", name: "Kernels / Shelled", name_ur: "پستہ مغز" },
   ],
-  // Cashews (Kaju)
+  // Cashews
   cashews: [
     { id: "plain", name: "Plain / Raw", name_ur: "سادہ کاجو" },
-    { id: "roasted", name: "Roasted / Salted", name_ur: "بھنے ہوئے کاجو" },
+    { id: "roasted", name: "Roasted & Salted", name_ur: "بھنے ہوئے کاجو" },
   ],
   // Zeera (Cumin)
   zeera: [
-    { id: "safaid", name: "Safaid Zeera (White)", name_ur: "سفید زیرہ" },
-    { id: "kala", name: "Kala Zeera (Black)", name_ur: "کالا زیرہ" },
+    { id: "safaid", name: "White Cumin", name_ur: "سفید زیرہ" },
+    { id: "kala", name: "Black Cumin", name_ur: "کالا زیرہ" },
   ],
 };
+
+export function cleanProductTitle(name?: string | null): string {
+  if (!name) return "";
+  let n = name.trim();
+  if (/without cap/i.test(n)) return "Walnuts";
+  if (/^walnut/i.test(n) || /akhrot/i.test(n)) return "Walnuts";
+  if (/^black pepper/i.test(n) || /kaali mirch/i.test(n) || /kali mirch/i.test(n)) return "Black Pepper";
+  if (/^pistachio/i.test(n) || /pista/i.test(n)) return "Pistachios";
+  if (/^cashew/i.test(n) || /kaju/i.test(n)) {
+    if (/roasted/i.test(n)) return "Roasted Cashews";
+    if (/nut/i.test(n)) return "Cashew Nuts";
+    return "Cashews";
+  }
+  if (/^chilli flakes/i.test(n) || /dara mirch/i.test(n)) return "Chilli Flakes";
+  if (/^gol mirch/i.test(n) || /^round red chilli/i.test(n)) return "Round Red Chilli";
+  if (/^zeera/i.test(n) || /^cumin/i.test(n)) return "Cumin Seeds";
+  if (/^garam masala/i.test(n)) return "Garam Masala";
+  // Strip any bracketed Roman Urdu like (Akhrot), (Kaali Mirch), etc.
+  return n.replace(/\s*\([^)]*\)/g, "").trim();
+}
 
 export function getProductClassifications(product?: { name?: string | null; id?: number | null }): ProductClassification[] {
   if (!product || !product.name) return [];

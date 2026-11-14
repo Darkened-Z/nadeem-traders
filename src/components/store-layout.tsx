@@ -19,8 +19,8 @@ import {
   subscribeCheckoutModal,
   openCartDrawer,
 } from "../lib/cart-store";
-import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, getProductClassifications } from "../lib/catalog";
-export { getProductClassifications };
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, getProductClassifications, cleanProductTitle } from "../lib/catalog";
+export { getProductClassifications, cleanProductTitle };
 
 export const WHATSAPP_NUMBER = "923000000000";
 
@@ -126,6 +126,7 @@ export function ModernProductCard({ product }: { product: any }) {
   const [selectedVariant, setSelectedVariant] = useState(classifications[0]?.name || "");
   const [justAdded, setJustAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const displayName = cleanProductTitle(product.name);
 
   useEffect(() => {
     if (classifications.length > 0) {
@@ -137,9 +138,10 @@ export function ModernProductCard({ product }: { product: any }) {
 
   const handleAdd = () => {
     if (!product.stock) return;
+    const baseName = displayName || product.name;
     const itemToAdd = selectedVariant
-      ? { ...product, name: `${product.name} (${selectedVariant})`, variant: selectedVariant }
-      : product;
+      ? { ...product, name: `${baseName} (${selectedVariant})`, variant: selectedVariant }
+      : { ...product, name: baseName };
     addToBag(itemToAdd, 1);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
@@ -154,7 +156,7 @@ export function ModernProductCard({ product }: { product: any }) {
         {product.image_url && !imgError ? (
           <img
             src={product.image_url}
-            alt={product.name}
+            alt={displayName}
             loading="lazy"
             onError={() => setImgError(true)}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -176,7 +178,7 @@ export function ModernProductCard({ product }: { product: any }) {
           to={`/product/${product.id}` as any}
           className="line-clamp-2 text-sm font-medium leading-snug text-foreground hover:underline underline-offset-2"
         >
-          {product.name}
+          {displayName}
         </Link>
         {product.name_ur && (
           <p lang="ur" dir="rtl" className="font-urdu mt-1 text-right text-base text-foreground/80">

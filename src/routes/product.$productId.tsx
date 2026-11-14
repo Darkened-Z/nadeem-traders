@@ -13,6 +13,7 @@ import {
   addToBag,
   rateLink,
   getProductClassifications,
+  cleanProductTitle,
 } from "../components/store-layout";
 
 export const Route = createFileRoute("/product/$productId")({
@@ -75,16 +76,17 @@ function ProductDetailsPage() {
   }
 
   const categoryColor = product.category_name ? getCategoryMeta(product.category_name).color : undefined;
-  const details = getProductDetailInfo(product.name);
+  const displayName = product ? cleanProductTitle(product.name) : "";
+  const details = getProductDetailInfo(displayName || product.name);
   const catalogMatch = CATALOG_PRODUCTS.find(
-    (cp) => cp.name.toLowerCase() === product.name.toLowerCase()
+    (cp) => cp.name.toLowerCase() === (displayName || product.name).toLowerCase()
   );
   const effectivePrice = product.price != null ? Number(product.price) : (catalogMatch?.price ?? 450);
   const effectiveWeight = product.weight || catalogMatch?.weight || "Standard Pack";
-  const effectiveProduct = { ...product, price: effectivePrice, weight: effectiveWeight };
+  const effectiveProduct = { ...product, name: displayName || product.name, price: effectivePrice, weight: effectiveWeight };
 
   const targetProduct = selectedVariant
-    ? { ...effectiveProduct, name: `${product.name} (${selectedVariant})`, variant: selectedVariant }
+    ? { ...effectiveProduct, name: `${displayName || product.name} (${selectedVariant})`, variant: selectedVariant }
     : effectiveProduct;
 
   const buyNow = () => {
@@ -109,7 +111,7 @@ function ProductDetailsPage() {
             {product.image_url && product.image_url !== failedSrc ? (
               <img
                 src={product.image_url}
-                alt={product.name}
+                alt={displayName || product.name}
                 ref={(el) => {
                   if (el?.complete && el.naturalWidth === 0) setFailedSrc(product.image_url);
                 }}
@@ -129,7 +131,7 @@ function ProductDetailsPage() {
                 {product.category_name}
               </span>
             )}
-            <h1 className="mt-1 font-display text-4xl font-semibold leading-tight sm:text-5xl">{product.name}</h1>
+            <h1 className="mt-1 font-display text-4xl font-semibold leading-tight sm:text-5xl">{displayName || product.name}</h1>
             {product.name_ur && (
               <p lang="ur" dir="rtl" className="font-urdu mt-2 text-right text-2xl text-foreground/85 md:text-left">
                 {product.name_ur}

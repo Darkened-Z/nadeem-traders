@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "./db";
-import { CATALOG_CATEGORIES, CATALOG_PRODUCTS } from "./catalog";
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, cleanProductTitle } from "./catalog";
 import { assertAdmin } from "./admin";
 import { Resend } from "resend";
 import { OAuth2Client } from "google-auth-library";
@@ -741,23 +741,31 @@ export const getCustomerAuditLogs = createServerFn({ method: "POST" })
 const PRODUCT_IMAGE_FALLBACKS: Record<string, string> = {
   "Almonds": "/products/almonds.jpg",
   "Premium Almonds": "/products/almonds.jpg",
+  "Cashews": "/products/cashews.jpg",
   "Cashew Nuts": "/products/cashews.jpg",
+  "Roasted Cashews": "/products/cashews.jpg",
   "Cashews Premium": "/products/cashews.jpg",
   "Cashews (Kaju)": "/products/cashews.jpg",
   "Kaju (Roasted, Plain)": "/products/cashews.jpg",
+  "Walnuts": "/products/walnuts.jpg",
   "Walnuts (Akhrot)": "/products/walnuts.jpg",
   "Walnuts (Akhrot, Without Cap)": "/products/walnuts.jpg",
+  "Pistachios": "/products/pista.jpg",
   "Pistachios (Pista)": "/products/pista.jpg",
   "Pista (Shell)": "/products/pista.jpg",
   "Pumpkin Seeds": "/products/pumpkin-seeds.jpg",
   "Red Chilli": "/products/red-chilli.jpg",
   "Kashmiri Red Chilli": "/products/red-chilli.jpg",
+  "Chilli Flakes": "/products/chilli-flakes.jpg",
+  "Round Red Chilli": "/products/gol-mirch.jpg",
   "Turmeric": "/products/haldi-powder.jpg",
   "Haldi Powder": "/products/haldi-powder.jpg",
+  "Black Pepper": "/products/black-pepper.jpg",
   "Black Pepper (Kaali Mirch)": "/products/black-pepper.jpg",
   "Black Pepper Powder": "/products/black-pepper.jpg",
   "Garam Masala": "/products/garam-masala.jpg",
   "Garam Masala (Sabat, Powder)": "/products/garam-masala.jpg",
+  "Cumin Seeds": "/products/zeera.jpg",
   "Zeera (Cumin)": "/products/zeera.jpg",
   "Zeera Sabit": "/products/zeera.jpg",
   "Masoor Dal": "/products/masoor-dal.jpg",
@@ -820,23 +828,26 @@ export const getProducts = createServerFn({ method: "GET" }).handler(
       ORDER BY c.position NULLS LAST, c.id, p.id
     `;
     const mapped = (res as any[]).map((p) => {
-      let name = p.name;
+      let name = cleanProductTitle(p.name);
       let name_ur = p.name_ur;
-      if (name.includes("Without Cap")) {
-        name = "Walnuts (Akhrot)";
+      if (name === "Walnuts") {
         name_ur = "اخروٹ";
-      } else if (name === "Black Pepper Powder") {
-        name = "Black Pepper (Kaali Mirch)";
+      } else if (name === "Black Pepper") {
         name_ur = "کالی مرچ";
-      } else if (name.includes("Garam Masala (Sabat")) {
-        name = "Garam Masala";
+      } else if (name === "Garam Masala") {
         name_ur = "گرم مصالحہ";
-      } else if (name.includes("Pista (Shell)")) {
-        name = "Pistachios (Pista)";
+      } else if (name === "Pistachios") {
         name_ur = "پستہ";
-      } else if (name.includes("Kaju (Roasted")) {
-        name = "Cashews (Kaju)";
+      } else if (name === "Cashews" || name === "Cashew Nuts" || name === "Roasted Cashews") {
         name_ur = "کاجو";
+      } else if (name === "Cumin Seeds") {
+        name_ur = "زیرہ";
+      } else if (name === "Chilli Flakes") {
+        name_ur = "دڑا مرچ";
+      } else if (name === "Round Red Chilli") {
+        name_ur = "گول مرچ";
+      } else if (name === "Oats") {
+        name_ur = "جئی";
       }
       let img = p.image_url;
       if (!img || img.includes("wikimedia")) {

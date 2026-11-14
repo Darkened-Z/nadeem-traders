@@ -48,7 +48,7 @@ export const PRODUCT_DESCRIPTIONS: Record<string, ProductDetailInfo> = {
     healthHighlights: ["Rich in healthy monounsaturated fats", "Good source of copper & magnesium", "Zero trans-fats"],
     storageAdvice: "Store sealed in an airtight container to prevent moisture absorption and retain crunch.",
   },
-  "Cashews (Kaju)": {
+  "Cashews": {
     tagline: "Premium whole white cashews — available in silky raw plain or artisanal slow-roasted.",
     description:
       "Our dual-selection Vietnamese cashews give you the choice between silky raw white kernels or artisanal slow dry-roasted whole cashews. Prepared without artificial additives or heavy oils, every kernel is curated for uniform size, high density, and pristine flavor.",
@@ -60,7 +60,7 @@ export const PRODUCT_DESCRIPTIONS: Record<string, ProductDetailInfo> = {
     healthHighlights: ["Healthy unsaturated fats", "Natural plant protein", "Essential minerals (Zinc & Iron)"],
     storageAdvice: "Store in a cool, dark place in an airtight glass jar.",
   },
-  "Pistachios (Pista)": {
+  "Pistachios": {
     tagline: "Naturally smile-opened Iranian pistachios with vibrant emerald-green kernels.",
     description:
       "Grown in the renowned mineral-rich soils of Iran, our premium pistachios are naturally tree-ripened and sun-opened, ensuring easy shell removal and pristine kernel flavor. Known for their distinct emerald hue, firm crunch, and complex floral nuttiness, they bring authentic Middle Eastern and Persian dry fruit excellence to your table.",
@@ -73,10 +73,10 @@ export const PRODUCT_DESCRIPTIONS: Record<string, ProductDetailInfo> = {
     healthHighlights: ["Rich in eye-protecting Lutein & Zeaxanthin", "High in Vitamin B6", "Low calorie to protein ratio"],
     storageAdvice: "Keep tightly sealed in a glass container. Avoid humid conditions to maintain optimal shell crispness.",
   },
-  "Walnuts (Akhrot)": {
+  "Walnuts": {
     tagline: "Hand-selected mountain walnuts with plump golden kernels and zero bitterness.",
     description:
-      "Harvested from pristine high-altitude orchards, our premium walnuts are prized for their tender, golden-amber kernels and clean, buttery palate without the dry astringency found in commercial varieties. Triple-cleaned and gently graded, they are available as whole paper-thin shell (kaghzi) or freshly extracted whole halves (giri).",
+      "Harvested from pristine high-altitude orchards, our premium walnuts are prized for their tender, golden-amber kernels and clean, buttery palate without the dry astringency found in commercial varieties. Triple-cleaned and gently graded, they are available as whole paper-thin shell or freshly extracted whole halves.",
     flavorProfile: "Deeply buttery, earthy, velvety, and naturally smooth.",
     culinaryUses: [
       "Enjoyed raw daily with morning milk and honey for cognitive health.",
@@ -188,7 +188,7 @@ export const PRODUCT_DESCRIPTIONS: Record<string, ProductDetailInfo> = {
     healthHighlights: ["Potent Curcumin antioxidant & anti-inflammatory", "Joint and recovery support", "100% pure single-origin"],
     storageAdvice: "Store in a dark glass container away from direct sunlight to preserve curcumin potency.",
   },
-  "Chilli Flakes (Dara Mirch)": {
+  "Chilli Flakes": {
     tagline: "Coarsely crushed sun-dried red chillies with roasted seeds for vibrant tarka.",
     description:
       "Crafted from premium Sindh sun-dried red chillies crushed with their seeds intact to provide both color contrast and sudden bursts of fiery heat. Essential for rustic roadside karahis, spicy pizzas, and sizzled garlic oil tempering.",
@@ -200,7 +200,7 @@ export const PRODUCT_DESCRIPTIONS: Record<string, ProductDetailInfo> = {
     healthHighlights: ["Natural capsaicin", "Stimulates digestion and circulation"],
     storageAdvice: "Store tightly sealed to keep seeds crisp and flakes dry.",
   },
-  "Gol Mirch (Round Red Chilli)": {
+  "Round Red Chilli": {
     tagline: "Whole button chillies from Sindh for royal aromatic tempering.",
     description:
       "Round, glossy whole dried button chillies selected for their intact shape, deep red skin, and aromatic seeds. When flash-fried in hot ghee or oil, they puff up and release a warm, nutty aroma without scorching the dish.",
@@ -212,7 +212,7 @@ export const PRODUCT_DESCRIPTIONS: Record<string, ProductDetailInfo> = {
     healthHighlights: ["Natural digestive stimulant", "Whole uncrushed purity"],
     storageAdvice: "Keep in a dry container in a cool kitchen pantry.",
   },
-  "Black Pepper (Kaali Mirch)": {
+  "Black Pepper": {
     tagline: "Bold Tellicherry-style black peppercorns bursting with pungent piperine heat.",
     description:
       "Known as the King of Spices, our whole black peppercorns are selected for high density and wrinkled, dark brown-to-black berries. Packed with volatile essential oils and piperine, they release an intensely sharp, woody aroma when cracked fresh.",
@@ -236,7 +236,7 @@ export const PRODUCT_DESCRIPTIONS: Record<string, ProductDetailInfo> = {
     healthHighlights: ["Metabolic warming spices", "Zero fillers, salt, or artificial flavoring"],
     storageAdvice: "Keep tightly capped in an airtight glass spice jar.",
   },
-  "Zeera (Cumin)": {
+  "Cumin Seeds": {
     tagline: "High-volatile-oil whole cumin seeds with intense earthy and citrus fragrance.",
     description:
       "Thoroughly machine-cleaned and sieved to remove stems, stones, and dust. Our whole cumin seeds feature a high concentration of cuminaldehyde, which blooms into an irresistible earthy, nutty fragrance upon meeting hot ghee or dry roasting.",
