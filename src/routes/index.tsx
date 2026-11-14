@@ -388,18 +388,18 @@ function Hero() {
 
 function WhatsAppBand() {
   const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    "Assalam o Alaikum! Mujhe poore mahine ka ration chahiye, rate pe baat karni hai. Meri list:",
+    "Assalam o Alaikum! Mujhe larger quantity / custom quotation chahiye. Meri requirement:",
   )}`;
   return (
     <section className="stack-section sticky top-14 bg-[#141311] text-white sm:top-16">
       <div data-reveal className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-14">
         <div>
           <h2 className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
-            Pura Mahina Guzaarna Hai?
+            Need Larger Quantities?
           </h2>
           <p className="mt-2 max-w-lg text-sm leading-relaxed text-white/75">
-            Poore Mahine Ka Ration Ek Saath Lo, Paise Bhi Munasib. List WhatsApp Karo Ya Baat Karke Apni Marzi Ka
-            Rate Lagwao — <strong className="font-semibold text-white">Jitna Zyada Saman, Utna Behtar Rate.</strong>
+            For larger quantities or custom quotations, you can contact us directly —{" "}
+            <strong className="font-semibold text-white">Jitna Zyada Saman, Utna Behtar Rate.</strong>
           </p>
         </div>
         <a
@@ -409,7 +409,7 @@ function WhatsAppBand() {
           className="btn-swipe shrink-0 bg-[#25D366] px-7 py-3.5 text-center text-sm font-semibold text-[#0B3D1F]"
           style={{ "--swipe": "#fff", "--swipe-fg": "#0B3D1F" } as React.CSSProperties}
         >
-          WhatsApp Pe Rate Fix Karo
+          Contact For Quotation
         </a>
       </div>
     </section>
