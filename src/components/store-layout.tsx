@@ -34,17 +34,17 @@ export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   "Dry Fruits": {
     slug: "dry-fruits",
     color: "#6B4226",
-    tagline: "Snack Game Strong. Duniya Bhar Ke Best Dry Fruits.",
+    tagline: "Rozana Ki Tawanai. Duniya Bhar Ke Behtareen Dry Fruits.",
   },
   Seeds: {
     slug: "seeds",
     color: "#2F6B3A",
-    tagline: "Chhote Seeds, Bari Health. Superfood Era.",
+    tagline: "Chotay Seeds, Achi Immunity.",
   },
   Spices: {
     slug: "spices",
     color: "#A1281C",
-    tagline: "Masala Jo Actually Hit Kare. Zero Artificial Rang.",
+    tagline: "Khalis Masalay, Asli Zaiqa. Zero Artificial Rang.",
   },
   "Whole Spices": {
     slug: "whole-spices",

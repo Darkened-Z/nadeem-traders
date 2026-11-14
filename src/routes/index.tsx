@@ -240,7 +240,7 @@ const HERO_SLIDES = [
   { image: "/hero/slide-2.jpg", label: "Daawat Season", line: "Daawat Ka Plan? Saman Humara", href: "/shop", color: "#2F6B3A" },
   { image: "/hero/slide-3.jpg", label: "Spices", line: "Lal Mirch, Full Garmi", href: "/category/spices", color: "#A1281C" },
   { image: "/hero/slide-4.jpg", label: "Whole Spices", line: "Daig Ka Asli Raaz: Sabut Masalay", href: "/category/whole-spices", color: "#8A6100" },
-  { image: "/hero/slide-5.jpg", label: "Seeds", line: "Bori Se Seedha Aapke Ghar", href: "/category/seeds", color: "#2F6B3A" },
+  { image: "/hero/slide-5.jpg", label: "Seeds", line: "Chotay Seeds, Achi Immunity", href: "/category/seeds", color: "#2F6B3A" },
 ];
 
 const SLIDE_MS = 5000;
@@ -323,10 +323,10 @@ function Hero() {
         <div className="hero-parallax-text lg:max-w-[46%]">
           <p className="animate-fade-up text-sm font-semibold text-[#E6CE9C]">Apka Trusted Stop</p>
           <h1 style={{ animationDelay: "120ms" }} className="animate-fade-up mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] sm:text-6xl xl:text-7xl">
-            Asli Maal. Sahi Daam. 100% Purity.
+            Good Food Starts With Good Ingredients.
           </h1>
           <p style={{ animationDelay: "240ms" }} className="animate-fade-up mt-4 max-w-md text-base leading-relaxed text-white/80">
-            Dry Fruits, Seeds Aur Masalay — Duniya Bhar Se Chun Kar, Aapke Kitchen Tak. Zero Milawat, Full Bharosa.
+            Dry Fruits, Seeds Aur Masalay — Duniya Bhar Se Chun Kar, Aapke Kitchen Tak. 100% Purity, Zero Milawat.
           </p>
           <div style={{ animationDelay: "360ms" }} className="animate-fade-up mt-7 flex gap-3">
             <Link
