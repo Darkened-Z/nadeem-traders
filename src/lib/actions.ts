@@ -835,6 +835,8 @@ export const createOrder = createServerFn({ method: "POST" })
       customer_phone?: string;
       shipping_address: string;
       total_amount: number;
+      coupon_code?: string;
+      discount_amount?: number;
       items: Array<{
         product_id: number;
         product_name: string;
@@ -861,9 +863,9 @@ export const createOrder = createServerFn({ method: "POST" })
       // 1. Insert order
       const order = await tx`
         INSERT INTO orders (
-          user_id, customer_name, customer_email, customer_phone, shipping_address, total_amount, status
+          user_id, customer_name, customer_email, customer_phone, shipping_address, total_amount, status, coupon_code, discount_amount
         ) VALUES (
-          ${data.user_id || null}, ${data.customer_name}, ${data.customer_email}, ${data.customer_phone || null}, ${data.shipping_address}, ${data.total_amount}, 'Pending'
+          ${data.user_id || null}, ${data.customer_name}, ${data.customer_email}, ${data.customer_phone || null}, ${data.shipping_address}, ${data.total_amount}, 'Pending', ${data.coupon_code || null}, ${data.discount_amount || 0}
         ) RETURNING *
       `;
       const orderId = order[0].id;
@@ -877,6 +879,19 @@ export const createOrder = createServerFn({ method: "POST" })
             ${orderId}, ${item.product_id}, ${item.product_name}, ${item.quantity}, ${item.price}
           )
         `;
+      }
+
+      // 3. Increment coupon usage if used
+      if (data.coupon_code) {
+        try {
+          await tx`
+            UPDATE coupons
+            SET times_used = COALESCE(times_used, 0) + 1
+            WHERE UPPER(code) = ${data.coupon_code.trim().toUpperCase()}
+          `;
+        } catch {
+          // non-fatal if coupons table not yet altered
+        }
       }
 
       return order[0];
@@ -897,6 +912,75 @@ export const createOrder = createServerFn({ method: "POST" })
     ).catch(console.error);
 
     return result;
+  });
+
+export const validateCoupon = createServerFn({ method: "POST" })
+  .validator((data: { code: string; subtotal: number }) => data)
+  .handler(async ({ data }) => {
+    const rawCode = (data.code || "").trim().toUpperCase();
+    if (!rawCode) {
+      return { valid: false, message: "Kupon code darj karein" };
+    }
+    const subtotal = Math.max(0, Number(data.subtotal) || 0);
+
+    if (!sql) {
+      if (rawCode === "WELCOME10") {
+        const discountAmount = Math.round((subtotal * 10) / 100);
+        return {
+          valid: true,
+          code: "WELCOME10",
+          discount_percent: 10,
+          discount_amount: discountAmount,
+          message: "10% discount apply ho gaya!",
+        };
+      }
+      return { valid: false, message: "Kupon code durust nahi hai" };
+    }
+
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS coupons (
+          id SERIAL PRIMARY KEY,
+          code TEXT UNIQUE NOT NULL,
+          discount_percent INTEGER NOT NULL,
+          active BOOLEAN DEFAULT TRUE,
+          min_order_amount INTEGER DEFAULT 0,
+          times_used INTEGER DEFAULT 0,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+      `;
+      const rows = await sql`
+        SELECT * FROM coupons
+        WHERE UPPER(code) = ${rawCode}
+        LIMIT 1
+      `;
+      if (rows.length === 0) {
+        return { valid: false, message: "Kupon code mojood nahi hai" };
+      }
+      const coupon = rows[0];
+      if (!coupon.active) {
+        return { valid: false, message: "Yeh kupon expire ya inactive hai" };
+      }
+      const minOrder = Number(coupon.min_order_amount) || 0;
+      if (subtotal < minOrder) {
+        return {
+          valid: false,
+          message: `Kam az kam Rs. ${minOrder.toLocaleString()} ke order par lag sakta hai`,
+        };
+      }
+      const percent = Number(coupon.discount_percent) || 0;
+      const discountAmount = Math.round((subtotal * percent) / 100);
+      return {
+        valid: true,
+        code: coupon.code,
+        discount_percent: percent,
+        discount_amount: discountAmount,
+        message: `${percent}% discount apply ho gaya! (-Rs. ${discountAmount.toLocaleString()})`,
+      };
+    } catch (err) {
+      console.error("validateCoupon error:", err);
+      return { valid: false, message: "Coupon check karne mein masla aya" };
+    }
   });
 
 export const getOrders = createServerFn({ method: "GET" }).handler(async () => {

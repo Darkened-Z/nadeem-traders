@@ -1,7 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, Package, Tags, ShoppingCart, ExternalLink, LogOut, Menu, X, Loader2, Lock, Coins, Users, Settings } from "lucide-react";
+import { Home, Package, Tags, ShoppingCart, ExternalLink, LogOut, Menu, X, Loader2, Lock, Coins, Users, Settings, Ticket, BarChart3 } from "lucide-react";
 import { adminLogin, adminLogout, adminSession } from "../lib/admin";
 import { Button, inputClass } from "./admin-ui";
 
@@ -22,7 +22,9 @@ const NAV = [
   { to: "/admin/rates", label: "Daily Rates", icon: Coins },
   { to: "/admin/products", label: "Products", icon: Package },
   { to: "/admin/categories", label: "Categories", icon: Tags },
+  { to: "/admin/coupons", label: "Coupons", icon: Ticket },
   { to: "/admin/customers", label: "Customers", icon: Users },
+  { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/settings", label: "Store Settings", icon: Settings },
 ];
 

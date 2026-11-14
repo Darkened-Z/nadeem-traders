@@ -369,3 +369,124 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
       throw new Error(err instanceof Error ? err.message : "Failed to save settings");
     }
   });
+
+export const adminListCoupons = createServerFn({ method: "GET" }).handler(async () => {
+  assertAdmin();
+  const q = db();
+  try {
+    await q`
+      CREATE TABLE IF NOT EXISTS coupons (
+        id SERIAL PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        discount_percent INTEGER NOT NULL,
+        active BOOLEAN DEFAULT TRUE,
+        min_order_amount INTEGER DEFAULT 0,
+        times_used INTEGER DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    return await q`SELECT * FROM coupons ORDER BY id DESC`;
+  } catch (err) {
+    console.error("adminListCoupons error:", err);
+    return [];
+  }
+});
+
+export const adminSaveCoupon = createServerFn({ method: "POST" })
+  .validator((data: { id?: number; code: string; discount_percent: number; min_order_amount?: number; active?: boolean }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    const code = data.code.trim().toUpperCase();
+    if (!code) throw new Error("Coupon code is required");
+    const percent = Math.min(100, Math.max(1, Math.round(data.discount_percent)));
+    const minOrder = Math.max(0, Math.round(data.min_order_amount || 0));
+    const active = data.active !== false;
+
+    if (data.id) {
+      const [row] = await q`
+        UPDATE coupons SET code = ${code}, discount_percent = ${percent}, min_order_amount = ${minOrder}, active = ${active}
+        WHERE id = ${data.id} RETURNING *
+      `;
+      return row;
+    } else {
+      const [row] = await q`
+        INSERT INTO coupons (code, discount_percent, min_order_amount, active)
+        VALUES (${code}, ${percent}, ${minOrder}, ${active})
+        RETURNING *
+      `;
+      return row;
+    }
+  });
+
+export const adminDeleteCoupon = createServerFn({ method: "POST" })
+  .validator((data: { id: number }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    await q`DELETE FROM coupons WHERE id = ${data.id}`;
+    return { ok: true };
+  });
+
+export const adminToggleCoupon = createServerFn({ method: "POST" })
+  .validator((data: { id: number; active: boolean }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    await q`UPDATE coupons SET active = ${data.active} WHERE id = ${data.id}`;
+    return { ok: true };
+  });
+
+export const adminGetAnalytics = createServerFn({ method: "GET" }).handler(async () => {
+  assertAdmin();
+  const q = db();
+  try {
+    const [rev] = await q`
+      SELECT
+        coalesce(sum(total_amount), 0)::int AS total_revenue,
+        count(*)::int AS total_orders,
+        coalesce(count(*) FILTER (WHERE status = 'Delivered'), 0)::int AS delivered_orders,
+        coalesce(count(*) FILTER (WHERE status = 'Pending'), 0)::int AS pending_orders,
+        coalesce(avg(total_amount), 0)::int AS avg_order_value
+      FROM orders
+    `;
+
+    const topProducts = await q`
+      SELECT
+        product_name,
+        sum(quantity)::int AS total_qty,
+        sum(quantity * price)::int AS total_sales
+      FROM order_items
+      GROUP BY product_name
+      ORDER BY total_sales DESC
+      LIMIT 8
+    `;
+
+    const statusCounts = await q`
+      SELECT status, count(*)::int AS count
+      FROM orders
+      GROUP BY status
+    `;
+
+    const recentDaily = await q`
+      SELECT
+        to_char(created_at, 'YYYY-MM-DD') AS day,
+        count(*)::int AS orders,
+        sum(total_amount)::int AS revenue
+      FROM orders
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY 1
+      ORDER BY 1 ASC
+    `;
+
+    return { rev, topProducts, statusCounts, recentDaily };
+  } catch (err) {
+    console.error("adminGetAnalytics error:", err);
+    return {
+      rev: { total_revenue: 0, total_orders: 0, delivered_orders: 0, pending_orders: 0, avg_order_value: 0 },
+      topProducts: [],
+      statusCounts: [],
+      recentDaily: [],
+    };
+  }
+});

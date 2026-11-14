@@ -7,6 +7,7 @@ import {
   getProducts,
   getBrands,
   createOrder,
+  validateCoupon,
   restoreSession,
   clearCartDb,
   getUserAddresses,
@@ -433,6 +434,13 @@ export function StoreLayout({
   });
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
+  const [couponInput, setCouponInput] = useState("");
+  const [isCheckingCoupon, setIsCheckingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discount_percent: number;
+    discount_amount: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -455,6 +463,36 @@ export function StoreLayout({
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const discountAmount = appliedCoupon ? appliedCoupon.discount_amount : 0;
+  const finalTotal = Math.max(0, subtotal - discountAmount);
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setIsCheckingCoupon(true);
+    try {
+      const res = await validateCoupon({ data: { code: couponInput.trim(), subtotal } });
+      if (res.valid) {
+        setAppliedCoupon({
+          code: res.code!,
+          discount_percent: res.discount_percent!,
+          discount_amount: res.discount_amount!,
+        });
+        toast.success(res.message);
+      } else {
+        toast.error(res.message || "Invalid coupon code");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to validate coupon");
+    } finally {
+      setIsCheckingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    toast.info("Coupon removed");
+  };
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -473,7 +511,9 @@ export function StoreLayout({
           customer_email: checkoutForm.email,
           customer_phone: checkoutForm.phone,
           shipping_address: checkoutForm.address,
-          total_amount: subtotal,
+          total_amount: finalTotal,
+          coupon_code: appliedCoupon?.code,
+          discount_amount: discountAmount,
           items: cart.map((item) => ({
             product_id: item.id,
             product_name: item.name,
@@ -489,6 +529,8 @@ export function StoreLayout({
         } catch {}
       }
       cartStore.clearCartLocal();
+      setAppliedCoupon(null);
+      setCouponInput("");
     } catch (err) {
       console.error(err);
       toast.error("Order nahi ho saka. Please try again.");
@@ -937,6 +979,50 @@ export function StoreLayout({
                     />
                   </label>
 
+                  {/* Promo / Discount Coupon */}
+                  <div className="rounded-lg border border-border bg-card p-3">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                      Discount Coupon Code
+                    </label>
+                    {appliedCoupon ? (
+                      <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 rounded text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 uppercase">
+                            {appliedCoupon.code}
+                          </span>
+                          <span className="text-emerald-700/80 dark:text-emerald-300/80">
+                            ({appliedCoupon.discount_percent}% OFF · -Rs. {appliedCoupon.discount_amount.toLocaleString()})
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          className="text-xs text-red-600 hover:underline font-semibold"
+                        >
+                          Hatao
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponInput}
+                          onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                          placeholder="Code darj karein (e.g. SAVE10)"
+                          className="flex-1 border border-border bg-background px-3 py-2 text-xs uppercase placeholder:normal-case focus:border-foreground focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyCoupon}
+                          disabled={isCheckingCoupon || !couponInput.trim()}
+                          className="border border-foreground bg-foreground px-4 py-2 text-xs font-semibold text-background disabled:opacity-40"
+                        >
+                          {isCheckingCoupon ? "Checking…" : "Apply"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <p>
                       <strong className="font-semibold text-foreground">No Prepayment, No Dhoka.</strong> Paise Sirf
@@ -946,9 +1032,21 @@ export function StoreLayout({
                     <p>Faisalabad Mein Ho? InDrive Ya Yango Se Seedha Ghar.</p>
                   </div>
 
-                  <div className="flex items-baseline justify-between border-t border-border pt-4">
-                    <span className="text-sm text-muted-foreground">Total</span>
-                    <span className="text-xl font-semibold">Rs. {subtotal.toLocaleString()}</span>
+                  <div className="space-y-1.5 border-t border-border pt-4">
+                    <div className="flex items-baseline justify-between text-sm text-muted-foreground">
+                      <span>Subtotal</span>
+                      <span>Rs. {subtotal.toLocaleString()}</span>
+                    </div>
+                    {appliedCoupon && (
+                      <div className="flex items-baseline justify-between text-sm text-emerald-600 font-medium">
+                        <span>Discount ({appliedCoupon.code})</span>
+                        <span>- Rs. {discountAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex items-baseline justify-between pt-1">
+                      <span className="text-sm font-semibold">Total (Cash on Delivery)</span>
+                      <span className="text-xl font-bold">Rs. {finalTotal.toLocaleString()}</span>
+                    </div>
                   </div>
 
                   <button

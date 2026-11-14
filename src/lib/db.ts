@@ -328,6 +328,11 @@ export async function initDb() {
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT`;
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier TEXT DEFAULT 'PostEx'`;
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes TEXT`;
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_code TEXT`;
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount INTEGER DEFAULT 0`;
+
+    await sql`ALTER TABLE coupons ADD COLUMN IF NOT EXISTS min_order_amount INTEGER DEFAULT 0`;
+    await sql`ALTER TABLE coupons ADD COLUMN IF NOT EXISTS times_used INTEGER DEFAULT 0`;
 
     await sql`
       CREATE TABLE IF NOT EXISTS store_settings (

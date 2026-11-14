@@ -320,7 +320,7 @@ function Hero() {
         <div className="hero-parallax-text lg:max-w-[46%]">
           <p className="animate-fade-up text-sm font-semibold text-[#E6CE9C]">Apka Trusted Stop</p>
           <h1 style={{ animationDelay: "120ms" }} className="animate-fade-up mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] sm:text-6xl xl:text-7xl">
-            Asli Maal. Sahi Daam. No Cap.
+            Asli Maal. Sahi Daam. 100% Purity.
           </h1>
           <p style={{ animationDelay: "240ms" }} className="animate-fade-up mt-4 max-w-md text-base leading-relaxed text-white/80">
             Dry Fruits, Seeds Aur Masalay — Duniya Bhar Se Chun Kar, Aapke Kitchen Tak. Zero Milawat, Full Bharosa.
