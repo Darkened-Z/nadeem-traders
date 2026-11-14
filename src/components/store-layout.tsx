@@ -215,31 +215,26 @@ export function ModernProductCard({ product }: { product: any }) {
         )}
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
-          {product.price != null ? (
-            <>
-              <span className="text-sm font-semibold text-foreground">
-                Rs. {Number(product.price).toLocaleString()}
-              </span>
-              <button
-                type="button"
-                onClick={handleAdd}
-                disabled={!product.stock}
-                aria-label={`Add ${product.name} to bag`}
-                className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 border border-foreground px-3 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
-              >
-                {justAdded ? <Check className="h-4 w-4 animate-pop" /> : "Add"}
-              </button>
-            </>
-          ) : (
-            <a
-              href={rateLink(product, selectedVariant)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-9 w-full items-center justify-center border border-[#25D366] bg-[#25D366]/10 px-3 text-xs font-semibold text-[#0B3D1F] transition-colors hover:bg-[#25D366]"
-            >
-              Rate Poochein
-            </a>
-          )}
+          {(() => {
+            const catalogMatch = CATALOG_PRODUCTS.find((cp) => cp.name.toLowerCase() === product.name.toLowerCase());
+            const displayPrice = product.price != null ? Number(product.price) : (catalogMatch?.price ?? 450);
+            return (
+              <>
+                <span className="text-sm font-semibold text-foreground">
+                  Rs. {displayPrice.toLocaleString()}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  disabled={!product.stock}
+                  aria-label={`Add ${product.name} to bag`}
+                  className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 border border-foreground px-3 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
+                >
+                  {justAdded ? <Check className="h-4 w-4 animate-pop" /> : "Add"}
+                </button>
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>

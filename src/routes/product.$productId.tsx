@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Plus, Minus, Loader2, ChevronLeft, MapPin } from "lucide-react";
+import { Plus, Minus, Loader2, ChevronLeft, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { recordRecentlyViewedDb } from "../lib/actions";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
+import { getProductDetailInfo } from "../lib/product-descriptions";
+import { CATALOG_PRODUCTS } from "../lib/catalog";
 import {
   StoreLayout,
   ProductRail,
@@ -73,10 +75,17 @@ function ProductDetailsPage() {
   }
 
   const categoryColor = product.category_name ? getCategoryMeta(product.category_name).color : undefined;
+  const details = getProductDetailInfo(product.name);
+  const catalogMatch = CATALOG_PRODUCTS.find(
+    (cp) => cp.name.toLowerCase() === product.name.toLowerCase()
+  );
+  const effectivePrice = product.price != null ? Number(product.price) : (catalogMatch?.price ?? 450);
+  const effectiveWeight = product.weight || catalogMatch?.weight || "Standard Pack";
+  const effectiveProduct = { ...product, price: effectivePrice, weight: effectiveWeight };
 
   const targetProduct = selectedVariant
-    ? { ...product, name: `${product.name} (${selectedVariant})`, variant: selectedVariant }
-    : product;
+    ? { ...effectiveProduct, name: `${product.name} (${selectedVariant})`, variant: selectedVariant }
+    : effectiveProduct;
 
   const buyNow = () => {
     cartStore.addToCart(targetProduct, qty);
@@ -172,92 +181,151 @@ function ProductDetailsPage() {
               </div>
             )}
 
-            {product.price != null ? (
-              <>
-                <p className="mt-5 text-3xl font-semibold">Rs. {Number(product.price).toLocaleString()}</p>
-
-                <div className="mt-6 flex items-center gap-3">
-                  <div className="inline-flex items-center border border-border">
-                    <button
-                      type="button"
-                      onClick={() => setQty((q) => Math.max(1, q - 1))}
-                      className="grid h-12 w-12 place-items-center"
-                      aria-label="Decrease quantity"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-10 text-center text-base font-medium">{qty}</span>
-                    <button
-                      type="button"
-                      onClick={() => setQty((q) => q + 1)}
-                      className="grid h-12 w-12 place-items-center"
-                      aria-label="Increase quantity"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                  {qty > 1 && (
-                    <span className="text-sm text-muted-foreground">
-                      = Rs. {(product.price * qty).toLocaleString()}
-                    </span>
-                  )}
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => addToBag(targetProduct, qty)}
-                    disabled={!product.stock}
-                    className="h-12 border border-foreground text-sm font-semibold disabled:opacity-40"
-                  >
-                    {product.stock ? "Add To Bag" : "Out Of Stock"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={buyNow}
-                    disabled={!product.stock}
-                    className="h-12 bg-foreground text-sm font-semibold text-background disabled:opacity-40"
-                  >
-                    Buy Now
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="mt-6">
-                <p className="text-sm text-muted-foreground">
-                  Is Item Ka Rate Quantity Ke Hisaab Se Hai — WhatsApp Karo, Jitna Zyada Saman, Utna Behtar Rate.
+            {/* Pricing & Cart Controls */}
+            <div className="mt-5">
+              <div className="flex items-baseline gap-3">
+                <p className="font-display text-3xl sm:text-4xl font-semibold">
+                  Rs. {effectivePrice.toLocaleString()}
                 </p>
-                <a
-                  href={rateLink(product, selectedVariant)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 flex h-12 items-center justify-center bg-[#25D366] text-sm font-semibold text-[#0B3D1F]"
-                >
-                  WhatsApp Pe Rate Poochein
-                </a>
+                <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+                  / {effectiveWeight}
+                </span>
               </div>
-            )}
 
-            <ul className="mt-8 space-y-3 border-t border-border pt-6 text-sm">
-              <li>
-                <strong className="font-semibold">No Prepayment, No Dhoka.</strong>{" "}
-                <span className="text-muted-foreground">Paise Sirf Delivery Pe.</span>
-              </li>
-              <li>
-                <strong className="font-semibold">Pakistan Bhar Mein Delivery.</strong>{" "}
-                <span className="text-muted-foreground">Tracking SMS Dispatch Hote Hi.</span>
-              </li>
-              <li>
-                <strong className="inline-flex items-center gap-1 font-semibold">
-                  In Faisalabad <MapPin className="h-3.5 w-3.5 fill-foreground text-foreground inline-block shrink-0" />
-                </strong>{" "}
-                <span className="text-muted-foreground">Doorstep Delivery via inDrive &amp; Yango.</span>
-              </li>
-              <li>
-                <strong className="font-semibold">Asli Source, Saaf Likha.</strong>{" "}
-                <span className="text-muted-foreground">Har Item Ka Origin Aapke Saamne.</span>
-              </li>
-            </ul>
+              <div className="mt-5 flex items-center gap-3">
+                <div className="inline-flex items-center border border-border bg-card">
+                  <button
+                    type="button"
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="grid h-11 w-11 place-items-center hover:bg-muted transition-colors"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+                  <span className="w-10 text-center text-sm font-semibold">{qty}</span>
+                  <button
+                    type="button"
+                    onClick={() => setQty((q) => q + 1)}
+                    className="grid h-11 w-11 place-items-center hover:bg-muted transition-colors"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+                {qty > 1 && (
+                  <span className="text-sm text-muted-foreground font-medium">
+                    Total: <strong className="text-foreground font-semibold">Rs. {(effectivePrice * qty).toLocaleString()}</strong>
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => addToBag(targetProduct, qty)}
+                  disabled={!product.stock}
+                  className="h-12 border border-foreground bg-background text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
+                >
+                  {product.stock ? "Add To Bag" : "Out Of Stock"}
+                </button>
+                <button
+                  type="button"
+                  onClick={buyNow}
+                  disabled={!product.stock}
+                  className="h-12 bg-foreground text-sm font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
+                >
+                  Buy Now
+                </button>
+              </div>
+            </div>
+
+            {/* Brand-Level Editorial Description */}
+            <div className="mt-7 border-t border-border pt-6">
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#C5A56E]">
+                Product Overview &amp; Heritage
+              </span>
+              <p className="mt-2 text-sm sm:text-base font-serif italic text-foreground leading-relaxed border-l-2 border-[#C5A56E] pl-3">
+                "{details.tagline}"
+              </p>
+              <p className="mt-3 text-xs sm:text-sm text-foreground/80 leading-relaxed font-light">
+                {details.description}
+              </p>
+
+              {/* Flavor Profile & Culinary Specs */}
+              <div className="mt-5 space-y-4 rounded-xl border border-border bg-card/60 p-4 sm:p-5">
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#C5A56E]" />
+                    Flavor &amp; Texture Profile
+                  </h3>
+                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground pl-3.5">
+                    {details.flavorProfile}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#C5A56E]" />
+                    Culinary Uses &amp; Pairing Ideas
+                  </h3>
+                  <ul className="mt-1.5 space-y-1 pl-3.5 text-xs sm:text-sm text-muted-foreground list-disc list-inside">
+                    {details.culinaryUses.map((use, idx) => (
+                      <li key={idx} className="leading-relaxed">
+                        {use}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#C5A56E]" />
+                    Key Health &amp; Nutrition Highlights
+                  </h3>
+                  <div className="mt-2 flex flex-wrap gap-1.5 pl-3.5">
+                    {details.healthHighlights.map((hl, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-foreground"
+                      >
+                        ✓ {hl}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-border/80 pt-3 text-[11px] text-muted-foreground pl-3.5">
+                  <strong className="text-foreground">Storage Advice:</strong> {details.storageAdvice}
+                </div>
+              </div>
+
+              {/* Trust & Dispatch Guarantees */}
+              <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3 text-xs">
+                <div className="flex items-start gap-2 rounded-lg border border-border/80 bg-muted/30 p-2.5">
+                  <ShieldCheck className="h-4 w-4 text-[#C5A56E] shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-semibold text-foreground">100% Purity</strong>
+                    <span className="text-[11px] text-muted-foreground">Unadulterated mandi source.</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 rounded-lg border border-border/80 bg-muted/30 p-2.5">
+                  <Truck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-semibold text-foreground">Nationwide COD</strong>
+                    <span className="text-[11px] text-muted-foreground">PostEx Courier dispatch.</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 rounded-lg border border-border/80 bg-muted/30 p-2.5">
+                  <MapPin className="h-4 w-4 text-foreground shrink-0 mt-0.5 fill-foreground" />
+                  <div>
+                    <strong className="block font-semibold text-foreground">In Faisalabad</strong>
+                    <span className="text-[11px] text-muted-foreground">inDrive &amp; Yango doorstep.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
