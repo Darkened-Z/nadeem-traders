@@ -255,3 +255,93 @@ export const adminListOrders = createServerFn({ method: "GET" }).handler(async (
   const items = ids.length ? await q`SELECT * FROM order_items WHERE order_id = ANY(${ids})` : [];
   return orders.map((o) => ({ ...o, items: items.filter((it) => it.order_id === o.id) }));
 });
+
+export const adminBatchUpdateRates = createServerFn({ method: "POST" })
+  .validator((data: { rates: { id: number; price: number | null }[] }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    await q.begin(async (tx) => {
+      for (const r of data.rates) {
+        const p = r.price == null ? null : Math.round(r.price);
+        await tx`UPDATE products SET price = ${p} WHERE id = ${r.id}`;
+      }
+    });
+    await bustStoreCache();
+    return { ok: true, count: data.rates.length };
+  });
+
+export const adminUpdateOrderTracking = createServerFn({ method: "POST" })
+  .validator((data: { id: number; tracking_number: string; courier?: string; status?: string; admin_notes?: string }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    const tracking = data.tracking_number?.trim() || null;
+    const courier = data.courier?.trim() || "PostEx";
+    const notes = data.admin_notes?.trim() || null;
+    const status = data.status || (tracking ? "Shipped" : undefined);
+
+    if (status) {
+      await q`UPDATE orders SET tracking_number = ${tracking}, courier = ${courier}, admin_notes = ${notes}, status = ${status} WHERE id = ${data.id}`;
+    } else {
+      await q`UPDATE orders SET tracking_number = ${tracking}, courier = ${courier}, admin_notes = ${notes} WHERE id = ${data.id}`;
+    }
+    return { ok: true };
+  });
+
+export const adminListCustomers = createServerFn({ method: "GET" }).handler(async () => {
+  assertAdmin();
+  const q = db();
+  return q`
+    SELECT
+      coalesce(nullif(customer_phone, ''), customer_email, customer_name) AS customer_key,
+      max(customer_name) AS name,
+      max(customer_phone) AS phone,
+      max(customer_email) AS email,
+      max(shipping_address) AS last_address,
+      count(*)::int AS orders_count,
+      sum(total_amount)::int AS total_spent,
+      max(created_at) AS last_order_at
+    FROM orders
+    GROUP BY 1
+    ORDER BY last_order_at DESC
+    LIMIT 500
+  `;
+});
+
+export const DEFAULT_STORE_SETTINGS: Record<string, string> = {
+  whatsapp_number: "923000000000",
+  announcement_text: "100% Purity Guaranteed · Apka Trusted Stop · Fast Doorstep Delivery via PostEx Courier",
+  delivery_fee: "250",
+  free_delivery_threshold: "3000",
+  store_phone: "+92 300 0000000",
+  store_email: "info@nadeemtraders.pk",
+  store_address: "Gala Mandi, Pakistan",
+};
+
+export const adminGetSettings = createServerFn({ method: "GET" }).handler(async () => {
+  assertAdmin();
+  if (!sql) return DEFAULT_STORE_SETTINGS;
+  const rows = await db()`SELECT key, value FROM store_settings`;
+  const map = { ...DEFAULT_STORE_SETTINGS };
+  for (const r of rows) map[r.key] = r.value;
+  return map;
+});
+
+export const adminSaveSettings = createServerFn({ method: "POST" })
+  .validator((data: Record<string, string>) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    await q.begin(async (tx) => {
+      for (const [k, v] of Object.entries(data)) {
+        await tx`
+          INSERT INTO store_settings (key, value, updated_at)
+          VALUES (${k}, ${String(v)}, NOW())
+          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+        `;
+      }
+    });
+    await bustStoreCache();
+    return { ok: true };
+  });

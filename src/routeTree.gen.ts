@@ -32,7 +32,10 @@ import { Route as ShopRouteImport } from './routes/shop'
 import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
+import { Route as AdminRatesRouteImport } from './routes/admin.rates'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as CategoryCategoryIdRouteImport } from './routes/category.$categoryId'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
 import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.index'
@@ -153,9 +156,24 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCustomersRoute = AdminCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRatesRoute = AdminRatesRouteImport.update({
+  id: '/rates',
+  path: '/rates',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
 const CategoryCategoryIdRoute = CategoryCategoryIdRouteImport.update({
@@ -202,7 +220,10 @@ export interface FileRoutesByFullPath {
   '/shop': typeof ShopRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/customers': typeof AdminCustomersRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/rates': typeof AdminRatesRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -231,7 +252,10 @@ export interface FileRoutesByTo {
   '/shop': typeof ShopRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/customers': typeof AdminCustomersRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/rates': typeof AdminRatesRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/admin': typeof AdminIndexRoute
@@ -262,7 +286,10 @@ export interface FileRoutesById {
   '/shop': typeof ShopRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/customers': typeof AdminCustomersRoute
   '/admin/orders': typeof AdminOrdersRoute
+  '/admin/rates': typeof AdminRatesRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/product/$productId': typeof ProductProductIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -294,7 +321,10 @@ export interface FileRouteTypes {
     | '/shop'
     | '/terms-of-use'
     | '/admin/categories'
+    | '/admin/customers'
     | '/admin/orders'
+    | '/admin/rates'
+    | '/admin/settings'
     | '/category/$categoryId'
     | '/product/$productId'
     | '/admin/'
@@ -323,7 +353,10 @@ export interface FileRouteTypes {
     | '/shop'
     | '/terms-of-use'
     | '/admin/categories'
+    | '/admin/customers'
     | '/admin/orders'
+    | '/admin/rates'
+    | '/admin/settings'
     | '/category/$categoryId'
     | '/product/$productId'
     | '/admin'
@@ -353,7 +386,10 @@ export interface FileRouteTypes {
     | '/shop'
     | '/terms-of-use'
     | '/admin/categories'
+    | '/admin/customers'
     | '/admin/orders'
+    | '/admin/rates'
+    | '/admin/settings'
     | '/category/$categoryId'
     | '/product/$productId'
     | '/admin/'
@@ -550,11 +586,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/customers': {
+      id: '/admin/customers'
+      path: '/customers'
+      fullPath: '/admin/customers'
+      preLoaderRoute: typeof AdminCustomersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
       fullPath: '/admin/orders'
       preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/rates': {
+      id: '/admin/rates'
+      path: '/rates'
+      fullPath: '/admin/rates'
+      preLoaderRoute: typeof AdminRatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/category/$categoryId': {
@@ -590,7 +647,10 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminCustomersRoute: typeof AdminCustomersRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminRatesRoute: typeof AdminRatesRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminProductsProductIdRoute: typeof AdminProductsProductIdRoute
   AdminProductsIndexRoute: typeof AdminProductsIndexRoute
@@ -598,7 +658,10 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminCustomersRoute: AdminCustomersRoute,
   AdminOrdersRoute: AdminOrdersRoute,
+  AdminRatesRoute: AdminRatesRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminProductsProductIdRoute: AdminProductsProductIdRoute,
   AdminProductsIndexRoute: AdminProductsIndexRoute,

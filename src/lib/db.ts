@@ -325,6 +325,18 @@ export async function initDb() {
     await sql`ALTER TABLE products ALTER COLUMN weight DROP NOT NULL`;
     await sql`ALTER TABLE products ALTER COLUMN brand SET DEFAULT 'Nadeem Traders'`;
 
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT`;
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier TEXT DEFAULT 'PostEx'`;
+    await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS admin_notes TEXT`;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS store_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+
     await seedCatalogIfEmpty();
 
     console.log("Tables created/altered successfully.");
