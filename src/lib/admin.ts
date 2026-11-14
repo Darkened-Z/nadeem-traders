@@ -322,10 +322,22 @@ export const DEFAULT_STORE_SETTINGS: Record<string, string> = {
 export const adminGetSettings = createServerFn({ method: "GET" }).handler(async () => {
   assertAdmin();
   if (!sql) return DEFAULT_STORE_SETTINGS;
-  const rows = await db()`SELECT key, value FROM store_settings`;
-  const map = { ...DEFAULT_STORE_SETTINGS };
-  for (const r of rows) map[r.key] = r.value;
-  return map;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS store_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    const rows = await sql`SELECT key, value FROM store_settings`;
+    const map = { ...DEFAULT_STORE_SETTINGS };
+    for (const r of rows) map[r.key] = r.value;
+    return map;
+  } catch (err) {
+    console.error("adminGetSettings failed, falling back to defaults:", err);
+    return DEFAULT_STORE_SETTINGS;
+  }
 });
 
 export const adminSaveSettings = createServerFn({ method: "POST" })
@@ -333,15 +345,27 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     assertAdmin();
     const q = db();
-    await q.begin(async (tx) => {
-      for (const [k, v] of Object.entries(data)) {
-        await tx`
-          INSERT INTO store_settings (key, value, updated_at)
-          VALUES (${k}, ${String(v)}, NOW())
-          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
-        `;
-      }
-    });
-    await bustStoreCache();
-    return { ok: true };
+    try {
+      await q`
+        CREATE TABLE IF NOT EXISTS store_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        )
+      `;
+      await q.begin(async (tx) => {
+        for (const [k, v] of Object.entries(data)) {
+          await tx`
+            INSERT INTO store_settings (key, value, updated_at)
+            VALUES (${k}, ${String(v)}, NOW())
+            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+          `;
+        }
+      });
+      await bustStoreCache();
+      return { ok: true };
+    } catch (err) {
+      console.error("adminSaveSettings failed:", err);
+      throw new Error(err instanceof Error ? err.message : "Failed to save settings");
+    }
   });

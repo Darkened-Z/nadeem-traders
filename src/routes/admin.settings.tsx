@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Save, Settings, Phone, Truck, ShieldCheck, Mail, MapPin } from "lucide-react";
 import { toast } from "sonner";
-import { adminGetSettings, adminSaveSettings } from "../lib/admin";
+import { adminGetSettings, adminSaveSettings, DEFAULT_STORE_SETTINGS } from "../lib/admin";
 import { useAdminQuery } from "../components/admin-shell";
 import { Button, Card, Field, PageHeader, errorMessage, inputClass } from "../components/admin-ui";
 
@@ -14,12 +14,12 @@ export const Route = createFileRoute("/admin/settings")({
 function SettingsPage() {
   const qc = useQueryClient();
   const { data: settings, isLoading } = useAdminQuery(["settings"], () => adminGetSettings());
-  const [form, setForm] = useState<Record<string, string>>({});
+  const [form, setForm] = useState<Record<string, string>>(DEFAULT_STORE_SETTINGS);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (settings) {
-      setForm(settings);
+      setForm((prev) => ({ ...prev, ...settings }));
     }
   }, [settings]);
 
@@ -41,7 +41,7 @@ function SettingsPage() {
     }
   };
 
-  if (isLoading || !settings) {
+  if (isLoading && !settings) {
     return <Loader2 className="mx-auto mt-20 h-6 w-6 animate-spin text-[#616161]" />;
   }
 
