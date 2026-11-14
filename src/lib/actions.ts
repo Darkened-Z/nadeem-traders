@@ -1,10 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "./db";
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS } from "./catalog";
+import { assertAdmin } from "./admin";
 import { Resend } from "resend";
 import { OAuth2Client } from "google-auth-library";
 import crypto from "crypto";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -58,7 +60,7 @@ async function sendOrderStatusEmail(
   `;
 
   try {
-    await resend.emails.send({
+    await resend?.emails.send({
       from: "Nadeem Traders <onboarding@resend.dev>",
       to: customerEmail,
       subject: `[Order #${orderId}] Status Update: ${status}`,
@@ -72,7 +74,7 @@ async function sendOrderStatusEmail(
   // Admin / Store Owner Notification
   try {
     const adminEmail = process.env.ADMIN_EMAIL || "technicalsubhan7801@gmail.com";
-    await resend.emails.send({
+    await resend?.emails.send({
       from: "Nadeem Traders <onboarding@resend.dev>",
       to: adminEmail,
       subject: `[Admin Alert - Order #${orderId}] Status: ${status}`,
@@ -720,37 +722,6 @@ export const getCustomerDashboardStats = createServerFn({ method: "POST" })
   });
 
 // Admin Authentication Events & Customer Controls
-export const toggleUserAccountStatus = createServerFn({ method: "POST" })
-  .validator((data: { userId: number; status: string }) => data)
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("users_list");
-    await sql`
-      UPDATE users SET account_status = ${data.status}, updated_at = NOW() WHERE id = ${data.userId}
-    `;
-    // If disabling account, delete all active sessions
-    if (data.status === "Disabled") {
-      await sql`UPDATE sessions SET active = FALSE WHERE user_id = ${data.userId}`;
-    }
-    return { success: true };
-  });
-
-export const forceResetSession = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    await sql`UPDATE sessions SET active = FALSE WHERE user_id = ${data.userId}`;
-    return { success: true };
-  });
-
-export const getCustomerSessionCount = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    const result = await sql`
-      SELECT count(*) FROM sessions WHERE user_id = ${data.userId} AND active = TRUE AND expires_at > NOW()
-    `;
-    return parseInt(result[0].count);
-  });
-
 export const getCustomerLoginHistory = createServerFn({ method: "POST" })
   .validator((data: { userId: number }) => data)
   .handler(async ({ data }) => {
@@ -792,29 +763,8 @@ const CATEGORY_IMAGE_FALLBACKS: Record<string, string> = {
 };
 
 // 1. Categories
-const MOCK_CATEGORIES = [
-  { id: 1, name: "Dry Fruits", icon: "🥜", image_url: "/categories/dry-fruits.jpg" },
-  { id: 2, name: "Spices", icon: "🌶️", image_url: "/categories/spices.jpg" },
-  { id: 3, name: "Pulses & Lentils", icon: "🫘", image_url: "/categories/pulses-lentils.jpg" },
-  { id: 4, name: "Rice & Grains", icon: "🌾", image_url: "/categories/rice-grains.jpg" },
-  { id: 5, name: "Cooking Oils", icon: "🫙", image_url: "/categories/cooking-oils.jpg" },
-  { id: 6, name: "Sugar & Salt", icon: "🧂", image_url: "/categories/sugar-salt.jpg" },
-];
-
-const MOCK_PRODUCTS = [
-  { id: 1, name: "Premium Almonds", brand: "Nadeem Traders", weight: "500g", price: 1800, old_price: null, wholesale_price: 1620, wholesale_min_qty: 5, rating: 5.0, reviews: 120, discount: 0, emoji: "🥜", stock: true, category_id: 1, category_name: "Dry Fruits", image_url: "/products/almonds.jpg" },
-  { id: 2, name: "Pumpkin Seeds", brand: "Nadeem Traders", weight: "250g", price: 650, old_price: null, wholesale_price: 560, wholesale_min_qty: 5, rating: 4.9, reviews: 85, discount: 0, emoji: "🌱", stock: true, category_id: 1, category_name: "Dry Fruits", image_url: "/products/pumpkin-seeds.jpg" },
-  { id: 3, name: "Kashmiri Red Chilli", brand: "Nadeem Traders", weight: "200g", price: 320, old_price: null, wholesale_price: 275, wholesale_min_qty: 10, rating: 4.8, reviews: 200, discount: 0, emoji: "🌶️", stock: true, category_id: 2, category_name: "Spices", image_url: "/products/red-chilli.jpg" },
-  { id: 4, name: "Haldi Powder", brand: "Nadeem Traders", weight: "200g", price: 180, old_price: null, wholesale_price: 150, wholesale_min_qty: 10, rating: 4.9, reviews: 310, discount: 0, emoji: "🟡", stock: true, category_id: 2, category_name: "Spices", image_url: "/products/haldi-powder.jpg" },
-  { id: 5, name: "Masoor Dal", brand: "Nadeem Traders", weight: "1kg", price: 280, old_price: null, wholesale_price: 245, wholesale_min_qty: 10, rating: 4.7, reviews: 95, discount: 0, emoji: "🫘", stock: true, category_id: 3, category_name: "Pulses & Lentils", image_url: "/products/masoor-dal.jpg" },
-  { id: 6, name: "Chana Dal", brand: "Nadeem Traders", weight: "1kg", price: 240, old_price: null, wholesale_price: 210, wholesale_min_qty: 10, rating: 4.8, reviews: 140, discount: 0, emoji: "🟤", stock: true, category_id: 3, category_name: "Pulses & Lentils", image_url: "/products/chana-dal.jpg" },
-  { id: 7, name: "Super Kainat Rice", brand: "Nadeem Traders", weight: "5kg", price: 1650, old_price: null, wholesale_price: 1480, wholesale_min_qty: 5, rating: 4.9, reviews: 275, discount: 0, emoji: "🌾", stock: true, category_id: 4, category_name: "Rice & Grains", image_url: "/products/kainat-rice.jpg" },
-  { id: 8, name: "Cashews Premium", brand: "Nadeem Traders", weight: "250g", price: 950, old_price: null, wholesale_price: 840, wholesale_min_qty: 5, rating: 5.0, reviews: 60, discount: 0, emoji: "🥜", stock: true, category_id: 1, category_name: "Dry Fruits", image_url: "/products/cashews.jpg" },
-  { id: 9, name: "Zeera (Cumin)", brand: "Nadeem Traders", weight: "100g", price: 160, old_price: null, wholesale_price: 135, wholesale_min_qty: 10, rating: 4.8, reviews: 180, discount: 0, emoji: "🌿", stock: true, category_id: 2, category_name: "Spices", image_url: "/products/zeera.jpg" },
-  { id: 10, name: "Sunflower Oil", brand: "Nadeem Traders", weight: "1L", price: 480, old_price: null, wholesale_price: 445, wholesale_min_qty: 12, rating: 4.7, reviews: 90, discount: 0, emoji: "🫙", stock: true, category_id: 5, category_name: "Cooking Oils", image_url: "/products/sunflower-oil.jpg" },
-  { id: 11, name: "Pink Salt", brand: "Nadeem Traders", weight: "800g", price: 120, old_price: null, wholesale_price: 95, wholesale_min_qty: 12, rating: 4.9, reviews: 145, discount: 0, emoji: "🧂", stock: true, category_id: 6, category_name: "Sugar & Salt", image_url: "/products/pink-salt.jpg" },
-  { id: 12, name: "White Sugar", brand: "Nadeem Traders", weight: "1kg", price: 155, old_price: null, wholesale_price: 142, wholesale_min_qty: 20, rating: 4.8, reviews: 210, discount: 0, emoji: "🧂", stock: true, category_id: 6, category_name: "Sugar & Salt", image_url: "/products/white-sugar.jpg" },
-];
+const MOCK_CATEGORIES = CATALOG_CATEGORIES;
+const MOCK_PRODUCTS = CATALOG_PRODUCTS;
 
 const MOCK_BRANDS = [
   { id: 1, name: "Nadeem Traders", image_url: null },
@@ -828,7 +778,7 @@ export const getCategories = createServerFn({ method: "GET" }).handler(
     const { serverCache } = await import("./server-cache");
     const cached = serverCache.get("categories");
     if (cached) return cached;
-    const res = await sql`SELECT * FROM categories ORDER BY name ASC`;
+    const res = await sql`SELECT * FROM categories ORDER BY position, id`;
     const mapped = (res as any[]).map((c) => {
       if (!c.image_url || c.image_url.includes("wikimedia")) {
         const fb = CATEGORY_IMAGE_FALLBACKS[c.name];
@@ -836,48 +786,11 @@ export const getCategories = createServerFn({ method: "GET" }).handler(
       }
       return c;
     });
-    serverCache.set("categories", mapped);
+    serverCache.set("categories", mapped, 30_000);
     return mapped;
   }
 );
 
-export const addCategory = createServerFn({ method: "POST" })
-  .validator((data: { name: string; icon: string; image_url?: string }) => data)
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("categories");
-    const result = await sql`
-      INSERT INTO categories (name, icon, image_url)
-      VALUES (${data.name}, ${data.icon}, ${data.image_url || null})
-      RETURNING *
-    `;
-    return result[0];
-  });
-
-export const deleteCategory = createServerFn({ method: "POST" })
-  .validator((data: { id: number }) => data)
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("categories");
-    await sql`DELETE FROM categories WHERE id = ${data.id}`;
-    return { success: true };
-  });
-
-export const editCategory = createServerFn({ method: "POST" })
-  .validator((data: { id: number; name: string; icon: string; image_url?: string }) => data)
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("categories");
-    serverCache.delete("products"); // products reference category_name in joins
-    await sql`
-      UPDATE categories 
-      SET name = ${data.name}, icon = ${data.icon}, image_url = ${data.image_url || null}
-      WHERE id = ${data.id}
-    `;
-    return { success: true };
-  });
-
-// 2. Products
 export const getProducts = createServerFn({ method: "GET" }).handler(
   async () => {
     if (!sql) return MOCK_PRODUCTS;
@@ -888,7 +801,8 @@ export const getProducts = createServerFn({ method: "GET" }).handler(
       SELECT p.*, c.name as category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      ORDER BY p.id DESC
+      WHERE p.status = 'active'
+      ORDER BY c.position NULLS LAST, c.id, p.id
     `;
     const mapped = (res as any[]).map((p) => {
       if (!p.image_url || p.image_url.includes("wikimedia")) {
@@ -897,102 +811,11 @@ export const getProducts = createServerFn({ method: "GET" }).handler(
       }
       return p;
     });
-    serverCache.set("products", mapped);
+    serverCache.set("products", mapped, 30_000);
     return mapped;
   }
 );
 
-export const addProduct = createServerFn({ method: "POST" })
-  .validator(
-    (data: {
-      name: string;
-      brand: string;
-      weight: string;
-      price: number;
-      old_price?: number;
-      discount?: number;
-      emoji: string;
-      stock: boolean;
-      category_id: number;
-      wholesale_price?: number;
-      wholesale_min_qty?: number;
-      image_url?: string;
-    }) => data
-  )
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("products");
-    const result = await sql`
-      INSERT INTO products (
-        name, brand, weight, price, old_price, discount, emoji, stock, category_id, wholesale_price, wholesale_min_qty, image_url
-      ) VALUES (
-        ${data.name}, ${data.brand}, ${data.weight}, ${data.price}, ${data.old_price || null}, ${data.discount || 0}, ${data.emoji}, ${data.stock}, ${data.category_id}, ${data.wholesale_price || null}, ${data.wholesale_min_qty || 1}, ${data.image_url || null}
-      )
-      RETURNING *
-    `;
-    return result[0];
-  });
-
-export const updateProductStock = createServerFn({ method: "POST" })
-  .validator((data: { id: number; stock: boolean }) => data)
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("products");
-    await sql`UPDATE products SET stock = ${data.stock} WHERE id = ${data.id}`;
-    return { success: true };
-  });
-
-export const deleteProduct = createServerFn({ method: "POST" })
-  .validator((data: { id: number }) => data)
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("products");
-    await sql`DELETE FROM products WHERE id = ${data.id}`;
-    return { success: true };
-  });
-
-export const editProduct = createServerFn({ method: "POST" })
-  .validator(
-    (data: {
-      id: number;
-      name: string;
-      brand: string;
-      weight: string;
-      price: number;
-      old_price?: number;
-      discount?: number;
-      emoji: string;
-      stock: boolean;
-      category_id: number;
-      wholesale_price?: number;
-      wholesale_min_qty?: number;
-      image_url?: string;
-    }) => data
-  )
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("products");
-    await sql`
-      UPDATE products
-      SET
-        name = ${data.name},
-        brand = ${data.brand},
-        weight = ${data.weight},
-        price = ${data.price},
-        old_price = ${data.old_price || null},
-        discount = ${data.discount || 0},
-        emoji = ${data.emoji},
-        stock = ${data.stock},
-        category_id = ${data.category_id},
-        wholesale_price = ${data.wholesale_price || null},
-        wholesale_min_qty = ${data.wholesale_min_qty || 1},
-        image_url = ${data.image_url || null}
-      WHERE id = ${data.id}
-    `;
-    return { success: true };
-  });
-
-// 3. Brands
 export const getBrands = createServerFn({ method: "GET" }).handler(async () => {
   if (!sql) return MOCK_BRANDS;
   const { serverCache } = await import("./server-cache");
@@ -1003,42 +826,6 @@ export const getBrands = createServerFn({ method: "GET" }).handler(async () => {
   return res;
 });
 
-export const addBrand = createServerFn({ method: "POST" })
-  .validator((data: { name: string; image_url?: string }) => data)
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("brands");
-    const result = await sql`
-      INSERT INTO brands (name, image_url)
-      VALUES (${data.name}, ${data.image_url || null})
-      RETURNING *
-    `;
-    return result[0];
-  });
-
-export const deleteBrand = createServerFn({ method: "POST" })
-  .validator((data: { id: number }) => data)
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("brands");
-    await sql`DELETE FROM brands WHERE id = ${data.id}`;
-    return { success: true };
-  });
-
-export const editBrand = createServerFn({ method: "POST" })
-  .validator((data: { id: number; name: string; image_url?: string }) => data)
-  .handler(async ({ data }) => {
-    const { serverCache } = await import("./server-cache");
-    serverCache.delete("brands");
-    await sql`
-      UPDATE brands 
-      SET name = ${data.name}, image_url = ${data.image_url || null}
-      WHERE id = ${data.id}
-    `;
-    return { success: true };
-  });
-
-// 4. Orders
 export const createOrder = createServerFn({ method: "POST" })
   .validator(
     (data: {
@@ -1113,6 +900,7 @@ export const createOrder = createServerFn({ method: "POST" })
   });
 
 export const getOrders = createServerFn({ method: "GET" }).handler(async () => {
+  assertAdmin();
   const { serverCache } = await import("./server-cache");
   const cached = serverCache.get("orders_list");
   if (cached) return cached;
@@ -1144,6 +932,7 @@ export const getOrders = createServerFn({ method: "GET" }).handler(async () => {
 export const updateOrderStatus = createServerFn({ method: "POST" })
   .validator((data: { id: number; status: string }) => data)
   .handler(async ({ data }) => {
+    assertAdmin();
     const { serverCache } = await import("./server-cache");
     serverCache.delete("orders_list");
     // 1. Update status
@@ -1199,18 +988,6 @@ export const getOrderStatus = createServerFn({ method: "GET" })
     };
   });
 
-export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
-  const { serverCache } = await import("./server-cache");
-  const cacheKey = "users_list";
-  const cached = serverCache.get(cacheKey);
-  if (cached) return cached;
-  const res = await sql`
-    SELECT * FROM users ORDER BY created_at DESC
-  `;
-  serverCache.set(cacheKey, res);
-  return res;
-});
-
 export const sendVerificationEmail = createServerFn({ method: "POST" })
   .validator((data: { email: string }) => data)
   .handler(async ({ data }) => {
@@ -1226,7 +1003,7 @@ export const sendVerificationEmail = createServerFn({ method: "POST" })
     console.log(`[VERIFICATION CODE GENERATED] Email: ${data.email}, Code: ${code}`);
 
     try {
-      await resend.emails.send({
+      await resend?.emails.send({
         from: "Nadeem Traders <onboarding@resend.dev>",
         to: data.email,
         subject: "Verify Your Email Address — Nadeem Traders",

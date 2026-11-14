@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Dry fruits, masalay, daal, chawal aur oil — seedha mandi se aapke kitchen tak. Cash on delivery across Pakistan.",
+          "Dry fruits, seeds aur masalay — duniya bhar se chun kar aapke kitchen tak. Cash on delivery across Pakistan.",
       },
     ],
   }),
@@ -30,7 +30,6 @@ const PERKS = [
   ["Cash On Delivery", "Paise Baad Mein"],
   ["Pakistan Bhar Mein", "Har Sheher"],
   ["Faisalabad Mein", "InDrive / Yango Delivery"],
-  ["Mandi Se Direct", "No Middlemen"],
 ];
 
 const STEPS = [
@@ -55,13 +54,13 @@ function HomePage() {
       <Hero />
 
       <div className="border-b border-border">
-        <ul className="mx-auto grid max-w-7xl grid-cols-2 px-4 sm:px-6 lg:grid-cols-4">
+        <ul className="mx-auto grid max-w-7xl grid-cols-3 divide-x divide-border px-1 sm:px-6">
           {PERKS.map(([head, sub], i) => (
             <li
               key={head}
               data-reveal
               style={stagger(i)}
-              className={`py-3.5 ${i % 2 === 0 ? "pr-3" : "border-l border-border pl-3"} ${i < 2 ? "border-b border-border lg:border-b-0" : ""} lg:border-l lg:px-5 lg:first:border-l-0 lg:first:pl-0`}
+              className="px-3 py-3.5 sm:px-5 sm:first:pl-0"
             >
               <strong className="block text-[13px] font-semibold leading-tight sm:text-sm">{head}</strong>
               <span className="block text-xs text-muted-foreground sm:text-sm">{sub}</span>
@@ -234,11 +233,11 @@ function StepsSimple() {
 }
 
 const HERO_SLIDES = [
-  { image: "/hero/slide-1.jpg", label: "Shop All", line: "Poori Mandi, Ek Click Pe", href: "/shop", color: "#6B4226" },
+  { image: "/hero/slide-1.jpg", label: "Shop All", line: "Poori Dukaan, Ek Click Pe", href: "/shop", color: "#6B4226" },
   { image: "/hero/slide-2.jpg", label: "Daawat Season", line: "Daawat Ka Plan? Saman Humara", href: "/shop", color: "#2F6B3A" },
   { image: "/hero/slide-3.jpg", label: "Spices", line: "Lal Mirch, Full Garmi", href: "/category/spices", color: "#A1281C" },
-  { image: "/hero/slide-4.jpg", label: "Rice & Grains", line: "Pulao Pe Compromise? Never.", href: "/category/rice-grains", color: "#1E3A5F" },
-  { image: "/hero/slide-5.jpg", label: "Pulses & Grains", line: "Bori Se Seedha Aapke Ghar", href: "/category/pulses-lentils", color: "#8A6100" },
+  { image: "/hero/slide-4.jpg", label: "Whole Spices", line: "Daig Ka Asli Raaz: Sabut Masalay", href: "/category/whole-spices", color: "#8A6100" },
+  { image: "/hero/slide-5.jpg", label: "Seeds", line: "Bori Se Seedha Aapke Ghar", href: "/category/seeds", color: "#2F6B3A" },
 ];
 
 const SLIDE_MS = 5000;
@@ -321,10 +320,10 @@ function Hero() {
         <div className="hero-parallax-text lg:max-w-[46%]">
           <p className="animate-fade-up text-sm font-semibold text-[#E6CE9C]">Apka Trusted Stop</p>
           <h1 style={{ animationDelay: "120ms" }} className="animate-fade-up mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] sm:text-6xl xl:text-7xl">
-            Asli Maal. Mandi Rates. No Cap.
+            Asli Maal. Sahi Daam. No Cap.
           </h1>
           <p style={{ animationDelay: "240ms" }} className="animate-fade-up mt-4 max-w-md text-base leading-relaxed text-white/80">
-            Dry Fruits, Masalay, Daal, Chawal — Seedha Mandi Se Aapke Kitchen Tak. Zero Milawat, Full Bharosa.
+            Dry Fruits, Seeds Aur Masalay — Duniya Bhar Se Chun Kar, Aapke Kitchen Tak. Zero Milawat, Full Bharosa.
           </p>
           <div style={{ animationDelay: "360ms" }} className="animate-fade-up mt-7 flex gap-3">
             <Link
@@ -343,7 +342,7 @@ function Hero() {
           </div>
 
           <div style={{ animationDelay: "480ms" }} className="animate-fade-up mt-9 lg:mt-12">
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Aaj Ki Mandi</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Aaj Ki Picks</p>
             <div className="mt-3 flex gap-2.5 lg:gap-3">
               {HERO_SLIDES.map((slide, i) => {
                 const isActive = i === active;

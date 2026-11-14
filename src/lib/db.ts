@@ -3,7 +3,7 @@ import postgres from "postgres";
 const DATABASE_URL = process.env.DATABASE_URL;
 
 export const sql = DATABASE_URL
-  ? postgres(DATABASE_URL, { ssl: "require", max: 10, idle_timeout: 20, connect_timeout: 10 })
+  ? postgres(DATABASE_URL, { ssl: "require", max: 10, idle_timeout: 20, connect_timeout: 10, onnotice: () => {} })
   : (null as unknown as ReturnType<typeof postgres>);
 
 export async function initDb() {
@@ -105,12 +105,6 @@ export async function initDb() {
     await sql`ALTER TABLE brands ADD COLUMN IF NOT EXISTS image_url TEXT`;
     await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL`;
 
-    // Start order IDs from 1
-    try {
-      await sql`ALTER SEQUENCE IF EXISTS orders_id_seq RESTART WITH 1`;
-    } catch (e) {
-      console.warn("Could not alter sequence orders_id_seq:", e);
-    }
 
     // Alterations for Google authentication & Customer Profile customization
     await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE`;
@@ -320,11 +314,48 @@ export async function initDb() {
       )
     `;
 
+    await sql`ALTER TABLE categories ADD COLUMN IF NOT EXISTS name_ur TEXT`;
+    await sql`ALTER TABLE categories ADD COLUMN IF NOT EXISTS position INTEGER NOT NULL DEFAULT 0`;
+    await sql`ALTER TABLE categories ALTER COLUMN icon SET DEFAULT ''`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS name_ur TEXT`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS origin TEXT`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS description TEXT`;
+    await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active'`;
+    await sql`ALTER TABLE products ALTER COLUMN price DROP NOT NULL`;
+    await sql`ALTER TABLE products ALTER COLUMN weight DROP NOT NULL`;
+    await sql`ALTER TABLE products ALTER COLUMN brand SET DEFAULT 'Nadeem Traders'`;
+
+    await seedCatalogIfEmpty();
+
     console.log("Tables created/altered successfully.");
 
-    console.log("Database initialized successfully without mock seed data.");
   } catch (error) {
     console.error("Failed to initialize database:", error);
     throw error;
   }
+}
+
+async function seedCatalogIfEmpty() {
+  const [{ n }] = await sql`SELECT count(*)::int AS n FROM categories`;
+  if (n > 0) return;
+  const { CATALOG_CATEGORIES, CATALOG_PRODUCTS } = await import("./catalog");
+  await sql.begin(async (tx) => {
+    const idMap = new Map<number, number>();
+    for (const [position, c] of CATALOG_CATEGORIES.entries()) {
+      const [row] = await tx`
+        INSERT INTO categories (name, name_ur, icon, image_url, position)
+        VALUES (${c.name}, ${c.name_ur}, '', ${c.image_url}, ${position})
+        RETURNING id
+      `;
+      idMap.set(c.id, row.id);
+    }
+    for (const p of CATALOG_PRODUCTS) {
+      await tx`
+        INSERT INTO products (name, name_ur, origin, brand, weight, price, emoji, stock, status, category_id, image_url)
+        VALUES (${p.name}, ${p.name_ur}, ${p.origin}, ${p.brand}, ${p.weight}, ${p.price}, '', true, 'active',
+                ${idMap.get(p.category_id)!}, ${p.image_url})
+      `;
+    }
+  });
+  console.log("Seeded catalog with", CATALOG_PRODUCTS.length, "products.");
 }

@@ -33,7 +33,7 @@ function HelpPage() {
     },
     {
       q: "How do you ensure 100% pure kiryana without adulteration?",
-      a: "We procure agricultural commodities directly from verified regional mandis and mills. Every batch of dry fruits, spices, and pulses is triple-cleaned and sealed in food-grade packaging before dispatch.",
+      a: "We source every item from verified growers and importers, and list its origin on the product page. Every batch of dry fruits, seeds, and spices is cleaned and sealed in food-grade packaging before dispatch.",
     },
   ];
 

@@ -49,8 +49,8 @@ function ShopPage() {
         (selectedCategory === null || p.category_id === selectedCategory) &&
         (selectedBrand === null || p.brand === selectedBrand),
     );
-    if (sortOption === "price-asc") list.sort((a, b) => a.price - b.price);
-    if (sortOption === "price-desc") list.sort((a, b) => b.price - a.price);
+    if (sortOption === "price-asc") list.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+    if (sortOption === "price-desc") list.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
     return list;
   }, [products, searchQuery, selectedCategory, selectedBrand, sortOption]);
 
@@ -68,7 +68,7 @@ function ShopPage() {
     <StoreLayout categories={categories} products={products} currentUser={currentUser}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
         <h1 className="font-display text-4xl font-semibold sm:text-5xl">All Products</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Sab Kuch, Ek Jagah. Mandi Rates, No Cap.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Sab Kuch, Ek Jagah. Sahi Daam, No Cap.</p>
 
         <div className="mt-6 flex items-center gap-2">
           <div className="relative min-w-0 flex-1 sm:max-w-sm">

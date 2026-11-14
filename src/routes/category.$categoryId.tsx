@@ -49,8 +49,8 @@ function CategoryPage() {
           (p.category_name && p.category_name.toLowerCase() === category.name.toLowerCase())) &&
         (!q || p.name.toLowerCase().includes(q)),
     );
-    if (sortBy === "price-low") list.sort((a, b) => a.price - b.price);
-    if (sortBy === "price-high") list.sort((a, b) => b.price - a.price);
+    if (sortBy === "price-low") list.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+    if (sortBy === "price-high") list.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
     if (sortBy === "title-az") list.sort((a, b) => a.name.localeCompare(b.name));
     return list;
   }, [products, category, searchQuery, sortBy]);
@@ -92,6 +92,11 @@ function CategoryPage() {
             >
               {activeCategory.name}
             </h1>
+            {activeCategory.name_ur && (
+              <p lang="ur" className="font-urdu mt-2 text-2xl" style={{ color: meta.color }}>
+                {activeCategory.name_ur}
+              </p>
+            )}
             <p className="mt-3 max-w-md text-base leading-relaxed text-muted-foreground">{meta.tagline}</p>
           </div>
           {activeCategory.image_url && (

@@ -10,7 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminPortalNadeem786RouteImport } from './routes/admin-portal-nadeem-786'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as BulkOrdersRouteImport } from './routes/bulk-orders'
 import { Route as CatalogRouteImport } from './routes/catalog'
@@ -30,17 +30,22 @@ import { Route as SellWithUsRouteImport } from './routes/sell-with-us'
 import { Route as ShippingPolicyRouteImport } from './routes/shipping-policy'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
+import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as CategoryCategoryIdRouteImport } from './routes/category.$categoryId'
 import { Route as ProductProductIdRouteImport } from './routes/product.$productId'
+import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.index'
+import { Route as AdminProductsProductIdRouteImport } from './routes/admin.products.$productId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPortalNadeem786Route = AdminPortalNadeem786RouteImport.update({
-  id: '/admin-portal-nadeem-786',
-  path: '/admin-portal-nadeem-786',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrandsRoute = BrandsRouteImport.update({
@@ -138,6 +143,21 @@ const TermsOfUseRoute = TermsOfUseRouteImport.update({
   path: '/terms-of-use',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AdminRoute,
+} as any)
 const CategoryCategoryIdRoute = CategoryCategoryIdRouteImport.update({
   id: '/category/$categoryId',
   path: '/category/$categoryId',
@@ -148,10 +168,20 @@ const ProductProductIdRoute = ProductProductIdRouteImport.update({
   path: '/product/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProductsIndexRoute = AdminProductsIndexRouteImport.update({
+  id: '/products/',
+  path: '/products/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProductsProductIdRoute = AdminProductsProductIdRouteImport.update({
+  id: '/products/$productId',
+  path: '/products/$productId',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin-portal-nadeem-786': typeof AdminPortalNadeem786Route
+  '/admin': typeof AdminRouteWithChildren
   '/brands': typeof BrandsRoute
   '/bulk-orders': typeof BulkOrdersRoute
   '/catalog': typeof CatalogRoute
@@ -171,12 +201,16 @@ export interface FileRoutesByFullPath {
   '/shipping-policy': typeof ShippingPolicyRoute
   '/shop': typeof ShopRoute
   '/terms-of-use': typeof TermsOfUseRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/products/$productId': typeof AdminProductsProductIdRoute
+  '/admin/products/': typeof AdminProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin-portal-nadeem-786': typeof AdminPortalNadeem786Route
   '/brands': typeof BrandsRoute
   '/bulk-orders': typeof BulkOrdersRoute
   '/catalog': typeof CatalogRoute
@@ -196,13 +230,18 @@ export interface FileRoutesByTo {
   '/shipping-policy': typeof ShippingPolicyRoute
   '/shop': typeof ShopRoute
   '/terms-of-use': typeof TermsOfUseRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/admin': typeof AdminIndexRoute
+  '/admin/products/$productId': typeof AdminProductsProductIdRoute
+  '/admin/products': typeof AdminProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin-portal-nadeem-786': typeof AdminPortalNadeem786Route
+  '/admin': typeof AdminRouteWithChildren
   '/brands': typeof BrandsRoute
   '/bulk-orders': typeof BulkOrdersRoute
   '/catalog': typeof CatalogRoute
@@ -222,14 +261,19 @@ export interface FileRoutesById {
   '/shipping-policy': typeof ShippingPolicyRoute
   '/shop': typeof ShopRoute
   '/terms-of-use': typeof TermsOfUseRoute
+  '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/category/$categoryId': typeof CategoryCategoryIdRoute
   '/product/$productId': typeof ProductProductIdRoute
+  '/admin/': typeof AdminIndexRoute
+  '/admin/products/$productId': typeof AdminProductsProductIdRoute
+  '/admin/products/': typeof AdminProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin-portal-nadeem-786'
+    | '/admin'
     | '/brands'
     | '/bulk-orders'
     | '/catalog'
@@ -249,12 +293,16 @@ export interface FileRouteTypes {
     | '/shipping-policy'
     | '/shop'
     | '/terms-of-use'
+    | '/admin/categories'
+    | '/admin/orders'
     | '/category/$categoryId'
     | '/product/$productId'
+    | '/admin/'
+    | '/admin/products/$productId'
+    | '/admin/products/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin-portal-nadeem-786'
     | '/brands'
     | '/bulk-orders'
     | '/catalog'
@@ -274,12 +322,17 @@ export interface FileRouteTypes {
     | '/shipping-policy'
     | '/shop'
     | '/terms-of-use'
+    | '/admin/categories'
+    | '/admin/orders'
     | '/category/$categoryId'
     | '/product/$productId'
+    | '/admin'
+    | '/admin/products/$productId'
+    | '/admin/products'
   id:
     | '__root__'
     | '/'
-    | '/admin-portal-nadeem-786'
+    | '/admin'
     | '/brands'
     | '/bulk-orders'
     | '/catalog'
@@ -299,13 +352,18 @@ export interface FileRouteTypes {
     | '/shipping-policy'
     | '/shop'
     | '/terms-of-use'
+    | '/admin/categories'
+    | '/admin/orders'
     | '/category/$categoryId'
     | '/product/$productId'
+    | '/admin/'
+    | '/admin/products/$productId'
+    | '/admin/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminPortalNadeem786Route: typeof AdminPortalNadeem786Route
+  AdminRoute: typeof AdminRouteWithChildren
   BrandsRoute: typeof BrandsRoute
   BulkOrdersRoute: typeof BulkOrdersRoute
   CatalogRoute: typeof CatalogRoute
@@ -338,11 +396,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin-portal-nadeem-786': {
-      id: '/admin-portal-nadeem-786'
-      path: '/admin-portal-nadeem-786'
-      fullPath: '/admin-portal-nadeem-786'
-      preLoaderRoute: typeof AdminPortalNadeem786RouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/brands': {
@@ -478,6 +536,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsOfUseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/category/$categoryId': {
       id: '/category/$categoryId'
       path: '/category/$categoryId'
@@ -492,12 +571,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/products/': {
+      id: '/admin/products/'
+      path: '/products'
+      fullPath: '/admin/products/'
+      preLoaderRoute: typeof AdminProductsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/products/$productId': {
+      id: '/admin/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/admin/products/$productId'
+      preLoaderRoute: typeof AdminProductsProductIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminOrdersRoute: typeof AdminOrdersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminProductsProductIdRoute: typeof AdminProductsProductIdRoute
+  AdminProductsIndexRoute: typeof AdminProductsIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminOrdersRoute: AdminOrdersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  AdminProductsProductIdRoute: AdminProductsProductIdRoute,
+  AdminProductsIndexRoute: AdminProductsIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminPortalNadeem786Route: AdminPortalNadeem786Route,
+  AdminRoute: AdminRouteWithChildren,
   BrandsRoute: BrandsRoute,
   BulkOrdersRoute: BulkOrdersRoute,
   CatalogRoute: CatalogRoute,

@@ -87,6 +87,10 @@
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
 @utility font-display { font-family: var(--font-display); }
 @utility font-mono { font-family: var(--font-mono); }
+@utility font-urdu {
+  font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif;
+  line-height: 1.9;
+}
 
 @layer base {
   * { border-color: var(--color-border); }

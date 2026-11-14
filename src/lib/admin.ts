@@ -1,0 +1,257 @@
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
+import { getCookie, setCookie, deleteCookie } from "@tanstack/react-start/server";
+import crypto from "crypto";
+import { sql } from "./db";
+
+const COOKIE = "nt_admin";
+const SESSION_DAYS = 7;
+
+function secret() {
+  const s = process.env.ADMIN_SESSION_SECRET;
+  if (!s || s.length < 32) throw new Error("ADMIN_SESSION_SECRET is not configured");
+  return s;
+}
+
+function sign(payload: string) {
+  return crypto.createHmac("sha256", secret()).update(payload).digest("hex");
+}
+
+function safeEqual(a: string, b: string) {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
+}
+
+function isValidSession(token: string | undefined) {
+  if (!token) return false;
+  const [exp, mac] = token.split(".");
+  if (!exp || !mac || Number(exp) < Date.now()) return false;
+  return safeEqual(mac, sign(exp));
+}
+
+const hasAdminCookie = createServerOnlyFn(() => isValidSession(getCookie(COOKIE)));
+
+export const assertAdmin = createServerOnlyFn(() => {
+  if (!hasAdminCookie()) throw new Error("Unauthorized");
+});
+
+function db() {
+  if (!sql) throw new Error("Database not connected");
+  return sql;
+}
+
+async function bustStoreCache() {
+  const { serverCache } = await import("./server-cache");
+  serverCache.delete("products");
+  serverCache.delete("categories");
+}
+
+export const adminSession = createServerFn({ method: "GET" }).handler(async () => ({
+  authed: hasAdminCookie(),
+  dbConnected: !!sql,
+}));
+
+export const adminLogin = createServerFn({ method: "POST" })
+  .validator((data: { password: string }) => data)
+  .handler(async ({ data }) => {
+    const expected = process.env.ADMIN_PASSWORD;
+    if (!expected) throw new Error("ADMIN_PASSWORD is not configured");
+    await new Promise((r) => setTimeout(r, 400));
+    if (!safeEqual(sign(data.password), sign(expected))) return { ok: false };
+    const exp = String(Date.now() + SESSION_DAYS * 86_400_000);
+    setCookie(COOKIE, `${exp}.${sign(exp)}`, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: SESSION_DAYS * 86_400,
+    });
+    return { ok: true };
+  });
+
+export const adminLogout = createServerFn({ method: "POST" }).handler(async () => {
+  deleteCookie(COOKIE, { path: "/" });
+  return { ok: true };
+});
+
+export const adminOverview = createServerFn({ method: "GET" }).handler(async () => {
+  assertAdmin();
+  const q = db();
+  const [counts] = await q`
+    SELECT
+      (SELECT count(*) FROM products)::int AS products,
+      (SELECT count(*) FROM products WHERE status = 'active')::int AS active,
+      (SELECT count(*) FROM products WHERE status = 'draft')::int AS drafts,
+      (SELECT count(*) FROM products WHERE price IS NULL)::int AS unpriced,
+      (SELECT count(*) FROM categories)::int AS categories,
+      (SELECT count(*) FROM orders)::int AS orders,
+      (SELECT count(*) FROM orders WHERE status = 'Pending')::int AS pending
+  `;
+  const recentOrders = await q`
+    SELECT id, customer_name, total_amount, status, created_at FROM orders ORDER BY id DESC LIMIT 5
+  `;
+  return { counts, recentOrders };
+});
+
+export const adminListProducts = createServerFn({ method: "GET" }).handler(async () => {
+  assertAdmin();
+  return db()`
+    SELECT p.*, c.name AS category_name
+    FROM products p LEFT JOIN categories c ON c.id = p.category_id
+    ORDER BY c.position NULLS LAST, c.id, p.id
+  `;
+});
+
+export const adminGetProduct = createServerFn({ method: "POST" })
+  .validator((data: { id: number }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const rows = await db()`SELECT * FROM products WHERE id = ${data.id}`;
+    return rows[0] ?? null;
+  });
+
+export type ProductInput = {
+  id?: number;
+  name: string;
+  name_ur: string | null;
+  description: string | null;
+  origin: string | null;
+  weight: string | null;
+  price: number | null;
+  category_id: number;
+  image_url: string | null;
+  stock: boolean;
+  status: "active" | "draft";
+};
+
+export const adminSaveProduct = createServerFn({ method: "POST" })
+  .validator((data: ProductInput) => {
+    if (!data.name?.trim()) throw new Error("Title is required");
+    if (!Number.isInteger(data.category_id)) throw new Error("Category is required");
+    if (data.price != null && (!Number.isFinite(data.price) || data.price < 0)) throw new Error("Invalid price");
+    if (data.status !== "active" && data.status !== "draft") throw new Error("Invalid status");
+    return data;
+  })
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    const v = {
+      name: data.name.trim(),
+      name_ur: data.name_ur?.trim() || null,
+      description: data.description?.trim() || null,
+      origin: data.origin?.trim() || null,
+      weight: data.weight?.trim() || null,
+      price: data.price == null ? null : Math.round(data.price),
+      image_url: data.image_url?.trim() || null,
+    };
+    let row;
+    if (data.id) {
+      [row] = await q`
+        UPDATE products SET
+          name = ${v.name}, name_ur = ${v.name_ur}, description = ${v.description}, origin = ${v.origin},
+          weight = ${v.weight}, price = ${v.price}, category_id = ${data.category_id},
+          image_url = ${v.image_url}, stock = ${data.stock}, status = ${data.status}
+        WHERE id = ${data.id}
+        RETURNING *
+      `;
+    } else {
+      [row] = await q`
+        INSERT INTO products (name, name_ur, description, origin, weight, price, category_id, image_url, stock, status, brand, emoji)
+        VALUES (${v.name}, ${v.name_ur}, ${v.description}, ${v.origin}, ${v.weight}, ${v.price}, ${data.category_id},
+                ${v.image_url}, ${data.stock}, ${data.status}, 'Nadeem Traders', '')
+        RETURNING *
+      `;
+    }
+    await bustStoreCache();
+    return row;
+  });
+
+export const adminSetProductStatus = createServerFn({ method: "POST" })
+  .validator((data: { ids: number[]; status: "active" | "draft" }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    if (data.status !== "active" && data.status !== "draft") throw new Error("Invalid status");
+    await db()`UPDATE products SET status = ${data.status} WHERE id = ANY(${data.ids})`;
+    await bustStoreCache();
+    return { ok: true };
+  });
+
+export const adminDeleteProducts = createServerFn({ method: "POST" })
+  .validator((data: { ids: number[] }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    await db()`DELETE FROM products WHERE id = ANY(${data.ids})`;
+    await bustStoreCache();
+    return { ok: true };
+  });
+
+export const adminListCategories = createServerFn({ method: "GET" }).handler(async () => {
+  assertAdmin();
+  return db()`
+    SELECT c.*, (SELECT count(*) FROM products p WHERE p.category_id = c.id)::int AS product_count
+    FROM categories c ORDER BY c.position, c.id
+  `;
+});
+
+export const adminSaveCategory = createServerFn({ method: "POST" })
+  .validator((data: { id?: number; name: string; name_ur: string | null; image_url: string | null }) => {
+    if (!data.name?.trim()) throw new Error("Name is required");
+    return data;
+  })
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    const name = data.name.trim();
+    const nameUr = data.name_ur?.trim() || null;
+    const image = data.image_url?.trim() || null;
+    const [row] = data.id
+      ? await q`UPDATE categories SET name = ${name}, name_ur = ${nameUr}, image_url = ${image} WHERE id = ${data.id} RETURNING *`
+      : await q`
+          INSERT INTO categories (name, name_ur, image_url, icon, position)
+          VALUES (${name}, ${nameUr}, ${image}, '', (SELECT coalesce(max(position), 0) + 1 FROM categories))
+          RETURNING *
+        `;
+    await bustStoreCache();
+    return row;
+  });
+
+export const adminMoveCategory = createServerFn({ method: "POST" })
+  .validator((data: { id: number; direction: -1 | 1 }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    const cats = await q`SELECT id FROM categories ORDER BY position, id`;
+    const ids = cats.map((c) => c.id as number);
+    const i = ids.indexOf(data.id);
+    const j = i + data.direction;
+    if (i < 0 || j < 0 || j >= ids.length) return { ok: true };
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    await q.begin(async (tx) => {
+      for (const [pos, id] of ids.entries()) {
+        await tx`UPDATE categories SET position = ${pos} WHERE id = ${id}`;
+      }
+    });
+    await bustStoreCache();
+    return { ok: true };
+  });
+
+export const adminDeleteCategory = createServerFn({ method: "POST" })
+  .validator((data: { id: number }) => data)
+  .handler(async ({ data }) => {
+    assertAdmin();
+    const q = db();
+    const [{ n }] = await q`SELECT count(*)::int AS n FROM products WHERE category_id = ${data.id}`;
+    if (n > 0) throw new Error("Move or delete this category's products first");
+    await q`DELETE FROM categories WHERE id = ${data.id}`;
+    await bustStoreCache();
+    return { ok: true };
+  });
+
+export const adminListOrders = createServerFn({ method: "GET" }).handler(async () => {
+  assertAdmin();
+  const q = db();
+  const orders = await q`SELECT * FROM orders ORDER BY id DESC LIMIT 200`;
+  const ids = orders.map((o) => o.id as number);
+  const items = ids.length ? await q`SELECT * FROM order_items WHERE order_id = ANY(${ids})` : [];
+  return orders.map((o) => ({ ...o, items: items.filter((it) => it.order_id === o.id) }));
+});

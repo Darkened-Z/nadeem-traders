@@ -89,7 +89,7 @@ function DeliveryInfoPage() {
               <span className="font-mono font-semibold">Rs. 180</span>
             </div>
             <div className="grid grid-cols-3 px-6 py-3.5">
-              <span className="font-semibold text-foreground">Bulk Mandi Sacks (25kg–50kg+)</span>
+              <span className="font-semibold text-foreground">Bulk Sacks (25kg–50kg+)</span>
               <span>2–5 Business Days (Bilty / Freight)</span>
               <span className="font-mono font-semibold">Calculated by Weight & City</span>
             </div>

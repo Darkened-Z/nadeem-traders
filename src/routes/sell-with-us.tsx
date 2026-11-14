@@ -63,7 +63,7 @@ function SellWithUsPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-semibold text-foreground">Origin City / Mandi *</label>
+              <label className="text-xs font-semibold text-foreground">Origin City *</label>
               <input
                 required
                 type="text"

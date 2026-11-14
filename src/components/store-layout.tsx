@@ -18,6 +18,7 @@ import {
   subscribeCheckoutModal,
   openCartDrawer,
 } from "../lib/cart-store";
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS } from "../lib/catalog";
 
 export const WHATSAPP_NUMBER = "923000000000";
 
@@ -31,32 +32,27 @@ export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   "Dry Fruits": {
     slug: "dry-fruits",
     color: "#6B4226",
-    tagline: "Snack Game Strong. Badaam, Kaju Aur Seeds — Sab Fresh Batch.",
+    tagline: "Snack Game Strong. Duniya Bhar Ke Best Dry Fruits.",
+  },
+  Seeds: {
+    slug: "seeds",
+    color: "#2F6B3A",
+    tagline: "Chhote Seeds, Bari Health. Superfood Era.",
   },
   Spices: {
     slug: "spices",
     color: "#A1281C",
     tagline: "Masala Jo Actually Hit Kare. Zero Artificial Rang.",
   },
-  "Pulses & Lentils": {
-    slug: "pulses-lentils",
-    color: "#2F6B3A",
-    tagline: "Protein Era, Daal Edition. Triple-Cleaned, Kankar-Free.",
-  },
-  "Rice & Grains": {
-    slug: "rice-grains",
-    color: "#1E3A5F",
-    tagline: "Lambi Grain, Full Khushboo. Biryani Ka Main Character.",
-  },
-  "Cooking Oils": {
-    slug: "cooking-oils",
+  "Whole Spices": {
+    slug: "whole-spices",
     color: "#8A6100",
-    tagline: "Light Oil, Heavy Flavour. Double-Refined, No Compromise.",
+    tagline: "Sabut Masalay, Poori Khushboo. Daig Ka Asli Raaz.",
   },
-  "Sugar & Salt": {
-    slug: "sugar-salt",
-    color: "#A3485F",
-    tagline: "Basics, But Make It Pure. Khewra Pink Salt Aur Saaf Cheeni.",
+  "Special Items": {
+    slug: "special-items",
+    color: "#1E3A5F",
+    tagline: "Healthy Choices, Roz Ke Liye.",
   },
 };
 
@@ -73,50 +69,8 @@ export function getCategoryMeta(name: string): CategoryMeta {
   };
 }
 
-export const DEFAULT_CATEGORIES = [
-  { id: 1, name: "Dry Fruits", icon: "🥜", image_url: "/categories/dry-fruits.jpg" },
-  { id: 2, name: "Spices", icon: "🌶️", image_url: "/categories/spices.jpg" },
-  { id: 3, name: "Pulses & Lentils", icon: "🫘", image_url: "/categories/pulses-lentils.jpg" },
-  { id: 4, name: "Rice & Grains", icon: "🌾", image_url: "/categories/rice-grains.jpg" },
-  { id: 5, name: "Cooking Oils", icon: "🫙", image_url: "/categories/cooking-oils.jpg" },
-  { id: 6, name: "Sugar & Salt", icon: "🧂", image_url: "/categories/sugar-salt.jpg" },
-];
-
-const p = (
-  id: number,
-  name: string,
-  weight: string,
-  price: number,
-  category_id: number,
-  category_name: string,
-  image: string,
-) => ({
-  id,
-  name,
-  brand: "Nadeem Traders",
-  weight,
-  price,
-  emoji: "🌾",
-  stock: true,
-  category_id,
-  category_name,
-  image_url: `/products/${image}.jpg`,
-});
-
-export const DEFAULT_PRODUCTS = [
-  p(1, "Premium Almonds", "500g", 1800, 1, "Dry Fruits", "almonds"),
-  p(2, "Pumpkin Seeds", "250g", 650, 1, "Dry Fruits", "pumpkin-seeds"),
-  p(3, "Kashmiri Red Chilli", "200g", 320, 2, "Spices", "red-chilli"),
-  p(4, "Haldi Powder", "200g", 180, 2, "Spices", "haldi-powder"),
-  p(5, "Masoor Dal", "1kg", 280, 3, "Pulses & Lentils", "masoor-dal"),
-  p(6, "Chana Dal", "1kg", 240, 3, "Pulses & Lentils", "chana-dal"),
-  p(7, "Super Kainat Rice", "5kg", 1650, 4, "Rice & Grains", "kainat-rice"),
-  p(8, "Cashews Premium", "250g", 950, 1, "Dry Fruits", "cashews"),
-  p(9, "Zeera (Cumin)", "100g", 160, 2, "Spices", "zeera"),
-  p(10, "Sunflower Oil", "1L", 480, 5, "Cooking Oils", "sunflower-oil"),
-  p(11, "Pink Salt", "800g", 120, 6, "Sugar & Salt", "pink-salt"),
-  p(12, "White Sugar", "1kg", 155, 6, "Sugar & Salt", "white-sugar"),
-];
+export const DEFAULT_CATEGORIES = CATALOG_CATEGORIES;
+export const DEFAULT_PRODUCTS = CATALOG_PRODUCTS;
 
 export function addToBag(product: any, qty = 1) {
   cartStore.addToCart(product, qty);
@@ -209,46 +163,85 @@ export function ModernProductCard({ product }: { product: any }) {
         >
           {product.name}
         </Link>
-        <p className="mt-0.5 text-xs text-muted-foreground">{product.weight}</p>
+        {product.name_ur && (
+          <p lang="ur" dir="rtl" className="font-urdu mt-1 text-right text-base text-foreground/80">
+            {product.name_ur}
+          </p>
+        )}
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {[product.origin, product.weight].filter(Boolean).join(" · ")}
+        </p>
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
-          <span className="text-sm font-semibold text-foreground">
-            Rs. {Number(product.price).toLocaleString()}
-          </span>
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={!product.stock}
-            aria-label={`Add ${product.name} to bag`}
-            className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 border border-foreground px-3 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
-          >
-            {justAdded ? <Check className="h-4 w-4 animate-pop" /> : "Add"}
-          </button>
+          {product.price != null ? (
+            <>
+              <span className="text-sm font-semibold text-foreground">
+                Rs. {Number(product.price).toLocaleString()}
+              </span>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!product.stock}
+                aria-label={`Add ${product.name} to bag`}
+                className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 border border-foreground px-3 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
+              >
+                {justAdded ? <Check className="h-4 w-4 animate-pop" /> : "Add"}
+              </button>
+            </>
+          ) : (
+            <a
+              href={rateLink(product)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 w-full items-center justify-center border border-[#25D366] bg-[#25D366]/10 px-3 text-xs font-semibold text-[#0B3D1F] transition-colors hover:bg-[#25D366]"
+            >
+              Rate Poochein
+            </a>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
+export function rateLink(product: any) {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    `Assalam o Alaikum! ${product.name} ka rate bata dein.`,
+  )}`;
+}
+
 export function CategoryTile({ category }: { category: any }) {
   const meta = getCategoryMeta(category.name);
+  const [imgError, setImgError] = useState(false);
   return (
     <Link data-reveal to={`/category/${category.id}` as any} className="group flex w-full flex-col overflow-hidden">
-      <div className="aspect-[4/3] overflow-hidden bg-muted">
-        {category.image_url && (
+      <div className="aspect-[4/3] overflow-hidden" style={{ backgroundColor: categoryTint(meta.color) }}>
+        {category.image_url && !imgError ? (
           <img
             src={category.image_url}
             alt={category.name}
             loading="lazy"
+            onError={() => setImgError(true)}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
+        ) : (
+          <div className="grid h-full w-full place-items-center">
+            <img src="/LOGO.png" alt="" className="h-14 w-14 object-contain opacity-60" />
+          </div>
         )}
       </div>
       <div
         className="flex flex-1 items-center justify-between gap-2 px-3 py-3 sm:px-4 text-white"
         style={{ backgroundColor: meta.color }}
       >
-        <span className="text-sm sm:text-base font-semibold leading-tight">{category.name}</span>
+        <span className="min-w-0">
+          <span className="block text-sm sm:text-base font-semibold leading-tight">{category.name}</span>
+          {category.name_ur && (
+            <span lang="ur" className="font-urdu block text-xs text-white/80 sm:text-sm">
+              {category.name_ur}
+            </span>
+          )}
+        </span>
         <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
       </div>
     </Link>
@@ -425,6 +418,7 @@ export function StoreLayout({
           const q = searchQuery.toLowerCase();
           return (
             item.name.toLowerCase().includes(q) ||
+            (item.name_ur && item.name_ur.includes(searchQuery.trim())) ||
             (item.category_name && item.category_name.toLowerCase().includes(q))
           );
         })
@@ -590,7 +584,7 @@ export function StoreLayout({
                   autoFocus
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Kya Dhoond Rahe Ho? Daal, Chawal, Masala…"
+                  placeholder="Kya Dhoond Rahe Ho? Badaam, Zeera, Chia…"
                   className="w-full bg-transparent text-base focus:outline-none"
                 />
                 <button
@@ -625,9 +619,13 @@ export function StoreLayout({
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">{item.weight}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {[item.origin, item.weight].filter(Boolean).join(" · ")}
+                          </p>
                         </div>
-                        <span className="text-sm font-semibold">Rs. {Number(item.price).toLocaleString()}</span>
+                        <span className="text-sm font-semibold">
+                          {item.price != null ? `Rs. ${Number(item.price).toLocaleString()}` : "Rate Poochein"}
+                        </span>
                       </Link>
                     ))
                   )}
@@ -707,7 +705,7 @@ export function StoreLayout({
               </div>
               <p className="mt-2 text-sm text-[#C5A56E]">Apka Trusted Stop</p>
               <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#A39E93]">
-                Mandi Se Seedha Aapke Kitchen Tak. Asli Maal, Sahi Daam.
+                Duniya Bhar Se Chun Kar, Aapke Kitchen Tak. Asli Maal, Sahi Daam.
               </p>
             </div>
 
