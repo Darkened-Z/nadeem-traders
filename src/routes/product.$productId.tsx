@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Plus, Minus, Loader2, ChevronLeft } from "lucide-react";
+import { Plus, Minus, Loader2, ChevronLeft, MapPin } from "lucide-react";
 import { recordRecentlyViewedDb } from "../lib/actions";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import {
@@ -248,8 +248,10 @@ function ProductDetailsPage() {
                 <span className="text-muted-foreground">Tracking SMS Dispatch Hote Hi.</span>
               </li>
               <li>
-                <strong className="font-semibold">Faisalabad Mein?</strong>{" "}
-                <span className="text-muted-foreground">InDrive Ya Yango Se Seedha Ghar.</span>
+                <strong className="inline-flex items-center gap-1 font-semibold">
+                  In Faisalabad <MapPin className="h-3.5 w-3.5 fill-foreground text-foreground inline-block shrink-0" />
+                </strong>{" "}
+                <span className="text-muted-foreground">Doorstep Delivery via inDrive &amp; Yango.</span>
               </li>
               <li>
                 <strong className="font-semibold">Asli Source, Saaf Likha.</strong>{" "}

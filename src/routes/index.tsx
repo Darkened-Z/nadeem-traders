@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import {
   StoreLayout,
   ProductRail,
@@ -26,12 +26,6 @@ export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-const PERKS = [
-  ["Cash On Delivery", "Paise Baad Mein"],
-  ["Pakistan Bhar Mein", "Har Sheher"],
-  ["Faisalabad Mein", "InDrive / Yango Delivery"],
-];
-
 const STEPS = [
   { title: "Bag Mein Daalo", body: "Jo Chahiye, Add Dabao. Koi Account, Koi Login Nahi." },
   { title: "Order Place Karo", body: "Naam, Number, Address — Bas 30 Second Ka Kaam." },
@@ -53,19 +47,28 @@ function HomePage() {
     <StoreLayout categories={categories} products={products} currentUser={currentUser}>
       <Hero />
 
-      <div className="border-b border-border">
+      <div className="border-b border-border bg-card/40">
         <ul className="mx-auto grid max-w-7xl grid-cols-3 divide-x divide-border px-1 sm:px-6">
-          {PERKS.map(([head, sub], i) => (
-            <li
-              key={head}
-              data-reveal
-              style={stagger(i)}
-              className="px-3 py-3.5 sm:px-5 sm:first:pl-0"
-            >
-              <strong className="block text-[13px] font-semibold leading-tight sm:text-sm">{head}</strong>
-              <span className="block text-xs text-muted-foreground sm:text-sm">{sub}</span>
-            </li>
-          ))}
+          <li data-reveal style={stagger(0)} className="px-3 py-3.5 sm:px-5 sm:first:pl-0">
+            <strong className="block text-[13px] font-semibold leading-tight sm:text-sm">Cash On Delivery</strong>
+            <span className="block text-xs text-muted-foreground sm:text-sm">Pay At Doorstep</span>
+          </li>
+
+          <li data-reveal style={stagger(1)} className="px-3 py-3.5 sm:px-5">
+            <strong className="block text-[13px] font-semibold leading-tight sm:text-sm">Across Pakistan</strong>
+            <span className="block text-xs text-muted-foreground sm:text-sm">All Cities &amp; Towns</span>
+          </li>
+
+          <li data-reveal style={stagger(2)} className="px-3 py-3.5 sm:px-5">
+            <strong className="inline-flex items-center gap-1.5 text-[13px] font-semibold leading-tight sm:text-sm">
+              <span>In Faisalabad</span>
+              <MapPin className="h-3.5 w-3.5 fill-foreground text-foreground shrink-0" />
+            </strong>
+            <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+              <img src="/logos/indrive.svg" alt="inDrive" className="h-4 sm:h-5 w-auto object-contain" />
+              <img src="/logos/yango.svg" alt="Yango" className="h-4 sm:h-5 w-auto object-contain" />
+            </div>
+          </li>
         </ul>
       </div>
 

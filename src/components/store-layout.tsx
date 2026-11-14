@@ -1067,11 +1067,12 @@ export function StoreLayout({
 
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <p>
-                      <strong className="font-semibold text-foreground">No Prepayment, No Dhoka.</strong> Paise Sirf
-                      Delivery Pe.
+                      <strong className="font-semibold text-foreground">Cash On Delivery:</strong> Pay At Doorstep.
                     </p>
-                    <p>Pakistan Bhar Mein PostEx Se, Tracking SMS Pe.</p>
-                    <p>Faisalabad Mein Ho? InDrive Ya Yango Se Seedha Ghar.</p>
+                    <p>Across Pakistan via PostEx Courier with SMS Tracking.</p>
+                    <p className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-foreground">In Faisalabad:</span> Doorstep Delivery via inDrive &amp; Yango.
+                    </p>
                   </div>
 
                   <div className="space-y-1.5 border-t border-border pt-4">
