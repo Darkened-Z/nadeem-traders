@@ -739,15 +739,30 @@ export const getCustomerAuditLogs = createServerFn({ method: "POST" })
   });
 
 const PRODUCT_IMAGE_FALLBACKS: Record<string, string> = {
+  "Almonds": "/products/almonds.jpg",
   "Premium Almonds": "/products/almonds.jpg",
+  "Cashew Nuts": "/products/cashews.jpg",
+  "Cashews Premium": "/products/cashews.jpg",
+  "Cashews (Kaju)": "/products/cashews.jpg",
+  "Kaju (Roasted, Plain)": "/products/cashews.jpg",
+  "Walnuts (Akhrot)": "/products/walnuts.jpg",
+  "Walnuts (Akhrot, Without Cap)": "/products/walnuts.jpg",
+  "Pistachios (Pista)": "/products/pista.jpg",
+  "Pista (Shell)": "/products/pista.jpg",
   "Pumpkin Seeds": "/products/pumpkin-seeds.jpg",
+  "Red Chilli": "/products/red-chilli.jpg",
   "Kashmiri Red Chilli": "/products/red-chilli.jpg",
+  "Turmeric": "/products/haldi-powder.jpg",
   "Haldi Powder": "/products/haldi-powder.jpg",
+  "Black Pepper (Kaali Mirch)": "/products/black-pepper.jpg",
+  "Black Pepper Powder": "/products/black-pepper.jpg",
+  "Garam Masala": "/products/garam-masala.jpg",
+  "Garam Masala (Sabat, Powder)": "/products/garam-masala.jpg",
+  "Zeera (Cumin)": "/products/zeera.jpg",
+  "Zeera Sabit": "/products/zeera.jpg",
   "Masoor Dal": "/products/masoor-dal.jpg",
   "Chana Dal": "/products/chana-dal.jpg",
   "Super Kainat Rice": "/products/kainat-rice.jpg",
-  "Cashews Premium": "/products/cashews.jpg",
-  "Zeera (Cumin)": "/products/zeera.jpg",
   "Sunflower Oil": "/products/sunflower-oil.jpg",
   "Pink Salt": "/products/pink-salt.jpg",
   "White Sugar": "/products/white-sugar.jpg",
@@ -805,11 +820,30 @@ export const getProducts = createServerFn({ method: "GET" }).handler(
       ORDER BY c.position NULLS LAST, c.id, p.id
     `;
     const mapped = (res as any[]).map((p) => {
-      if (!p.image_url || p.image_url.includes("wikimedia")) {
-        const fb = PRODUCT_IMAGE_FALLBACKS[p.name];
-        if (fb) return { ...p, image_url: fb };
+      let name = p.name;
+      let name_ur = p.name_ur;
+      if (name.includes("Without Cap")) {
+        name = "Walnuts (Akhrot)";
+        name_ur = "اخروٹ";
+      } else if (name === "Black Pepper Powder") {
+        name = "Black Pepper (Kaali Mirch)";
+        name_ur = "کالی مرچ";
+      } else if (name.includes("Garam Masala (Sabat")) {
+        name = "Garam Masala";
+        name_ur = "گرم مصالحہ";
+      } else if (name.includes("Pista (Shell)")) {
+        name = "Pistachios (Pista)";
+        name_ur = "پستہ";
+      } else if (name.includes("Kaju (Roasted")) {
+        name = "Cashews (Kaju)";
+        name_ur = "کاجو";
       }
-      return p;
+      let img = p.image_url;
+      if (!img || img.includes("wikimedia")) {
+        const fb = PRODUCT_IMAGE_FALLBACKS[name] || PRODUCT_IMAGE_FALLBACKS[p.name];
+        if (fb) img = fb;
+      }
+      return { ...p, name, name_ur, image_url: img };
     });
     serverCache.set("products", mapped, 30_000);
     return mapped;

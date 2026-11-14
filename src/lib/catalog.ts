@@ -19,9 +19,9 @@ type Seed = [
 const ITEMS: Seed[] = [
   ["Almonds", "بادام", "USA", 1, "almonds", 1800, "500g"],
   ["Cashew Nuts", "کاجو", "Vietnam", 1, "cashews", 950, "250g"],
-  ["Pista (Shell)", "پستہ (چھلکے والا)", "Iran", 1, "pista"],
-  ["Walnuts (Akhrot, Without Cap)", "اخروٹ (گری)", "China", 1, "walnuts"],
-  ["Kaju (Roasted, Plain)", "بھنے ہوئے کاجو (سادہ)", "Vietnam", 1, "kaju-roasted"],
+  ["Pistachios (Pista)", "پستہ", "Iran", 1, "pista"],
+  ["Walnuts (Akhrot)", "اخروٹ", "China", 1, "walnuts"],
+  ["Cashews (Kaju)", "کاجو", "Vietnam", 1, "kaju-roasted"],
   ["Kishmish", "کشمش", "Afghanistan", 1, "kishmish"],
 
   ["Sunflower Seeds", "سورج مکھی کے بیج", "USA", 2, "sunflower-seeds"],
@@ -36,9 +36,9 @@ const ITEMS: Seed[] = [
   ["Chilli Flakes (Dara Mirch)", "دڑا مرچ", "Sindh, Pakistan", 3, "chilli-flakes"],
   ["Gol Mirch (Round Red Chilli)", "گول مرچ", "Sindh, Pakistan", 3, "gol-mirch"],
 
-  ["Black Pepper Powder", "کالی مرچ پاؤڈر", "Brazil", 4, "black-pepper"],
-  ["Garam Masala (Sabat, Powder)", "گرم مصالحہ (ثابت، پسا ہوا)", null, 4, "garam-masala"],
-  ["Zeera Sabit", "ثابت زیرہ", "India", 4, "zeera", 160, "100g"],
+  ["Black Pepper (Kaali Mirch)", "کالی مرچ", "Brazil", 4, "black-pepper"],
+  ["Garam Masala", "گرم مصالحہ", null, 4, "garam-masala"],
+  ["Zeera (Cumin)", "زیرہ", "India", 4, "zeera", 160, "100g"],
   ["Green Cardamom", "سبز الائچی", "Guatemala", 4, "green-cardamom"],
   ["Black Cardamom", "کالی الائچی", "India", 4, "black-cardamom"],
   ["Cloves", "لونگ", "Indonesia", 4, "cloves"],
@@ -46,6 +46,69 @@ const ITEMS: Seed[] = [
   ["Oats", "جئی (اوٹس)", "Pakistan", 5, "oats"],
   ["Ispaghol Chilka", "اسپغول چھلکا", "India", 5, "ispaghol"],
 ];
+
+export interface ProductClassification {
+  id: string;
+  name: string;
+  name_ur: string;
+}
+
+export const PRODUCT_CLASSIFICATIONS: Record<string, ProductClassification[]> = {
+  // Walnuts (Akhrot)
+  walnuts: [
+    { id: "kernels", name: "Kernels / Shelled (Giri)", name_ur: "اخروٹ گری" },
+    { id: "inshell", name: "In-Shell (Kaghzi)", name_ur: "کاغذی اخروٹ (چھلکے والا)" },
+  ],
+  // Black Pepper (Kaali Mirch)
+  "black-pepper": [
+    { id: "whole", name: "Whole / Sabut", name_ur: "ثابت کالی مرچ" },
+    { id: "powder", name: "Powder / Ground", name_ur: "پسی ہوئی کالی مرچ" },
+  ],
+  // Garam Masala
+  "garam-masala": [
+    { id: "whole", name: "Whole / Sabut", name_ur: "ثابت گرم مصالحہ" },
+    { id: "powder", name: "Powder / Ground", name_ur: "پسا ہوا گرم مصالحہ" },
+  ],
+  // Red Chilli (Laal Mirch)
+  "red-chilli": [
+    { id: "powder", name: "Powder / Pisi Hui", name_ur: "پسی ہوئی لال مرچ" },
+    { id: "whole", name: "Whole / Sabut (Dandi Cut)", name_ur: "ثابت لال مرچ" },
+  ],
+  // Turmeric (Haldi)
+  turmeric: [
+    { id: "powder", name: "Powder", name_ur: "ہلدی پاؤڈر" },
+    { id: "whole", name: "Whole / Sabut Ganth", name_ur: "ثابت گانٹھ" },
+  ],
+  // Pistachios (Pista)
+  pista: [
+    { id: "inshell", name: "In-Shell (Chilke Wala)", name_ur: "چھلکے والا پستہ" },
+    { id: "kernels", name: "Kernels / Maghaz (Giri)", name_ur: "پستہ مغز (گری)" },
+  ],
+  // Cashews (Kaju)
+  cashews: [
+    { id: "plain", name: "Plain / Raw", name_ur: "سادہ کاجو" },
+    { id: "roasted", name: "Roasted / Salted", name_ur: "بھنے ہوئے کاجو" },
+  ],
+  // Zeera (Cumin)
+  zeera: [
+    { id: "safaid", name: "Safaid Zeera (White)", name_ur: "سفید زیرہ" },
+    { id: "kala", name: "Kala Zeera (Black)", name_ur: "کالا زیرہ" },
+  ],
+};
+
+export function getProductClassifications(product?: { name?: string | null; id?: number | null }): ProductClassification[] {
+  if (!product || !product.name) return [];
+  const n = product.name.toLowerCase();
+  if (n.includes("walnut") || n.includes("akhrot")) return PRODUCT_CLASSIFICATIONS.walnuts;
+  if (n.includes("black pepper") || n.includes("kaali mirch") || n.includes("kali mirch")) return PRODUCT_CLASSIFICATIONS["black-pepper"];
+  if (n.includes("garam masala")) return PRODUCT_CLASSIFICATIONS["garam-masala"];
+  if (n.includes("red chilli") || n.includes("laal mirch")) return PRODUCT_CLASSIFICATIONS["red-chilli"];
+  if (n.includes("turmeric") || n.includes("haldi")) return PRODUCT_CLASSIFICATIONS.turmeric;
+  if (n.includes("pista") || n.includes("pistachio")) return PRODUCT_CLASSIFICATIONS.pista;
+  if (n.includes("kaju") || n.includes("cashew")) return PRODUCT_CLASSIFICATIONS.cashews;
+  if (n.includes("zeera") || n.includes("cumin")) return PRODUCT_CLASSIFICATIONS.zeera;
+  return [];
+}
 
 export const CATALOG_PRODUCTS = ITEMS.map(([name, name_ur, origin, category_id, image, price, weight], i) => ({
   id: i + 1,

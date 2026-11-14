@@ -19,7 +19,8 @@ import {
   subscribeCheckoutModal,
   openCartDrawer,
 } from "../lib/cart-store";
-import { CATALOG_CATEGORIES, CATALOG_PRODUCTS } from "../lib/catalog";
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, getProductClassifications } from "../lib/catalog";
+export { getProductClassifications };
 
 export const WHATSAPP_NUMBER = "923000000000";
 
@@ -121,12 +122,25 @@ export function useStoreData() {
 }
 
 export function ModernProductCard({ product }: { product: any }) {
+  const classifications = getProductClassifications(product);
+  const [selectedVariant, setSelectedVariant] = useState(classifications[0]?.name || "");
   const [justAdded, setJustAdded] = useState(false);
   const [imgError, setImgError] = useState(false);
 
+  useEffect(() => {
+    if (classifications.length > 0) {
+      setSelectedVariant(classifications[0].name);
+    } else {
+      setSelectedVariant("");
+    }
+  }, [product?.id]);
+
   const handleAdd = () => {
     if (!product.stock) return;
-    addToBag(product, 1);
+    const itemToAdd = selectedVariant
+      ? { ...product, name: `${product.name} (${selectedVariant})`, variant: selectedVariant }
+      : product;
+    addToBag(itemToAdd, 1);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
   };
@@ -173,6 +187,33 @@ export function ModernProductCard({ product }: { product: any }) {
           {[product.origin, product.weight].filter(Boolean).join(" · ")}
         </p>
 
+        {classifications.length > 0 && (
+          <div className="mt-2 flex gap-1 rounded bg-muted/70 p-0.5" role="group" aria-label="Classification">
+            {classifications.map((c) => {
+              const isSel = selectedVariant === c.name;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedVariant(c.name);
+                  }}
+                  className={`flex-1 rounded py-1 px-1.5 text-center text-[10px] font-medium transition-colors ${
+                    isSel
+                      ? "bg-background text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title={`${c.name} (${c.name_ur})`}
+                >
+                  <span className="truncate block">{c.name.split("/")[0].trim()}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
           {product.price != null ? (
             <>
@@ -191,7 +232,7 @@ export function ModernProductCard({ product }: { product: any }) {
             </>
           ) : (
             <a
-              href={rateLink(product)}
+              href={rateLink(product, selectedVariant)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-9 w-full items-center justify-center border border-[#25D366] bg-[#25D366]/10 px-3 text-xs font-semibold text-[#0B3D1F] transition-colors hover:bg-[#25D366]"
@@ -205,9 +246,10 @@ export function ModernProductCard({ product }: { product: any }) {
   );
 }
 
-export function rateLink(product: any) {
+export function rateLink(product: any, variant?: string) {
+  const label = variant ? `${product.name} (${variant})` : product.name;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-    `Assalam o Alaikum! ${product.name} ka rate bata dein.`,
+    `Assalam o Alaikum! Mujhe ${label} ka rate bata dein.`,
   )}`;
 }
 

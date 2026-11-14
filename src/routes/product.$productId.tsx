@@ -10,6 +10,7 @@ import {
   getCategoryMeta,
   addToBag,
   rateLink,
+  getProductClassifications,
 } from "../components/store-layout";
 
 export const Route = createFileRoute("/product/$productId")({
@@ -29,6 +30,9 @@ function ProductDetailsPage() {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
   const product = products.find((p) => p.id === Number(productId)) || null;
+  const classifications = getProductClassifications(product);
+  const [selectedVariant, setSelectedVariant] = useState(classifications[0]?.name || "");
+
   const relatedProducts = product
     ? products.filter((p) => p.category_id === product.category_id && p.id !== product.id).slice(0, 4)
     : [];
@@ -36,6 +40,11 @@ function ProductDetailsPage() {
   useEffect(() => {
     if (!product) return;
     setQty(1);
+    if (classifications.length > 0) {
+      setSelectedVariant(classifications[0].name);
+    } else {
+      setSelectedVariant("");
+    }
     recordRecentlyViewedDb({ data: { productId: product.id } }).catch(() => {});
   }, [product?.id]);
 
@@ -65,8 +74,12 @@ function ProductDetailsPage() {
 
   const categoryColor = product.category_name ? getCategoryMeta(product.category_name).color : undefined;
 
+  const targetProduct = selectedVariant
+    ? { ...product, name: `${product.name} (${selectedVariant})`, variant: selectedVariant }
+    : product;
+
   const buyNow = () => {
-    cartStore.addToCart(product, qty);
+    cartStore.addToCart(targetProduct, qty);
     openCheckoutModal();
   };
 
@@ -128,6 +141,37 @@ function ProductDetailsPage() {
               )}
             </dl>
 
+            {classifications.length > 0 && (
+              <div className="mt-5 border-y border-border py-4">
+                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+                  <span>Classification / قسم منتخب کریں:</span>
+                  <span className="font-semibold text-foreground">{selectedVariant}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {classifications.map((c) => {
+                    const active = selectedVariant === c.name;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setSelectedVariant(c.name)}
+                        className={`flex flex-col items-center justify-center p-3 text-center border transition-all ${
+                          active
+                            ? "border-foreground bg-foreground text-background shadow-xs font-semibold"
+                            : "border-border bg-card text-foreground hover:border-foreground/50"
+                        }`}
+                      >
+                        <span className="text-sm font-semibold">{c.name}</span>
+                        <span lang="ur" dir="rtl" className="font-urdu text-xs opacity-80 mt-0.5">
+                          {c.name_ur}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {product.price != null ? (
               <>
                 <p className="mt-5 text-3xl font-semibold">Rs. {Number(product.price).toLocaleString()}</p>
@@ -162,7 +206,7 @@ function ProductDetailsPage() {
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => addToBag(product, qty)}
+                    onClick={() => addToBag(targetProduct, qty)}
                     disabled={!product.stock}
                     className="h-12 border border-foreground text-sm font-semibold disabled:opacity-40"
                   >
@@ -184,7 +228,7 @@ function ProductDetailsPage() {
                   Is Item Ka Rate Quantity Ke Hisaab Se Hai — WhatsApp Karo, Jitna Zyada Saman, Utna Behtar Rate.
                 </p>
                 <a
-                  href={rateLink(product)}
+                  href={rateLink(product, selectedVariant)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-4 flex h-12 items-center justify-center bg-[#25D366] text-sm font-semibold text-[#0B3D1F]"

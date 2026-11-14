@@ -342,6 +342,15 @@ export async function initDb() {
       )
     `;
 
+    // Normalize commodity names
+    try {
+      await sql`UPDATE products SET name = 'Walnuts (Akhrot)', name_ur = 'اخروٹ' WHERE name ILIKE '%Without Cap%'`;
+      await sql`UPDATE products SET name = 'Black Pepper (Kaali Mirch)', name_ur = 'کالی مرچ' WHERE name ILIKE '%black pepper%'`;
+      await sql`UPDATE products SET name = 'Garam Masala', name_ur = 'گرم مصالحہ' WHERE name ILIKE '%garam masala%'`;
+      await sql`UPDATE products SET name = 'Pistachios (Pista)', name_ur = 'پستہ' WHERE name ILIKE '%pista%'`;
+      await sql`UPDATE products SET name = 'Cashews (Kaju)', name_ur = 'کاجو' WHERE name ILIKE '%kaju%roasted%'`;
+    } catch {}
+
     await seedCatalogIfEmpty();
 
     console.log("Tables created/altered successfully.");
