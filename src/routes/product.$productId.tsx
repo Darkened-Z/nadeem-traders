@@ -107,7 +107,7 @@ function ProductDetailsPage() {
         )}
 
         <div className="mt-4 grid gap-6 md:grid-cols-2 md:gap-12">
-          <div className="-mx-4 aspect-square overflow-hidden bg-muted sm:mx-0">
+          <div className="-mx-4 aspect-[4/3] overflow-hidden bg-muted sm:mx-0">
             {product.image_url && product.image_url !== failedSrc ? (
               <img
                 src={product.image_url}

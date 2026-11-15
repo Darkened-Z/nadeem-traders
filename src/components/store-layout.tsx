@@ -151,7 +151,7 @@ export function ModernProductCard({ product }: { product: any }) {
     <div data-reveal className="flex flex-col transition-transform duration-300 hover:-translate-y-1">
       <Link
         to={`/product/${product.id}` as any}
-        className="group relative block aspect-square w-full overflow-hidden bg-muted"
+        className="group relative block aspect-[4/3] w-full overflow-hidden bg-muted"
       >
         {product.image_url && !imgError ? (
           <img
