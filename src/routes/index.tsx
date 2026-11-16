@@ -78,10 +78,7 @@ function HomePage() {
           <CategoryRail categories={categories} />
         </section>
 
-        <section>
-          <SectionHeader title="Trending" subtitle="Jo Sab Le Ja Rahe Hain." href="/shop" />
-          <ProductRail products={trending} />
-        </section>
+        <TrendingSection products={trending} />
       </div>
 
       {categoryRows.map(({ category, items }, idx) => (
@@ -93,6 +90,23 @@ function HomePage() {
 
       <OrderSteps />
     </StoreLayout>
+  );
+}
+
+function TrendingSection({ products }: { products: any[] }) {
+  const railRef = useRef<HTMLDivElement>(null);
+  return (
+    <section>
+      <SectionHeader
+        title="Trending"
+        subtitle="Jo Sab Le Ja Rahe Hain."
+        href="/shop"
+        showSwipeHint
+        onScrollLeft={() => railRef.current?.scrollBy({ left: -340, behavior: "smooth" })}
+        onScrollRight={() => railRef.current?.scrollBy({ left: 340, behavior: "smooth" })}
+      />
+      <ProductRail products={products} railRef={railRef} />
+    </section>
   );
 }
 

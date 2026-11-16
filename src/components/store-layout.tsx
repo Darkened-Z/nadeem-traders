@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
-import { ShoppingBag, Search, Plus, Minus, X, Check, Menu, ArrowRight } from "lucide-react";
+import { useEffect, useState, useRef, type ReactNode } from "react";
+import { ShoppingBag, Search, Plus, Minus, X, Check, Menu, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   getCategories,
@@ -293,11 +293,27 @@ export const stagger = (i: number) => ({ "--d": i }) as React.CSSProperties;
 const railClass =
   "-mx-4 flex snap-x snap-mandatory scroll-pl-4 gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0";
 
-export function ProductRail({ products }: { products: any[] }) {
+export function ProductRail({
+  products,
+  railRef,
+}: {
+  products: any[];
+  railRef?: React.RefObject<HTMLDivElement | null>;
+}) {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const ref = railRef || internalRef;
+
   return (
-    <div className={`${railClass} sm:grid-cols-3 sm:gap-y-8 lg:grid-cols-4`}>
+    <div
+      ref={ref}
+      className="-mx-4 flex snap-x snap-mandatory scroll-pl-4 gap-3 overflow-x-auto px-4 pb-2 pt-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:gap-5 sm:px-0"
+    >
       {products.map((item, i) => (
-        <div key={item.id} className="w-[42%] shrink-0 snap-start sm:w-auto" style={stagger(i)}>
+        <div
+          key={item.id}
+          className="w-[72%] shrink-0 snap-start sm:w-[46%] md:w-[31%] lg:w-[23.5%]"
+          style={stagger(i)}
+        >
           <ModernProductCard product={item} />
         </div>
       ))}
@@ -309,6 +325,15 @@ export const categoryTint = (color: string) => `color-mix(in srgb, ${color} 20%,
 
 export function CategorySection({ category, items }: { category: any; items: any[] }) {
   const meta = getCategoryMeta(category.name);
+  const railRef = useRef<HTMLDivElement>(null);
+
+  const scrollLeft = () => {
+    railRef.current?.scrollBy({ left: -340, behavior: "smooth" });
+  };
+  const scrollRight = () => {
+    railRef.current?.scrollBy({ left: 340, behavior: "smooth" });
+  };
+
   return (
     <section
       className="stack-section sticky top-14 py-10 sm:top-16 sm:py-14"
@@ -320,8 +345,11 @@ export function CategorySection({ category, items }: { category: any; items: any
           subtitle={meta.tagline}
           href={`/category/${category.id}`}
           accent={meta.color}
+          showSwipeHint
+          onScrollLeft={scrollLeft}
+          onScrollRight={scrollRight}
         />
-        <ProductRail products={items} />
+        <ProductRail products={items} railRef={railRef} />
       </div>
     </section>
   );
@@ -344,29 +372,73 @@ export function SectionHeader({
   subtitle,
   href,
   accent,
+  showSwipeHint,
+  onScrollLeft,
+  onScrollRight,
 }: {
   title: string;
   subtitle?: string;
   href?: string;
   accent?: string;
+  showSwipeHint?: boolean;
+  onScrollLeft?: () => void;
+  onScrollRight?: () => void;
 }) {
   return (
     <div data-reveal className="mb-4 flex items-end justify-between gap-4 sm:mb-6">
       <div className="min-w-0">
-        <h2 className="font-display text-[1.75rem] font-semibold leading-tight sm:text-4xl" style={{ color: accent }}>
-          {title}
-        </h2>
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+          <h2 className="font-display text-[1.75rem] font-semibold leading-tight sm:text-4xl" style={{ color: accent }}>
+            {title}
+          </h2>
+          {showSwipeHint && (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide sm:text-sm shadow-2xs border"
+              style={{
+                backgroundColor: accent ? `color-mix(in srgb, ${accent} 12%, #ffffff)` : "rgba(0,0,0,0.05)",
+                borderColor: accent ? `color-mix(in srgb, ${accent} 25%, transparent)` : "rgba(0,0,0,0.1)",
+                color: accent || "inherit",
+              }}
+            >
+              <span>Swipe left</span>
+              <ArrowRight className="h-3.5 w-3.5 animate-pulse" />
+            </span>
+          )}
+        </div>
         {subtitle && <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>}
       </div>
-      {href && (
-        <Link
-          to={href as any}
-          className="shrink-0 pb-1 text-sm font-semibold underline underline-offset-4"
-          style={{ color: accent }}
-        >
-          See All
-        </Link>
-      )}
+
+      <div className="flex items-center gap-2 shrink-0 pb-1">
+        {(onScrollLeft || onScrollRight) && (
+          <div className="hidden sm:flex items-center gap-1.5 mr-1">
+            <button
+              type="button"
+              onClick={onScrollLeft}
+              aria-label="Scroll left"
+              className="grid h-8 w-8 place-items-center rounded-full border border-black/10 bg-white/80 backdrop-blur text-foreground shadow-2xs hover:bg-white active:scale-95 transition-all cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onScrollRight}
+              aria-label="Scroll right"
+              className="grid h-8 w-8 place-items-center rounded-full border border-black/10 bg-white/80 backdrop-blur text-foreground shadow-2xs hover:bg-white active:scale-95 transition-all cursor-pointer"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {href && (
+          <Link
+            to={href as any}
+            className="text-sm font-semibold underline underline-offset-4"
+            style={{ color: accent }}
+          >
+            See All
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
