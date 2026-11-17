@@ -1,6 +1,6 @@
 import { sql } from "./db";
 import crypto from "crypto";
-import { getCookie, setCookie, deleteCookie } from "@tanstack/react-start/server";
+import { getCookie, setCookie, deleteCookie, getRequestIP } from "@tanstack/react-start/server";
 
 export async function getSessionToken() {
   if (typeof window !== "undefined") return null;
@@ -70,21 +70,36 @@ export async function clearGuestToken() {
   }
 }
 
-export async function resolveUserOrGuest() {
+// Vercel overwrites X-Forwarded-For with the real client address, so it is trustworthy there.
+export function getClientIp(): string | null {
+  return getRequestIP({ xForwardedFor: true }) || null;
+}
+
+export async function getSessionUserId(): Promise<number | null> {
   const sessionToken = await getSessionToken();
-  if (sessionToken) {
-    const session = await sql`
-      SELECT user_id FROM sessions 
-      WHERE id = ${sessionToken} AND active = TRUE AND expires_at > NOW()
-    `;
-    if (session.length > 0) {
-      return { userId: session[0].user_id };
-    }
-  }
+  if (!sessionToken) return null;
+  const session = await sql`
+    SELECT s.user_id FROM sessions s
+    JOIN users u ON u.id = s.user_id
+    WHERE s.id = ${sessionToken} AND s.active = TRUE AND s.expires_at > NOW()
+      AND COALESCE(u.account_status, 'Active') <> 'Disabled'
+  `;
+  return session.length > 0 ? session[0].user_id : null;
+}
+
+export async function requireSessionUserId(): Promise<number> {
+  const userId = await getSessionUserId();
+  if (!userId) throw new Error("Please sign in to continue.");
+  return userId;
+}
+
+export async function resolveUserOrGuest(): Promise<{ userId?: number; guestSessionId?: string }> {
+  const userId = await getSessionUserId();
+  if (userId) return { userId };
 
   let guestToken = await getGuestToken();
   if (!guestToken) {
-    guestToken = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36);
+    guestToken = crypto.randomUUID();
     await setGuestToken(guestToken);
   }
   return { guestSessionId: guestToken };

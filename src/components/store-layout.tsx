@@ -19,7 +19,7 @@ import {
   subscribeCheckoutModal,
   openCartDrawer,
 } from "../lib/cart-store";
-import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, getProductClassifications, cleanProductTitle } from "../lib/catalog";
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, getProductClassifications, cleanProductTitle, variantImage } from "../lib/catalog";
 export { getProductClassifications, cleanProductTitle };
 
 export const WHATSAPP_NUMBER = "923000000000";
@@ -125,8 +125,9 @@ export function ModernProductCard({ product }: { product: any }) {
   const classifications = getProductClassifications(product);
   const [selectedVariant, setSelectedVariant] = useState(classifications[0]?.name || "");
   const [justAdded, setJustAdded] = useState(false);
-  const [imgError, setImgError] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const displayName = cleanProductTitle(product.name);
+  const imageSrc = variantImage(product, selectedVariant);
 
   useEffect(() => {
     if (classifications.length > 0) {
@@ -153,17 +154,17 @@ export function ModernProductCard({ product }: { product: any }) {
         to={`/product/${product.id}` as any}
         className="group relative block aspect-[4/3] w-full overflow-hidden bg-muted"
       >
-        {product.image_url && !imgError ? (
-          <picture>
+        {imageSrc && imageSrc !== failedSrc ? (
+          <picture key={imageSrc}>
             <source
-              srcSet={product.image_url.replace(/\.jpe?g$/, ".webp")}
+              srcSet={imageSrc.replace(/\.jpe?g$/, ".webp")}
               type="image/webp"
             />
             <img
-              src={product.image_url}
-              alt={displayName}
+              src={imageSrc}
+              alt={selectedVariant ? `${displayName} (${selectedVariant})` : displayName}
               loading="lazy"
-              onError={() => setImgError(true)}
+              onError={() => setFailedSrc(imageSrc)}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none select-none"
               draggable={false}
             />
@@ -563,7 +564,7 @@ export function StoreLayout({
       email: prev.email || currentUser.email || "",
       phone: prev.phone || currentUser.phone_number || "",
     }));
-    getUserAddresses({ data: { userId: currentUser.id } })
+    getUserAddresses()
       .then((addrs) => {
         const def = addrs.find((a: any) => a.is_default) || addrs[0];
         if (def) {
@@ -583,7 +584,9 @@ export function StoreLayout({
     if (!couponInput.trim()) return;
     setIsCheckingCoupon(true);
     try {
-      const res = await validateCoupon({ data: { code: couponInput.trim(), subtotal } });
+      const res = await validateCoupon({
+        data: { code: couponInput.trim(), items: cart.map((item) => ({ product_id: item.id, variant: item.variant, quantity: item.quantity })) },
+      });
       if (res.valid) {
         setAppliedCoupon({
           code: res.code!,
@@ -619,34 +622,22 @@ export function StoreLayout({
     try {
       const result = await createOrder({
         data: {
-          user_id: currentUser?.id || null,
           customer_name: checkoutForm.name,
           customer_email: checkoutForm.email,
           customer_phone: checkoutForm.phone,
           shipping_address: checkoutForm.address,
-          total_amount: finalTotal,
           coupon_code: appliedCoupon?.code,
-          discount_amount: discountAmount,
-          items: cart.map((item) => ({
-            product_id: item.id,
-            product_name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-          })),
+          items: cart.map((item) => ({ product_id: item.id, variant: item.variant, quantity: item.quantity })),
         },
       });
       setCreatedOrderId(result.id);
-      if (currentUser?.id) {
-        try {
-          await clearCartDb({ data: { userId: currentUser.id } });
-        } catch {}
-      }
+      clearCartDb().catch(() => {});
       cartStore.clearCartLocal();
       setAppliedCoupon(null);
       setCouponInput("");
     } catch (err) {
       console.error(err);
-      toast.error("Order nahi ho saka. Please try again.");
+      toast.error(err instanceof Error && err.message ? err.message : "Order nahi ho saka. Please try again.");
     } finally {
       setIsSubmittingOrder(false);
     }
@@ -936,7 +927,7 @@ export function StoreLayout({
                 </div>
               ) : (
                 cart.map((item) => (
-                  <div key={item.id} className="flex gap-3 border-b border-border py-4">
+                  <div key={item.key} className="flex gap-3 border-b border-border py-4">
                     <div className="h-20 w-20 shrink-0 overflow-hidden bg-muted">
                       {item.image_url && (
                         <img src={item.image_url} alt="" className="h-full w-full object-cover" />
@@ -950,7 +941,7 @@ export function StoreLayout({
                         </div>
                         <button
                           type="button"
-                          onClick={() => cartStore.removeFromCart(item.id)}
+                          onClick={() => cartStore.removeFromCart(item.key)}
                           className="-mr-2 -mt-1 grid h-8 w-8 shrink-0 place-items-center text-muted-foreground"
                           aria-label={`Remove ${item.name}`}
                         >
@@ -961,7 +952,7 @@ export function StoreLayout({
                         <div className="inline-flex items-center border border-border">
                           <button
                             type="button"
-                            onClick={() => cartStore.updateQuantity(item.id, -1)}
+                            onClick={() => cartStore.updateQuantity(item.key, -1)}
                             className="grid h-9 w-9 place-items-center"
                             aria-label="Decrease"
                           >
@@ -970,7 +961,7 @@ export function StoreLayout({
                           <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                           <button
                             type="button"
-                            onClick={() => cartStore.updateQuantity(item.id, 1)}
+                            onClick={() => cartStore.updateQuantity(item.key, 1)}
                             className="grid h-9 w-9 place-items-center"
                             aria-label="Increase"
                           >

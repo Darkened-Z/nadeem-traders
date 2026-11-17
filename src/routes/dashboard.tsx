@@ -13,7 +13,7 @@ import {
   deleteUserAddressDb, getProductReviews, submitReview, getSupportTickets, 
   createSupportTicket, getUserNotifications, markNotificationRead, getCoupons, 
   updateUserPreferences, getCustomerLoginHistory, getCustomerAuditLogs, removeFromCartDb,
-  getProducts, getOrders
+  getProducts, getMyOrders
 } from "../lib/actions";
 import { toast } from "sonner";
 import { useCart, cartStore } from "../lib/cart-store";
@@ -85,46 +85,40 @@ function DashboardPage() {
     try {
       if (tab === "overview") {
         const [rv, n] = await Promise.all([
-          getRecentlyViewed({ data: { userId } }),
-          getUserNotifications({ data: { userId } })
+          getRecentlyViewed(),
+          getUserNotifications()
         ]);
         setRecentlyViewed(rv);
         setNotifications(n);
       } else if (tab === "orders") {
-        const allOrders = await getOrders();
-        const userOrders = allOrders.filter(
-          (o: any) =>
-            o.user_id === userId ||
-            (o.customer_email && currentUser?.email && o.customer_email.toLowerCase() === currentUser.email.toLowerCase())
-        );
-        setOrders(userOrders);
+        setOrders(await getMyOrders());
       } else if (tab === "wishlist") {
-        const w = await getWishlist({ data: { userId } });
+        const w = await getWishlist();
         setWishlist(w);
       } else if (tab === "cart") {
         await cartStore.load();
       } else if (tab === "addresses") {
-        const addr = await getUserAddresses({ data: { userId } });
+        const addr = await getUserAddresses();
         setAddresses(addr);
       } else if (tab === "rewards") {
         const c = await getCoupons();
         setCoupons(c);
       } else if (tab === "notifications") {
-        const n = await getUserNotifications({ data: { userId } });
+        const n = await getUserNotifications();
         setNotifications(n);
       } else if (tab === "recently-viewed") {
-        const rv = await getRecentlyViewed({ data: { userId } });
+        const rv = await getRecentlyViewed();
         setRecentlyViewed(rv);
       } else if (tab === "reviews") {
         const prods = await getProducts();
         setAllProducts(prods);
       } else if (tab === "tickets") {
-        const tk = await getSupportTickets({ data: { userId } });
+        const tk = await getSupportTickets();
         setTickets(tk);
       } else if (tab === "security") {
         const [hist, logs] = await Promise.all([
-          getCustomerLoginHistory({ data: { userId } }),
-          getCustomerAuditLogs({ data: { userId } })
+          getCustomerLoginHistory(),
+          getCustomerAuditLogs()
         ]);
         setLoginHistory(hist);
         setAuditLogs(logs);
@@ -164,7 +158,7 @@ function DashboardPage() {
             marketingConsent: user.marketing_consent || false,
             newsletterSubscription: user.newsletter_subscription || false
           });
-          const st = await getCustomerDashboardStats({ data: { userId: user.id } });
+          const st = await getCustomerDashboardStats();
           setStats(st);
           await loadTabData(user.id, "overview");
         } else {
@@ -207,7 +201,6 @@ function DashboardPage() {
     try {
       await addUserAddressDb({
         data: {
-          userId: currentUser.id,
           type: newAddress.type,
           firstName: newAddress.firstName,
           lastName: newAddress.lastName,
@@ -245,7 +238,7 @@ function DashboardPage() {
   const handleDeleteAddress = async (id: number) => {
     if (!currentUser || !window.confirm("Delete this address?")) return;
     try {
-      await deleteUserAddressDb({ data: { userId: currentUser.id, addressId: id } });
+      await deleteUserAddressDb({ data: { addressId: id } });
       toast.success("Address deleted.");
       loadTabData(currentUser.id, "addresses");
     } catch (err) {
@@ -260,7 +253,6 @@ function DashboardPage() {
     try {
       await createSupportTicket({
         data: {
-          userId: currentUser.id,
           subject: newTicket.subject,
           message: newTicket.message
         }
@@ -281,7 +273,6 @@ function DashboardPage() {
     try {
       await submitReview({
         data: {
-          userId: currentUser.id,
           productId: parseInt(newReview.productId),
           rating: newReview.rating,
           comment: newReview.comment
@@ -303,7 +294,6 @@ function DashboardPage() {
     try {
       await updateUserPreferences({
         data: {
-          userId: currentUser.id,
           marketingConsent: prefForm.marketingConsent,
           newsletterSubscription: prefForm.newsletterSubscription,
           phone: prefForm.phone
@@ -348,9 +338,9 @@ function DashboardPage() {
     }
   };
 
-  const handleRemoveFromCart = async (id: number) => {
+  const handleRemoveFromCart = async (key: string) => {
     if (!currentUser) return;
-    cartStore.removeFromCart(id);
+    cartStore.removeFromCart(key);
     toast.success("Item removed from cart");
   };
 
@@ -790,7 +780,7 @@ function DashboardPage() {
               ) : (
                 <div className="space-y-4">
                   {cart.map((item) => (
-                    <div key={item.id} className="bg-background border border-border rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm">
+                    <div key={item.key} className="bg-background border border-border rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-xl bg-muted border border-border flex items-center justify-center text-2xl shrink-0 overflow-hidden">
                           {item.image_url ? (
@@ -809,7 +799,7 @@ function DashboardPage() {
                           <span className="text-xs font-bold text-foreground">{item.quantity} Qty</span>
                           <span className="text-xs font-bold text-primary block mt-0.5">Rs. {(item.price * item.quantity).toLocaleString()}</span>
                         </div>
-                        <button onClick={() => handleRemoveFromCart(item.id)} className="text-rose-600 dark:text-rose-400 hover:text-rose-500 transition">
+                        <button onClick={() => handleRemoveFromCart(item.key)} className="text-rose-600 dark:text-rose-400 hover:text-rose-500 transition">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>

@@ -4,7 +4,7 @@ import { Plus, Minus, Loader2, ChevronLeft, MapPin, ShieldCheck, Truck } from "l
 import { recordRecentlyViewedDb } from "../lib/actions";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import { getProductDetailInfo } from "../lib/product-descriptions";
-import { CATALOG_PRODUCTS } from "../lib/catalog";
+import { CATALOG_PRODUCTS, variantImage } from "../lib/catalog";
 import {
   StoreLayout,
   ProductRail,
@@ -85,6 +85,7 @@ function ProductDetailsPage() {
   const effectiveWeight = product.weight || catalogMatch?.weight || "Standard Pack";
   const effectiveProduct = { ...product, name: displayName || product.name, price: effectivePrice, weight: effectiveWeight };
 
+  const imageSrc = variantImage(product, selectedVariant);
   const targetProduct = selectedVariant
     ? { ...effectiveProduct, name: `${displayName || product.name} (${selectedVariant})`, variant: selectedVariant }
     : effectiveProduct;
@@ -108,14 +109,15 @@ function ProductDetailsPage() {
 
         <div className="mt-4 grid gap-6 md:grid-cols-2 md:gap-12">
           <div className="-mx-4 aspect-[4/3] overflow-hidden bg-muted sm:mx-0">
-            {product.image_url && product.image_url !== failedSrc ? (
+            {imageSrc && imageSrc !== failedSrc ? (
               <img
-                src={product.image_url}
-                alt={displayName || product.name}
+                key={imageSrc}
+                src={imageSrc}
+                alt={selectedVariant ? `${displayName || product.name} (${selectedVariant})` : displayName || product.name}
                 ref={(el) => {
-                  if (el?.complete && el.naturalWidth === 0) setFailedSrc(product.image_url);
+                  if (el?.complete && el.naturalWidth === 0) setFailedSrc(imageSrc);
                 }}
-                onError={() => setFailedSrc(product.image_url)}
+                onError={() => setFailedSrc(imageSrc)}
                 className="h-full w-full object-cover"
               />
             ) : (

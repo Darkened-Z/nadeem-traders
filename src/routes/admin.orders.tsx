@@ -5,10 +5,10 @@ import { ChevronDown, Loader2, Download, Truck, ExternalLink, MessageCircle, Sav
 import { toast } from "sonner";
 import { adminListOrders, adminUpdateOrderTracking } from "../lib/admin";
 import { updateOrderStatus } from "../lib/actions";
-import { useAdminQuery } from "../components/admin-shell";
+import { ORDER_STATUSES as STATUSES } from "../lib/order-status";
+import { useAdminInfiniteQuery } from "../components/admin-shell";
 import { Badge, Button, EmptyState, PageHeader, errorMessage, inputClass } from "../components/admin-ui";
 
-const STATUSES = ["Pending", "Shipped", "Delivered", "Cancelled"];
 const COURIERS = ["PostEx", "TCS", "M&P", "Leopards", "Trax"];
 
 export const Route = createFileRoute("/admin/orders")({
@@ -25,7 +25,11 @@ function formatPakPhone(raw?: string | null): string {
 
 function OrdersPage() {
   const qc = useQueryClient();
-  const { data: orders = [], isLoading } = useAdminQuery(["orders"], () => adminListOrders());
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useAdminInfiniteQuery(
+    ["orders"],
+    (beforeId: number | undefined) => adminListOrders({ data: { beforeId } }),
+    (last) => last.nextBeforeId,
+  );
   const [open, setOpen] = useState<number | null>(null);
   const [updating, setUpdating] = useState<number | null>(null);
   const [trackingForm, setTrackingForm] = useState<Record<number, { tracking: string; courier: string }>>({});
@@ -66,7 +70,7 @@ function OrdersPage() {
     }
   };
 
-  const list = orders as any[];
+  const list = (data?.pages.flatMap((p) => p.orders) ?? []) as any[];
 
   const exportCSV = () => {
     if (list.length === 0) {
@@ -366,6 +370,13 @@ function OrdersPage() {
           </table>
         )}
       </div>
+      {hasNextPage && (
+        <div className="mt-4 flex justify-center">
+          <Button variant="secondary" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
+            Load older orders
+          </Button>
+        </div>
+      )}
 
       {printOrder && <PrintInvoiceModal order={printOrder} onClose={() => setPrintOrder(null)} />}
     </>

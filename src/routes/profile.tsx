@@ -5,7 +5,7 @@ import {
   CheckCircle2, AlertTriangle, ArrowLeft, LogOut, Loader2,
   TrendingUp, Layers
 } from "lucide-react";
-import { getOrders } from "../lib/actions";
+import { getMyOrders } from "../lib/actions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
@@ -26,12 +26,9 @@ function ProfileDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
 
-  const fetchUserOrders = async (email: string) => {
+  const fetchUserOrders = async () => {
     try {
-      const allOrders = await getOrders();
-      // filter orders for this user by email
-      const userOrders = allOrders.filter((o: any) => o.customer_email.toLowerCase() === email.toLowerCase());
-      setOrders(userOrders);
+      setOrders(await getMyOrders());
     } catch (err) {
       console.error(err);
       toast.error("Failed to load your orders history.");
@@ -54,7 +51,7 @@ function ProfileDashboardPage() {
           try {
             const userObj = JSON.parse(savedUser);
             setCurrentUser(userObj);
-            fetchUserOrders(userObj.email);
+            fetchUserOrders();
           } catch (e) {
             navigate({ to: "/", search: { login: "true" } as any });
           }

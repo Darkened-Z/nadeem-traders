@@ -289,6 +289,15 @@ export async function initDb() {
       )
     `;
 
+    // One cart line per product option (e.g. Cashews Plain vs Roasted).
+    await sql`ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS variant TEXT NOT NULL DEFAULT ''`;
+    await sql`ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_user_id_product_id_key`;
+    await sql`ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_guest_session_id_product_id_key`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS cart_items_user_line ON cart_items (user_id, product_id, variant)`;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS cart_items_guest_line ON cart_items (guest_session_id, product_id, variant)`;
+    // The roasted cashews used to be a separate product; it is now the "Roasted & Salted" option of Cashews (id 2).
+    await sql`UPDATE products SET status = 'draft' WHERE id = 5 AND name = 'Cashews' AND image_url = '/products/kaju-roasted.jpg'`;
+
     // 20. Wishlist Items Table
     await sql`
       CREATE TABLE IF NOT EXISTS wishlist_items (

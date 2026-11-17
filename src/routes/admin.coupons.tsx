@@ -194,7 +194,7 @@ function CouponsPage() {
         <Modal
           title={editing.id ? "Edit Coupon" : "Create New Coupon"}
           onClose={() => setEditing(null)}
-          actions={
+          footer={
             <>
               <Button variant="secondary" onClick={() => setEditing(null)} disabled={saving}>
                 Cancel

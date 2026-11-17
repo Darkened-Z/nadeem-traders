@@ -155,7 +155,7 @@ function RatesPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl bg-white shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06]">
+      <div className="overflow-x-auto rounded-xl bg-white shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06]">
         {isLoading ? (
           <Loader2 className="mx-auto my-16 h-6 w-6 animate-spin text-[#616161]" />
         ) : filtered.length === 0 ? (
@@ -182,7 +182,7 @@ function RatesPage() {
                   <tr key={p.id} className={`hover:bg-[#FAFAFA] ${isChanged ? "bg-[#FFFDEB]" : ""}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <Thumb src={p.image_url} />
+                        <Thumb src={p.image_url} alt="" />
                         <div>
                           <p className="font-semibold text-[#303030]">{p.name}</p>
                           {p.origin && <p className="text-[11px] text-[#8A8A8A]">Origin: {p.origin}</p>}

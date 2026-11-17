@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useDeferredValue, useState } from "react";
 import { Loader2, Search, Users, MessageCircle, MapPin, ShoppingBag } from "lucide-react";
 import { adminListCustomers } from "../lib/admin";
-import { useAdminQuery } from "../components/admin-shell";
-import { Badge, EmptyState, PageHeader, inputClass } from "../components/admin-ui";
+import { useAdminInfiniteQuery } from "../components/admin-shell";
+import { Button, EmptyState, PageHeader, inputClass } from "../components/admin-ui";
 
 export const Route = createFileRoute("/admin/customers")({
   component: CustomersPage,
@@ -18,30 +18,17 @@ function formatPakPhone(raw?: string | null): string {
 }
 
 function CustomersPage() {
-  const { data: customers = [], isLoading } = useAdminQuery(["customers"], () => adminListCustomers());
   const [search, setSearch] = useState("");
+  const term = useDeferredValue(search.trim());
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useAdminInfiniteQuery(
+    ["customers", term],
+    (offset: number | undefined) => adminListCustomers({ data: { offset, search: term } }),
+    (last, pages) => (last.hasMore ? pages.reduce((n, p) => n + p.customers.length, 0) : undefined),
+  );
 
-  const list = customers as any[];
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((c) => {
-      return (
-        (c.name ?? "").toLowerCase().includes(q) ||
-        (c.phone ?? "").toLowerCase().includes(q) ||
-        (c.email ?? "").toLowerCase().includes(q) ||
-        (c.last_address ?? "").toLowerCase().includes(q)
-      );
-    });
-  }, [list, search]);
-
-  const stats = useMemo(() => {
-    const total = list.length;
-    const repeat = list.filter((c) => c.orders_count > 1).length;
-    const totalRev = list.reduce((acc, c) => acc + (Number(c.total_spent) || 0), 0);
-    return { total, repeat, totalRev };
-  }, [list]);
+  const filtered = (data?.pages.flatMap((p) => p.customers) ?? []) as any[];
+  const totals = data?.pages[0]?.totals;
+  const stats = { total: totals?.total ?? 0, repeat: totals?.repeat ?? 0, totalRev: totals?.revenue ?? 0 };
 
   return (
     <>
@@ -180,6 +167,13 @@ function CustomersPage() {
           </table>
         )}
       </div>
+      {hasNextPage && (
+        <div className="mt-4 flex justify-center">
+          <Button variant="secondary" loading={isFetchingNextPage} onClick={() => fetchNextPage()}>
+            Load more customers
+          </Button>
+        </div>
+      )}
     </>
   );
 }

@@ -16,12 +16,12 @@ type Seed = [
   weight?: string,
 ];
 
-const ITEMS: Seed[] = [
+const ITEMS: (Seed | null)[] = [
   ["Almonds", "بادام", "USA", 1, "almonds", 1800, "500g"],
   ["Cashew Nuts", "کاجو", "Vietnam", 1, "cashews", 950, "250g"],
   ["Pistachios", "پستہ", "Iran", 1, "pista", 1450, "250g"],
   ["Walnuts", "اخروٹ", "China", 1, "walnuts", 980, "250g"],
-  ["Cashews", "کاجو", "Vietnam", 1, "kaju-roasted", 950, "250g"],
+  null, // was a second "Cashews" (roasted); now the Roasted option of Cashews. Slot kept so ids match the database.
   ["Kishmish", "کشمش", "Afghanistan", 1, "kishmish", 380, "250g"],
 
   ["Sunflower Seeds", "سورج مکھی کے بیج", "USA", 2, "sunflower-seeds", 450, "250g"],
@@ -51,6 +51,7 @@ export interface ProductClassification {
   id: string;
   name: string;
   name_ur: string;
+  image?: string;
 }
 
 export const PRODUCT_CLASSIFICATIONS: Record<string, ProductClassification[]> = {
@@ -86,8 +87,8 @@ export const PRODUCT_CLASSIFICATIONS: Record<string, ProductClassification[]> = 
   ],
   // Cashews
   cashews: [
-    { id: "plain", name: "Plain / Raw", name_ur: "سادہ کاجو" },
-    { id: "roasted", name: "Roasted & Salted", name_ur: "بھنے ہوئے کاجو" },
+    { id: "plain", name: "Plain / Raw", name_ur: "سادہ کاجو", image: "/products/cashews.jpg" },
+    { id: "roasted", name: "Roasted & Salted", name_ur: "بھنے ہوئے کاجو", image: "/products/kaju-roasted.jpg" },
   ],
   // Zeera (Cumin)
   zeera: [
@@ -116,6 +117,18 @@ export function cleanProductTitle(name?: string | null): string {
   return n.replace(/\s*\([^)]*\)/g, "").trim();
 }
 
+export function variantImage(product: { name?: string | null; image_url?: string | null }, variant?: string | null) {
+  const option = getProductClassifications(product).find((c) => c.name === variant);
+  return option?.image ?? product.image_url ?? null;
+}
+
+// Cart lines and order items carry the chosen option; "" means the product has none.
+export function normalizeVariant(product: { name?: string | null }, variant?: string | null) {
+  const options = getProductClassifications(product);
+  if (options.length === 0) return "";
+  return options.find((c) => c.name === variant)?.name ?? options[0].name;
+}
+
 export function getProductClassifications(product?: { name?: string | null; id?: number | null }): ProductClassification[] {
   if (!product || !product.name) return [];
   const n = product.name.toLowerCase();
@@ -130,7 +143,10 @@ export function getProductClassifications(product?: { name?: string | null; id?:
   return [];
 }
 
-export const CATALOG_PRODUCTS = ITEMS.map(([name, name_ur, origin, category_id, image, price, weight], i) => ({
+export const CATALOG_PRODUCTS = ITEMS.flatMap((row, i) => {
+  if (!row) return [];
+  const [name, name_ur, origin, category_id, image, price, weight] = row;
+  return [{
   id: i + 1,
   name,
   name_ur,
@@ -143,4 +159,5 @@ export const CATALOG_PRODUCTS = ITEMS.map(([name, name_ur, origin, category_id, 
   category_id,
   category_name: CATALOG_CATEGORIES.find((c) => c.id === category_id)!.name,
   image_url: `/products/${image}.jpg`,
-}));
+  }];
+});

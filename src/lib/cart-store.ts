@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { getCartItems, addToCartDb, updateCartItemQuantityDb, removeFromCartDb } from "./actions";
 import { toast } from "sonner";
+import { cleanProductTitle, variantImage } from "./catalog";
 
 export interface CartItem {
-  id: number; // represents the product.id
+  key: string; // product id + chosen option, one cart line each
+  id: number; // product id
+  variant: string; // chosen option, "" when the product has none
   name: string;
   brand: string;
   weight: string;
@@ -50,15 +53,30 @@ function notify() {
   listeners.forEach((l) => l(current));
 }
 
-// Maps to track server state and queue status per product ID
-const confirmedQuantities = new Map<number, number>();
-const latestRequestedQty = new Map<number, number>();
-const debounceTimers = new Map<number, NodeJS.Timeout>();
-const requestSequence = new Map<number, number>();
-const activeRequests = new Map<number, boolean>();
+// Maps to track server state and queue status per cart line key
+const confirmedQuantities = new Map<string, number>();
+const latestRequestedQty = new Map<string, number>();
+const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const requestSequence = new Map<string, number>();
 
-// Load initial cart once when script loads (in background)
 let isInitialized = false;
+
+export const lineKey = (productId: number, variant = "") => `${productId}|${variant}`;
+
+function withLineKey(item: any): CartItem {
+  const variant = item.variant ?? "";
+  return { ...item, variant, key: lineKey(item.id, variant) };
+}
+
+function readLocalCart(): CartItem[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("nadeem_cart");
+    return stored ? (JSON.parse(stored) as any[]).map(withLineKey) : null;
+  } catch {
+    return null;
+  }
+}
 
 export const cartStore = {
   getCart() {
@@ -73,48 +91,40 @@ export const cartStore = {
 
   async load() {
     try {
-      const items = await getCartItems({ data: {} });
+      const items = await getCartItems();
       if (items && items.length > 0) {
-        cartState = items.map((item) => ({
-          id: item.id, // product ID
-          name: item.name,
-          brand: item.brand,
-          weight: item.weight,
-          price: item.price,
-          wholesale_price: item.wholesale_price,
-          wholesale_min_qty: item.wholesale_min_qty || 1,
-          emoji: item.emoji || "🌾",
-          quantity: item.quantity,
-          image_url: item.image_url,
-        }));
-      } else if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("nadeem_cart");
-        if (stored) {
-          try {
-            cartState = JSON.parse(stored);
-          } catch {}
-        }
+        cartState = items.map((item) => {
+          const baseName = cleanProductTitle(item.name) || item.name;
+          const variant = item.variant ?? "";
+          return {
+            key: lineKey(item.id, variant),
+            id: item.id,
+            variant,
+            name: variant ? `${baseName} (${variant})` : baseName,
+            brand: item.brand,
+            weight: item.weight,
+            price: item.price,
+            wholesale_price: item.wholesale_price,
+            wholesale_min_qty: item.wholesale_min_qty || 1,
+            emoji: item.emoji || "🌾",
+            quantity: item.quantity,
+            image_url: variantImage(item, variant),
+          };
+        });
+      } else {
+        cartState = readLocalCart() ?? cartState;
       }
-
-      // Set confirmed states
-      confirmedQuantities.clear();
-      latestRequestedQty.clear();
-      for (const item of cartState) {
-        confirmedQuantities.set(item.id, item.quantity);
-        latestRequestedQty.set(item.id, item.quantity);
-      }
-      notify();
-    } catch (e) {
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("nadeem_cart");
-        if (stored) {
-          try {
-            cartState = JSON.parse(stored);
-            notify();
-          } catch {}
-        }
-      }
+    } catch {
+      cartState = readLocalCart() ?? cartState;
     }
+
+    confirmedQuantities.clear();
+    latestRequestedQty.clear();
+    for (const item of cartState) {
+      confirmedQuantities.set(item.key, item.quantity);
+      latestRequestedQty.set(item.key, item.quantity);
+    }
+    notify();
   },
 
   subscribe(listener: (cart: CartItem[]) => void) {
@@ -124,20 +134,20 @@ export const cartStore = {
     };
   },
 
-  addToCart(product: any, qty: number = 1, isWholesale: boolean = false) {
-    const existingIndex = cartState.findIndex((item) => item.id === product.id);
-    const prevConfirmed = confirmedQuantities.get(product.id) || 0;
-    
+  addToCart(product: any, qty: number = 1) {
+    const variant: string = product.variant ?? "";
+    const key = lineKey(product.id, variant);
+    const existingIndex = cartState.findIndex((item) => item.key === key);
+
     let targetQty = qty;
     if (existingIndex > -1) {
       targetQty = cartState[existingIndex].quantity + qty;
-      cartState[existingIndex] = {
-        ...cartState[existingIndex],
-        quantity: targetQty,
-      };
+      cartState[existingIndex] = { ...cartState[existingIndex], quantity: targetQty };
     } else {
-      const newItem: CartItem = {
+      cartState.push({
+        key,
         id: product.id,
+        variant,
         name: product.name,
         brand: product.brand,
         weight: product.weight,
@@ -146,52 +156,38 @@ export const cartStore = {
         wholesale_min_qty: product.wholesale_min_qty || 1,
         emoji: product.emoji || "🌾",
         quantity: qty,
-        image_url: product.image_url || null,
-      };
-      cartState.push(newItem);
+        image_url: variantImage(product, variant),
+      });
     }
 
-    latestRequestedQty.set(product.id, targetQty);
+    latestRequestedQty.set(key, targetQty);
     notify();
-
-    // Trigger debounced synchronization
-    this.scheduleSync(product.id, product.name);
+    this.scheduleSync(key);
   },
 
-  updateQuantity(productId: number, delta: number) {
-    const existingIndex = cartState.findIndex((item) => item.id === productId);
+  updateQuantity(key: string, delta: number) {
+    const existingIndex = cartState.findIndex((item) => item.key === key);
     if (existingIndex === -1) return;
 
-    const currentQty = cartState[existingIndex].quantity;
-    const newQty = currentQty + delta;
-    latestRequestedQty.set(productId, newQty);
-
-    const productName = cartState[existingIndex].name;
+    const newQty = cartState[existingIndex].quantity + delta;
+    latestRequestedQty.set(key, newQty);
 
     if (newQty <= 0) {
-      cartState = cartState.filter((item) => item.id !== productId);
+      cartState = cartState.filter((item) => item.key !== key);
     } else {
-      cartState[existingIndex] = {
-        ...cartState[existingIndex],
-        quantity: newQty,
-      };
+      cartState[existingIndex] = { ...cartState[existingIndex], quantity: newQty };
     }
 
     notify();
-
-    // Trigger debounced synchronization
-    this.scheduleSync(productId, productName);
+    this.scheduleSync(key);
   },
 
-  removeFromCart(productId: number) {
-    const existingItem = cartState.find((item) => item.id === productId);
-    if (!existingItem) return;
-
-    latestRequestedQty.set(productId, 0);
-    cartState = cartState.filter((item) => item.id !== productId);
+  removeFromCart(key: string) {
+    if (!cartState.some((item) => item.key === key)) return;
+    latestRequestedQty.set(key, 0);
+    cartState = cartState.filter((item) => item.key !== key);
     notify();
-
-    this.scheduleSync(productId, existingItem.name);
+    this.scheduleSync(key);
   },
 
   clearCartLocal() {
@@ -206,54 +202,37 @@ export const cartStore = {
     notify();
   },
 
-  scheduleSync(productId: number, productName: string) {
-    // Clear existing timer to debounce rapid quantity changes (250ms)
-    if (debounceTimers.has(productId)) {
-      clearTimeout(debounceTimers.get(productId)!);
-    }
+  // Debounced (250ms) server sync per cart line; a sequence number drops stale responses.
+  scheduleSync(key: string) {
+    if (debounceTimers.has(key)) clearTimeout(debounceTimers.get(key)!);
 
     const timer = setTimeout(async () => {
-      debounceTimers.delete(productId);
-      
-      const targetQty = latestRequestedQty.get(productId) ?? 0;
-      const confirmedQty = confirmedQuantities.get(productId) ?? 0;
-
-      // Skip API request if current client state matches the server's confirmed state
+      debounceTimers.delete(key);
+      const targetQty = latestRequestedQty.get(key) ?? 0;
+      const confirmedQty = confirmedQuantities.get(key) ?? 0;
       if (targetQty === confirmedQty) return;
 
-      // Increment sequence number to prevent race conditions
-      const seq = (requestSequence.get(productId) || 0) + 1;
-      requestSequence.set(productId, seq);
+      const seq = (requestSequence.get(key) || 0) + 1;
+      requestSequence.set(key, seq);
 
+      const [id, variant] = key.split("|");
+      const productId = Number(id);
       try {
-        activeRequests.set(productId, true);
-
         if (targetQty <= 0) {
-          await removeFromCartDb({ data: { productId } });
+          await removeFromCartDb({ data: { productId, variant } });
         } else if (confirmedQty === 0) {
-          // If not previously in database, add it
-          await addToCartDb({ data: { productId, quantity: targetQty } });
+          await addToCartDb({ data: { productId, variant, quantity: targetQty } });
         } else {
-          // If already in database, update quantity
-          await updateCartItemQuantityDb({ data: { productId, quantity: targetQty } });
-        }
-
-        // Only update verified state if this was the latest request dispatched
-        if (requestSequence.get(productId) === seq) {
-          confirmedQuantities.set(productId, targetQty);
-          activeRequests.delete(productId);
+          await updateCartItemQuantityDb({ data: { productId, variant, quantity: targetQty } });
         }
       } catch (err: any) {
-        if (requestSequence.get(productId) === seq) {
-          console.warn(`Local cart retained; backend sync info:`, err?.message);
-          activeRequests.delete(productId);
-          // Keep optimistic local cart intact
-          confirmedQuantities.set(productId, targetQty);
-        }
+        console.warn(`Local cart retained; backend sync info:`, err?.message);
       }
+      // The local cart stays authoritative even when the backend sync fails.
+      if (requestSequence.get(key) === seq) confirmedQuantities.set(key, targetQty);
     }, 250);
 
-    debounceTimers.set(productId, timer);
+    debounceTimers.set(key, timer);
   },
 };
 

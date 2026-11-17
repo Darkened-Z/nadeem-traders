@@ -1,6 +1,6 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useState, type FormEvent } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Home, Package, Tags, ShoppingCart, ExternalLink, LogOut, Menu, X, Loader2, Lock, Coins, Users, Settings, Ticket, BarChart3 } from "lucide-react";
 import { adminLogin, adminLogout, adminSession } from "../lib/admin";
 import { Button, inputClass } from "./admin-ui";
@@ -10,6 +10,25 @@ const LockContext = createContext<() => void>(() => {});
 export function useAdminQuery<T>(key: unknown[], fn: () => Promise<T>) {
   const lockOut = useContext(LockContext);
   const query = useQuery({ queryKey: ["admin", ...key], queryFn: fn, retry: false });
+  useEffect(() => {
+    if (query.error instanceof Error && query.error.message === "Unauthorized") lockOut();
+  }, [query.error, lockOut]);
+  return query;
+}
+
+export function useAdminInfiniteQuery<T, C>(
+  key: unknown[],
+  fn: (cursor: C | undefined) => Promise<T>,
+  nextCursor: (lastPage: T, pages: T[]) => C | undefined,
+) {
+  const lockOut = useContext(LockContext);
+  const query = useInfiniteQuery({
+    queryKey: ["admin", ...key],
+    queryFn: ({ pageParam }) => fn(pageParam as C | undefined),
+    initialPageParam: undefined as C | undefined,
+    getNextPageParam: nextCursor,
+    retry: false,
+  });
   useEffect(() => {
     if (query.error instanceof Error && query.error.message === "Unauthorized") lockOut();
   }, [query.error, lockOut]);

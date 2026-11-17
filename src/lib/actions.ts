@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "./db";
-import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, cleanProductTitle } from "./catalog";
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, cleanProductTitle, normalizeVariant } from "./catalog";
 import { assertAdmin } from "./admin";
+import { assertOrderStatus } from "./order-status";
 import { Resend } from "resend";
 import { OAuth2Client } from "google-auth-library";
 import crypto from "crypto";
@@ -118,9 +119,10 @@ async function createAuditLog(userId: number | null, action: string, ip: string 
 
 // 0. Complete Google Authentication
 export const loginWithGoogleCredential = createServerFn({ method: "POST" })
-  .validator((data: { credential: string; guestSessionId?: string; deviceInfo?: string; browser?: string; os?: string; ip?: string }) => data)
-  .handler(async ({ data }) => {
-    const { setSessionToken, clearGuestToken } = await import("./server-cookies");
+  .validator((data: { credential: string; deviceInfo?: string; browser?: string; os?: string }) => data)
+  .handler(async ({ data: input }) => {
+    const { setSessionToken, clearGuestToken, getGuestToken, getClientIp } = await import("./server-cookies");
+    const data = { ...input, ip: getClientIp(), guestSessionId: await getGuestToken() };
     // 1. Verify token securely
     const payload = await verifyGoogleIdToken(data.credential);
     const email = payload.email!;
@@ -218,10 +220,10 @@ export const loginWithGoogleCredential = createServerFn({ method: "POST" })
       const guestCart = await sql`SELECT * FROM cart_items WHERE guest_session_id = ${data.guestSessionId}`;
       for (const item of guestCart) {
         await sql`
-          INSERT INTO cart_items (user_id, product_id, quantity)
-          VALUES (${user.id}, ${item.product_id}, ${item.quantity})
-          ON CONFLICT (user_id, product_id)
-          DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+          INSERT INTO cart_items (user_id, product_id, variant, quantity)
+          VALUES (${user.id}, ${item.product_id}, ${item.variant}, ${item.quantity})
+          ON CONFLICT (user_id, product_id, variant)
+          DO UPDATE SET quantity = LEAST(cart_items.quantity + EXCLUDED.quantity, 999)
         `;
       }
       await sql`DELETE FROM cart_items WHERE guest_session_id = ${data.guestSessionId}`;
@@ -310,178 +312,158 @@ export const getOrCreateGuestSession = createServerFn({ method: "POST" }).handle
   return { guestSessionId: guestToken };
 });
 
-// Shopping Cart Actions
-export const getCartItems = createServerFn({ method: "POST" })
-  .validator((data: { userId?: number; guestSessionId?: string }) => data)
-  .handler(async ({ data }) => {
-    if (!sql) return [];
-    if (!data.userId && !data.guestSessionId) {
-      const { resolveUserOrGuest } = await import("./server-cookies");
-      const identity = await resolveUserOrGuest();
-      data.userId = identity.userId;
-      data.guestSessionId = identity.guestSessionId;
-    }
+// Every user-scoped action derives its identity from the httpOnly session/guest cookies, never from client input.
+async function cartOwner() {
+  const { resolveUserOrGuest } = await import("./server-cookies");
+  return resolveUserOrGuest();
+}
 
-    if (data.userId) {
-      return await sql`
-        SELECT c.id as cart_item_id, c.quantity, p.*, cat.name as category_name
-        FROM cart_items c
-        JOIN products p ON c.product_id = p.id
-        LEFT JOIN categories cat ON p.category_id = cat.id
-        WHERE c.user_id = ${data.userId}
-      `;
-    } else if (data.guestSessionId) {
-      return await sql`
-        SELECT c.id as cart_item_id, c.quantity, p.*, cat.name as category_name
-        FROM cart_items c
-        JOIN products p ON c.product_id = p.id
-        LEFT JOIN categories cat ON p.category_id = cat.id
-        WHERE c.guest_session_id = ${data.guestSessionId}
-      `;
-    }
-    return [];
-  });
+async function sessionUserId() {
+  const { requireSessionUserId } = await import("./server-cookies");
+  return requireSessionUserId();
+}
+
+function assertQuantity(quantity: number) {
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
+    throw new Error("Invalid quantity");
+  }
+}
+
+// Shopping Cart Actions
+export const getCartItems = createServerFn({ method: "POST" }).handler(async () => {
+  if (!sql) return [];
+  const { userId, guestSessionId } = await cartOwner();
+  if (userId) {
+    return await sql`
+      SELECT c.id as cart_item_id, c.quantity, c.variant, p.*, cat.name as category_name
+      FROM cart_items c
+      JOIN products p ON c.product_id = p.id
+      LEFT JOIN categories cat ON p.category_id = cat.id
+      WHERE c.user_id = ${userId}
+    `;
+  }
+  return await sql`
+    SELECT c.id as cart_item_id, c.quantity, c.variant, p.*, cat.name as category_name
+    FROM cart_items c
+    JOIN products p ON c.product_id = p.id
+    LEFT JOIN categories cat ON p.category_id = cat.id
+    WHERE c.guest_session_id = ${guestSessionId!}
+  `;
+});
 
 export const addToCartDb = createServerFn({ method: "POST" })
-  .validator((data: { userId?: number; guestSessionId?: string; productId: number; quantity: number }) => data)
+  .validator((data: { productId: number; variant?: string; quantity: number }) => data)
   .handler(async ({ data }) => {
     if (!sql) return { success: true };
-    if (!data.userId && !data.guestSessionId) {
-      const { resolveUserOrGuest } = await import("./server-cookies");
-      const identity = await resolveUserOrGuest();
-      data.userId = identity.userId;
-      data.guestSessionId = identity.guestSessionId;
-    }
-
-    if (data.userId) {
+    assertQuantity(data.quantity);
+    const [product] = await sql`SELECT name FROM products WHERE id = ${data.productId}`;
+    if (!product) throw new Error("Product not found");
+    const variant = normalizeVariant(product, data.variant);
+    const { userId, guestSessionId } = await cartOwner();
+    if (userId) {
       await sql`
-        INSERT INTO cart_items (user_id, product_id, quantity)
-        VALUES (${data.userId}, ${data.productId}, ${data.quantity})
-        ON CONFLICT (user_id, product_id)
-        DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+        INSERT INTO cart_items (user_id, product_id, variant, quantity)
+        VALUES (${userId}, ${data.productId}, ${variant}, ${data.quantity})
+        ON CONFLICT (user_id, product_id, variant)
+        DO UPDATE SET quantity = LEAST(cart_items.quantity + EXCLUDED.quantity, 999)
       `;
-    } else if (data.guestSessionId) {
+    } else {
       await sql`
-        INSERT INTO cart_items (guest_session_id, product_id, quantity)
-        VALUES (${data.guestSessionId}, ${data.productId}, ${data.quantity})
-        ON CONFLICT (guest_session_id, product_id)
-        DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+        INSERT INTO cart_items (guest_session_id, product_id, variant, quantity)
+        VALUES (${guestSessionId!}, ${data.productId}, ${variant}, ${data.quantity})
+        ON CONFLICT (guest_session_id, product_id, variant)
+        DO UPDATE SET quantity = LEAST(cart_items.quantity + EXCLUDED.quantity, 999)
       `;
     }
     return { success: true };
   });
 
 export const updateCartItemQuantityDb = createServerFn({ method: "POST" })
-  .validator((data: { userId?: number; guestSessionId?: string; productId: number; quantity: number }) => data)
+  .validator((data: { productId: number; variant?: string; quantity: number }) => data)
   .handler(async ({ data }) => {
     if (!sql) return { success: true };
-    if (!data.userId && !data.guestSessionId) {
-      const { resolveUserOrGuest } = await import("./server-cookies");
-      const identity = await resolveUserOrGuest();
-      data.userId = identity.userId;
-      data.guestSessionId = identity.guestSessionId;
-    }
-
-    if (data.userId) {
+    assertQuantity(data.quantity);
+    const variant = data.variant ?? "";
+    const { userId, guestSessionId } = await cartOwner();
+    if (userId) {
       await sql`
         UPDATE cart_items SET quantity = ${data.quantity}
-        WHERE user_id = ${data.userId} AND product_id = ${data.productId}
+        WHERE user_id = ${userId} AND product_id = ${data.productId} AND variant = ${variant}
       `;
-    } else if (data.guestSessionId) {
+    } else {
       await sql`
         UPDATE cart_items SET quantity = ${data.quantity}
-        WHERE guest_session_id = ${data.guestSessionId} AND product_id = ${data.productId}
+        WHERE guest_session_id = ${guestSessionId!} AND product_id = ${data.productId} AND variant = ${variant}
       `;
     }
     return { success: true };
   });
 
 export const removeFromCartDb = createServerFn({ method: "POST" })
-  .validator((data: { userId?: number; guestSessionId?: string; productId: number }) => data)
+  .validator((data: { productId: number; variant?: string }) => data)
   .handler(async ({ data }) => {
     if (!sql) return { success: true };
-    if (!data.userId && !data.guestSessionId) {
-      const { resolveUserOrGuest } = await import("./server-cookies");
-      const identity = await resolveUserOrGuest();
-      data.userId = identity.userId;
-      data.guestSessionId = identity.guestSessionId;
-    }
-
-    if (data.userId) {
-      await sql`
-        DELETE FROM cart_items WHERE user_id = ${data.userId} AND product_id = ${data.productId}
-      `;
-    } else if (data.guestSessionId) {
-      await sql`
-        DELETE FROM cart_items WHERE guest_session_id = ${data.guestSessionId} AND product_id = ${data.productId}
-      `;
+    const variant = data.variant ?? "";
+    const { userId, guestSessionId } = await cartOwner();
+    if (userId) {
+      await sql`DELETE FROM cart_items WHERE user_id = ${userId} AND product_id = ${data.productId} AND variant = ${variant}`;
+    } else {
+      await sql`DELETE FROM cart_items WHERE guest_session_id = ${guestSessionId!} AND product_id = ${data.productId} AND variant = ${variant}`;
     }
     return { success: true };
   });
 
-export const clearCartDb = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    if (!sql) return { success: true };
-    await sql`DELETE FROM cart_items WHERE user_id = ${data.userId}`;
-    return { success: true };
-  });
+export const clearCartDb = createServerFn({ method: "POST" }).handler(async () => {
+  if (!sql) return { success: true };
+  const { userId, guestSessionId } = await cartOwner();
+  if (userId) {
+    await sql`DELETE FROM cart_items WHERE user_id = ${userId}`;
+  } else {
+    await sql`DELETE FROM cart_items WHERE guest_session_id = ${guestSessionId!}`;
+  }
+  return { success: true };
+});
 
 // Wishlist Actions
-export const getWishlist = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    return await sql`
-      SELECT w.id as wishlist_item_id, p.*, cat.name as category_name
-      FROM wishlist_items w
-      JOIN products p ON w.product_id = p.id
-      LEFT JOIN categories cat ON p.category_id = cat.id
-      WHERE w.user_id = ${data.userId}
-    `;
-  });
+export const getWishlist = createServerFn({ method: "POST" }).handler(async () => {
+  const userId = await sessionUserId();
+  return await sql`
+    SELECT w.id as wishlist_item_id, p.*, cat.name as category_name
+    FROM wishlist_items w
+    JOIN products p ON w.product_id = p.id
+    LEFT JOIN categories cat ON p.category_id = cat.id
+    WHERE w.user_id = ${userId}
+  `;
+});
 
 export const toggleWishlistDb = createServerFn({ method: "POST" })
-  .validator((data: { userId: number; productId: number }) => data)
+  .validator((data: { productId: number }) => data)
   .handler(async ({ data }) => {
-    const existing = await sql`
-      SELECT * FROM wishlist_items WHERE user_id = ${data.userId} AND product_id = ${data.productId}
+    const userId = await sessionUserId();
+    const removed = await sql`
+      DELETE FROM wishlist_items WHERE user_id = ${userId} AND product_id = ${data.productId} RETURNING id
     `;
-    if (existing.length > 0) {
-      await sql`
-        DELETE FROM wishlist_items WHERE user_id = ${data.userId} AND product_id = ${data.productId}
-      `;
-      return { success: true, wishlisted: false };
-    } else {
-      await sql`
-        INSERT INTO wishlist_items (user_id, product_id)
-        VALUES (${data.userId}, ${data.productId})
-      `;
-      return { success: true, wishlisted: true };
-    }
+    if (removed.length > 0) return { success: true, wishlisted: false };
+    await sql`INSERT INTO wishlist_items (user_id, product_id) VALUES (${userId}, ${data.productId})`;
+    return { success: true, wishlisted: true };
   });
 
 // Recently Viewed Actions
 export const recordRecentlyViewedDb = createServerFn({ method: "POST" })
-  .validator((data: { userId?: number; guestSessionId?: string; productId: number }) => data)
+  .validator((data: { productId: number }) => data)
   .handler(async ({ data }) => {
-    if (!data.userId && !data.guestSessionId) {
-      const { resolveUserOrGuest } = await import("./server-cookies");
-      const identity = await resolveUserOrGuest();
-      data.userId = identity.userId;
-      data.guestSessionId = identity.guestSessionId;
-    }
-
-    if (data.userId) {
+    const { userId, guestSessionId } = await cartOwner();
+    if (userId) {
       await sql`
         INSERT INTO recently_viewed (user_id, product_id, viewed_at)
-        VALUES (${data.userId}, ${data.productId}, NOW())
+        VALUES (${userId}, ${data.productId}, NOW())
         ON CONFLICT (user_id, product_id)
         DO UPDATE SET viewed_at = NOW()
       `;
-    } else if (data.guestSessionId) {
+    } else {
       await sql`
         INSERT INTO recently_viewed (guest_session_id, product_id, viewed_at)
-        VALUES (${data.guestSessionId}, ${data.productId}, NOW())
+        VALUES (${guestSessionId!}, ${data.productId}, NOW())
         ON CONFLICT (guest_session_id, product_id)
         DO UPDATE SET viewed_at = NOW()
       `;
@@ -489,52 +471,40 @@ export const recordRecentlyViewedDb = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-export const getRecentlyViewed = createServerFn({ method: "POST" })
-  .validator((data: { userId?: number; guestSessionId?: string }) => data)
-  .handler(async ({ data }) => {
-    if (!data.userId && !data.guestSessionId) {
-      const { resolveUserOrGuest } = await import("./server-cookies");
-      const identity = await resolveUserOrGuest();
-      data.userId = identity.userId;
-      data.guestSessionId = identity.guestSessionId;
-    }
-
-    if (data.userId) {
-      return await sql`
-        SELECT rv.viewed_at, p.*, cat.name as category_name
-        FROM recently_viewed rv
-        JOIN products p ON rv.product_id = p.id
-        LEFT JOIN categories cat ON p.category_id = cat.id
-        WHERE rv.user_id = ${data.userId}
-        ORDER BY rv.viewed_at DESC
-        LIMIT 12
-      `;
-    } else if (data.guestSessionId) {
-      return await sql`
-        SELECT rv.viewed_at, p.*, cat.name as category_name
-        FROM recently_viewed rv
-        JOIN products p ON rv.product_id = p.id
-        LEFT JOIN categories cat ON p.category_id = cat.id
-        WHERE rv.guest_session_id = ${data.guestSessionId}
-        ORDER BY rv.viewed_at DESC
-        LIMIT 12
-      `;
-    }
-    return [];
-  });
+export const getRecentlyViewed = createServerFn({ method: "POST" }).handler(async () => {
+  const { userId, guestSessionId } = await cartOwner();
+  if (userId) {
+    return await sql`
+      SELECT rv.viewed_at, p.*, cat.name as category_name
+      FROM recently_viewed rv
+      JOIN products p ON rv.product_id = p.id
+      LEFT JOIN categories cat ON p.category_id = cat.id
+      WHERE rv.user_id = ${userId}
+      ORDER BY rv.viewed_at DESC
+      LIMIT 12
+    `;
+  }
+  return await sql`
+    SELECT rv.viewed_at, p.*, cat.name as category_name
+    FROM recently_viewed rv
+    JOIN products p ON rv.product_id = p.id
+    LEFT JOIN categories cat ON p.category_id = cat.id
+    WHERE rv.guest_session_id = ${guestSessionId!}
+    ORDER BY rv.viewed_at DESC
+    LIMIT 12
+  `;
+});
 
 // Address Book Actions
-export const getUserAddresses = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    return await sql`
-      SELECT * FROM user_addresses WHERE user_id = ${data.userId} ORDER BY is_default DESC, id DESC
-    `;
-  });
+export const getUserAddresses = createServerFn({ method: "POST" }).handler(async () => {
+  const userId = await sessionUserId();
+  return await sql`
+    SELECT * FROM user_addresses WHERE user_id = ${userId} ORDER BY is_default DESC, id DESC
+  `;
+});
 
 export const addUserAddressDb = createServerFn({ method: "POST" })
   .validator((data: {
-    userId: number;
     type: string;
     firstName: string;
     lastName: string;
@@ -548,53 +518,57 @@ export const addUserAddressDb = createServerFn({ method: "POST" })
     isDefault: boolean;
   }) => data)
   .handler(async ({ data }) => {
+    const userId = await sessionUserId();
     if (data.isDefault) {
       await sql`
-        UPDATE user_addresses SET is_default = FALSE WHERE user_id = ${data.userId} AND type = ${data.type}
+        UPDATE user_addresses SET is_default = FALSE WHERE user_id = ${userId} AND type = ${data.type}
       `;
     }
     await sql`
       INSERT INTO user_addresses (user_id, type, first_name, last_name, address_line1, address_line2, city, state, postal_code, country, phone, is_default)
-      VALUES (${data.userId}, ${data.type}, ${data.firstName}, ${data.lastName}, ${data.addressLine1}, ${data.addressLine2 || null}, ${data.city}, ${data.state}, ${data.postalCode}, ${data.country}, ${data.phone}, ${data.isDefault})
+      VALUES (${userId}, ${data.type}, ${data.firstName}, ${data.lastName}, ${data.addressLine1}, ${data.addressLine2 || null}, ${data.city}, ${data.state}, ${data.postalCode}, ${data.country}, ${data.phone}, ${data.isDefault})
     `;
     return { success: true };
   });
 
 export const deleteUserAddressDb = createServerFn({ method: "POST" })
-  .validator((data: { userId: number; addressId: number }) => data)
+  .validator((data: { addressId: number }) => data)
   .handler(async ({ data }) => {
-    await sql`
-      DELETE FROM user_addresses WHERE id = ${data.addressId} AND user_id = ${data.userId}
-    `;
+    const userId = await sessionUserId();
+    await sql`DELETE FROM user_addresses WHERE id = ${data.addressId} AND user_id = ${userId}`;
     return { success: true };
   });
 
 // Preference Actions
 export const updateUserPreferences = createServerFn({ method: "POST" })
-  .validator((data: { userId: number; marketingConsent: boolean; newsletterSubscription: boolean; phone?: string }) => data)
+  .validator((data: { marketingConsent: boolean; newsletterSubscription: boolean; phone?: string }) => data)
   .handler(async ({ data }) => {
+    const userId = await sessionUserId();
     await sql`
-      UPDATE users SET 
-        marketing_consent = ${data.marketingConsent}, 
+      UPDATE users SET
+        marketing_consent = ${data.marketingConsent},
         newsletter_subscription = ${data.newsletterSubscription},
         phone_number = ${data.phone || null},
         updated_at = NOW()
-      WHERE id = ${data.userId}
+      WHERE id = ${userId}
     `;
     return { success: true };
   });
 
 // Reviews Actions
 export const submitReview = createServerFn({ method: "POST" })
-  .validator((data: { userId: number; productId: number; rating: number; comment: string }) => data)
+  .validator((data: { productId: number; rating: number; comment: string }) => data)
   .handler(async ({ data }) => {
+    const userId = await sessionUserId();
+    if (!Number.isInteger(data.rating) || data.rating < 1 || data.rating > 5) {
+      throw new Error("Rating must be between 1 and 5");
+    }
     const result = await sql`
       INSERT INTO reviews (user_id, product_id, rating, comment)
-      VALUES (${data.userId}, ${data.productId}, ${data.rating}, ${data.comment})
+      VALUES (${userId}, ${data.productId}, ${data.rating}, ${data.comment})
       RETURNING *
     `;
-    
-    // Increment product review metrics
+
     const reviewsResult = await sql`
       SELECT count(*), avg(rating) FROM reviews WHERE product_id = ${data.productId}
     `;
@@ -602,7 +576,7 @@ export const submitReview = createServerFn({ method: "POST" })
     const avgRating = parseFloat(reviewsResult[0].avg || "5.0");
 
     await sql`
-      UPDATE products SET 
+      UPDATE products SET
         reviews = ${count},
         rating = ${parseFloat(avgRating.toFixed(1))}
       WHERE id = ${data.productId}
@@ -624,119 +598,102 @@ export const getProductReviews = createServerFn({ method: "POST" })
   });
 
 // Support Ticket Actions
-export const getSupportTickets = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    return await sql`
-      SELECT * FROM support_tickets WHERE user_id = ${data.userId} ORDER BY id DESC
-    `;
-  });
+export const getSupportTickets = createServerFn({ method: "POST" }).handler(async () => {
+  const userId = await sessionUserId();
+  return await sql`SELECT * FROM support_tickets WHERE user_id = ${userId} ORDER BY id DESC`;
+});
 
 export const createSupportTicket = createServerFn({ method: "POST" })
-  .validator((data: { userId: number; subject: string; message: string }) => data)
+  .validator((data: { subject: string; message: string }) => data)
   .handler(async ({ data }) => {
+    const userId = await sessionUserId();
     await sql`
       INSERT INTO support_tickets (user_id, subject, message)
-      VALUES (${data.userId}, ${data.subject}, ${data.message})
+      VALUES (${userId}, ${data.subject}, ${data.message})
     `;
     return { success: true };
   });
 
 // Notifications Actions
-export const getUserNotifications = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    return await sql`
-      SELECT * FROM notifications WHERE user_id = ${data.userId} ORDER BY id DESC
-    `;
-  });
+export const getUserNotifications = createServerFn({ method: "POST" }).handler(async () => {
+  const userId = await sessionUserId();
+  return await sql`SELECT * FROM notifications WHERE user_id = ${userId} ORDER BY id DESC`;
+});
 
 export const markNotificationRead = createServerFn({ method: "POST" })
-  .validator((data: { userId: number; notificationId: number }) => data)
+  .validator((data: { notificationId: number }) => data)
   .handler(async ({ data }) => {
+    const userId = await sessionUserId();
     await sql`
-      UPDATE notifications SET is_read = TRUE 
-      WHERE id = ${data.notificationId} AND user_id = ${data.userId}
+      UPDATE notifications SET is_read = TRUE
+      WHERE id = ${data.notificationId} AND user_id = ${userId}
     `;
     return { success: true };
   });
 
 // Coupons & Rewards Actions
 export const getCoupons = createServerFn({ method: "GET" }).handler(async () => {
-  return await sql`SELECT * FROM coupons WHERE active = TRUE`;
+  await sessionUserId();
+  return await sql`
+    SELECT code, discount_percent, min_order_amount FROM coupons WHERE active = TRUE ORDER BY discount_percent DESC
+  `;
 });
 
-export const applyCoupon = createServerFn({ method: "POST" })
-  .validator((data: { code: string }) => data)
-  .handler(async ({ data }) => {
-    const result = await sql`
-      SELECT * FROM coupons WHERE code = ${data.code.toUpperCase()} AND active = TRUE
-    `;
-    if (result.length === 0) {
-      throw new Error("Invalid or inactive coupon code.");
-    }
-    return result[0];
+export const getCustomerDashboardStats = createServerFn({ method: "POST" }).handler(async () => {
+  const userId = await sessionUserId();
+  const userResult = await sql`
+    SELECT created_at, reward_points, last_login FROM users WHERE id = ${userId}
+  `;
+
+  const ordersResult = await sql`
+    SELECT status, count(*), sum(total_amount) as total_spent FROM orders 
+    WHERE user_id = ${userId} 
+    GROUP BY status
+  `;
+
+  const wishlistCountResult = await sql`
+    SELECT count(*) FROM wishlist_items WHERE user_id = ${userId}
+  `;
+
+  const stats = {
+    memberSince: userResult[0]?.created_at || new Date(),
+    rewardPoints: userResult[0]?.reward_points || 0,
+    lastLogin: userResult[0]?.last_login || new Date(),
+    wishlistCount: parseInt(wishlistCountResult[0]?.count || "0"),
+    totalOrders: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    cancelledOrders: 0,
+    returnedOrders: 0,
+    totalSpending: 0
+  };
+
+  ordersResult.forEach(row => {
+    const count = parseInt(row.count);
+    stats.totalOrders += count;
+    if (row.status !== "Cancelled") stats.totalSpending += parseFloat(row.total_spent || "0");
+    if (row.status === "Pending") stats.pendingOrders = count;
+    else if (row.status === "Completed" || row.status === "Delivered") stats.completedOrders = count;
+    else if (row.status === "Cancelled") stats.cancelledOrders = count;
+    else if (row.status === "Returned") stats.returnedOrders = count;
   });
 
-export const getCustomerDashboardStats = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    const userResult = await sql`
-      SELECT created_at, reward_points, last_login FROM users WHERE id = ${data.userId}
-    `;
-    
-    const ordersResult = await sql`
-      SELECT status, count(*), sum(total_amount) as total_spent FROM orders 
-      WHERE user_id = ${data.userId} 
-      GROUP BY status
-    `;
+  return stats;
+});
 
-    const wishlistCountResult = await sql`
-      SELECT count(*) FROM wishlist_items WHERE user_id = ${data.userId}
-    `;
+export const getCustomerLoginHistory = createServerFn({ method: "POST" }).handler(async () => {
+  const userId = await sessionUserId();
+  return await sql`
+    SELECT * FROM login_history WHERE user_id = ${userId} ORDER BY id DESC LIMIT 20
+  `;
+});
 
-    const stats = {
-      memberSince: userResult[0]?.created_at || new Date(),
-      rewardPoints: userResult[0]?.reward_points || 0,
-      lastLogin: userResult[0]?.last_login || new Date(),
-      wishlistCount: parseInt(wishlistCountResult[0]?.count || "0"),
-      totalOrders: 0,
-      pendingOrders: 0,
-      completedOrders: 0,
-      cancelledOrders: 0,
-      returnedOrders: 0,
-      totalSpending: 0
-    };
-
-    ordersResult.forEach(row => {
-      const count = parseInt(row.count);
-      stats.totalOrders += count;
-      stats.totalSpending += parseFloat(row.total_spent || "0");
-      if (row.status === "Pending") stats.pendingOrders = count;
-      else if (row.status === "Completed" || row.status === "Delivered") stats.completedOrders = count;
-      else if (row.status === "Cancelled") stats.cancelledOrders = count;
-      else if (row.status === "Returned") stats.returnedOrders = count;
-    });
-
-    return stats;
-  });
-
-// Admin Authentication Events & Customer Controls
-export const getCustomerLoginHistory = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    return await sql`
-      SELECT * FROM login_history WHERE user_id = ${data.userId} ORDER BY id DESC LIMIT 20
-    `;
-  });
-
-export const getCustomerAuditLogs = createServerFn({ method: "POST" })
-  .validator((data: { userId: number }) => data)
-  .handler(async ({ data }) => {
-    return await sql`
-      SELECT * FROM audit_logs WHERE user_id = ${data.userId} ORDER BY id DESC LIMIT 20
-    `;
-  });
+export const getCustomerAuditLogs = createServerFn({ method: "POST" }).handler(async () => {
+  const userId = await sessionUserId();
+  return await sql`
+    SELECT * FROM audit_logs WHERE user_id = ${userId} ORDER BY id DESC LIMIT 20
+  `;
+});
 
 const PRODUCT_IMAGE_FALLBACKS: Record<string, string> = {
   "Almonds": "/products/almonds.jpg",
@@ -887,200 +844,179 @@ export const getBrands = createServerFn({ method: "GET" }).handler(async () => {
   return res;
 });
 
+type CartLineInput = { product_id: number; variant?: string; quantity: number };
+type PricedLine = { product_id: number; product_name: string; quantity: number; price: number };
+
+async function priceCart(items: CartLineInput[]): Promise<{ lines: PricedLine[]; subtotal: number }> {
+  if (!Array.isArray(items) || items.length === 0) throw new Error("Cart is empty");
+  for (const item of items) assertQuantity(item.quantity);
+  const ids = [...new Set(items.map((i) => i.product_id))];
+  const rows = await sql`
+    SELECT id, name, price, stock, status
+    FROM products WHERE id = ANY(${ids})
+  `;
+  const byId = new Map(rows.map((r) => [r.id as number, r]));
+  const merged = new Map<string, PricedLine>();
+  for (const item of items) {
+    const p = byId.get(item.product_id);
+    if (!p || p.status !== "active" || p.stock === false || p.price == null) {
+      throw new Error(`${p?.name ?? "A product in your cart"} is not available for online order right now.`);
+    }
+    const variant = normalizeVariant(p, item.variant);
+    const key = `${p.id}|${variant}`;
+    const existing = merged.get(key);
+    if (existing) {
+      existing.quantity += item.quantity;
+      assertQuantity(existing.quantity);
+      continue;
+    }
+    const baseName = cleanProductTitle(p.name) || p.name;
+    merged.set(key, {
+      product_id: p.id,
+      product_name: variant ? `${baseName} (${variant})` : baseName,
+      quantity: item.quantity,
+      // Every option of a product sells at the product's price.
+      price: Number(p.price),
+    });
+  }
+  const lines = [...merged.values()];
+  const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
+  return { lines, subtotal };
+}
+
+async function resolveCoupon(code: string | undefined, subtotal: number) {
+  const rawCode = (code || "").trim().toUpperCase();
+  if (!rawCode) return { ok: false as const, message: "Kupon code darj karein" };
+  const rows = await sql`SELECT * FROM coupons WHERE UPPER(code) = ${rawCode} LIMIT 1`;
+  if (rows.length === 0) return { ok: false as const, message: "Kupon code mojood nahi hai" };
+  const coupon = rows[0];
+  if (!coupon.active) return { ok: false as const, message: "Yeh kupon expire ya inactive hai" };
+  const minOrder = Number(coupon.min_order_amount) || 0;
+  if (subtotal < minOrder) {
+    return { ok: false as const, message: `Kam az kam Rs. ${minOrder.toLocaleString()} ke order par lag sakta hai` };
+  }
+  const percent = Math.min(100, Math.max(0, Number(coupon.discount_percent) || 0));
+  return {
+    ok: true as const,
+    code: coupon.code as string,
+    percent,
+    discount: Math.round((subtotal * percent) / 100),
+  };
+}
+
 export const createOrder = createServerFn({ method: "POST" })
   .validator(
     (data: {
-      user_id?: number;
       customer_name: string;
       customer_email: string;
       customer_phone?: string;
       shipping_address: string;
-      total_amount: number;
       coupon_code?: string;
-      discount_amount?: number;
-      items: Array<{
-        product_id: number;
-        product_name: string;
-        quantity: number;
-        price: number;
-      }>;
+      items: CartLineInput[];
     }) => data
   )
   .handler(async ({ data }) => {
-    if (!sql) {
-      const mockId = Math.floor(100000 + Math.random() * 900000);
-      return {
-        id: mockId,
-        customer_name: data.customer_name,
-        customer_email: data.customer_email,
-        total_amount: data.total_amount,
-        status: "Pending",
-      };
+    if (!sql) throw new Error("Database not connected");
+    const customerName = data.customer_name?.trim();
+    const customerEmail = data.customer_email?.trim();
+    const shippingAddress = data.shipping_address?.trim();
+    if (!customerName || !customerEmail || !shippingAddress) {
+      throw new Error("Please complete all required fields.");
     }
+
+    const { getSessionUserId } = await import("./server-cookies");
+    const userId = await getSessionUserId();
+    const { lines, subtotal } = await priceCart(data.items);
+
+    let couponCode: string | null = null;
+    let discount = 0;
+    if (data.coupon_code?.trim()) {
+      const coupon = await resolveCoupon(data.coupon_code, subtotal);
+      if (!coupon.ok) throw new Error(coupon.message);
+      couponCode = coupon.code;
+      discount = coupon.discount;
+    }
+    const total = Math.max(0, subtotal - discount);
+
     const { serverCache } = await import("./server-cache");
     serverCache.delete("orders_list");
-    // Start transaction to insert order and order items
     const result = await sql.begin(async (tx) => {
-      // 1. Insert order
       const order = await tx`
         INSERT INTO orders (
           user_id, customer_name, customer_email, customer_phone, shipping_address, total_amount, status, coupon_code, discount_amount
         ) VALUES (
-          ${data.user_id || null}, ${data.customer_name}, ${data.customer_email}, ${data.customer_phone || null}, ${data.shipping_address}, ${data.total_amount}, 'Pending', ${data.coupon_code || null}, ${data.discount_amount || 0}
+          ${userId}, ${customerName}, ${customerEmail}, ${data.customer_phone?.trim() || null}, ${shippingAddress}, ${total}, 'Pending', ${couponCode}, ${discount}
         ) RETURNING *
       `;
       const orderId = order[0].id;
 
-      // 2. Insert order items
-      for (const item of data.items) {
+      for (const line of lines) {
         await tx`
-          INSERT INTO order_items (
-            order_id, product_id, product_name, quantity, price
-          ) VALUES (
-            ${orderId}, ${item.product_id}, ${item.product_name}, ${item.quantity}, ${item.price}
-          )
+          INSERT INTO order_items (order_id, product_id, product_name, quantity, price)
+          VALUES (${orderId}, ${line.product_id}, ${line.product_name}, ${line.quantity}, ${line.price})
         `;
       }
 
-      // 3. Increment coupon usage if used
-      if (data.coupon_code) {
-        try {
-          await tx`
-            UPDATE coupons
-            SET times_used = COALESCE(times_used, 0) + 1
-            WHERE UPPER(code) = ${data.coupon_code.trim().toUpperCase()}
-          `;
-        } catch {
-          // non-fatal if coupons table not yet altered
-        }
+      if (couponCode) {
+        await tx`UPDATE coupons SET times_used = COALESCE(times_used, 0) + 1 WHERE code = ${couponCode}`;
       }
 
       return order[0];
     });
 
-    // Send confirmation email asynchronously via Resend
     sendOrderStatusEmail(
       result.id,
-      data.customer_name,
-      data.customer_email,
+      customerName,
+      customerEmail,
       "Pending (COD Received)",
-      data.total_amount,
-      data.items.map((i) => ({
-        name: i.product_name,
-        quantity: i.quantity,
-        price: i.price,
-      }))
+      total,
+      lines.map((l) => ({ name: l.product_name, quantity: l.quantity, price: l.price }))
     ).catch(console.error);
 
     return result;
   });
 
 export const validateCoupon = createServerFn({ method: "POST" })
-  .validator((data: { code: string; subtotal: number }) => data)
+  .validator((data: { code: string; items: CartLineInput[] }) => data)
   .handler(async ({ data }) => {
-    const rawCode = (data.code || "").trim().toUpperCase();
-    if (!rawCode) {
-      return { valid: false, message: "Kupon code darj karein" };
-    }
-    const subtotal = Math.max(0, Number(data.subtotal) || 0);
-
-    if (!sql) {
-      if (rawCode === "WELCOME10") {
-        const discountAmount = Math.round((subtotal * 10) / 100);
-        return {
-          valid: true,
-          code: "WELCOME10",
-          discount_percent: 10,
-          discount_amount: discountAmount,
-          message: "10% discount apply ho gaya!",
-        };
-      }
-      return { valid: false, message: "Kupon code durust nahi hai" };
-    }
-
+    if (!(data.code || "").trim()) return { valid: false, message: "Kupon code darj karein" };
     try {
-      await sql`
-        CREATE TABLE IF NOT EXISTS coupons (
-          id SERIAL PRIMARY KEY,
-          code TEXT UNIQUE NOT NULL,
-          discount_percent INTEGER NOT NULL,
-          active BOOLEAN DEFAULT TRUE,
-          min_order_amount INTEGER DEFAULT 0,
-          times_used INTEGER DEFAULT 0,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        )
-      `;
-      const rows = await sql`
-        SELECT * FROM coupons
-        WHERE UPPER(code) = ${rawCode}
-        LIMIT 1
-      `;
-      if (rows.length === 0) {
-        return { valid: false, message: "Kupon code mojood nahi hai" };
-      }
-      const coupon = rows[0];
-      if (!coupon.active) {
-        return { valid: false, message: "Yeh kupon expire ya inactive hai" };
-      }
-      const minOrder = Number(coupon.min_order_amount) || 0;
-      if (subtotal < minOrder) {
-        return {
-          valid: false,
-          message: `Kam az kam Rs. ${minOrder.toLocaleString()} ke order par lag sakta hai`,
-        };
-      }
-      const percent = Number(coupon.discount_percent) || 0;
-      const discountAmount = Math.round((subtotal * percent) / 100);
+      const { subtotal } = await priceCart(data.items);
+      const coupon = await resolveCoupon(data.code, subtotal);
+      if (!coupon.ok) return { valid: false, message: coupon.message };
       return {
         valid: true,
         code: coupon.code,
-        discount_percent: percent,
-        discount_amount: discountAmount,
-        message: `${percent}% discount apply ho gaya! (-Rs. ${discountAmount.toLocaleString()})`,
+        discount_percent: coupon.percent,
+        discount_amount: coupon.discount,
+        message: `${coupon.percent}% discount apply ho gaya! (-Rs. ${coupon.discount.toLocaleString()})`,
       };
     } catch (err) {
       console.error("validateCoupon error:", err);
-      return { valid: false, message: "Coupon check karne mein masla aya" };
+      return { valid: false, message: err instanceof Error ? err.message : "Coupon check karne mein masla aya" };
     }
   });
 
-export const getOrders = createServerFn({ method: "GET" }).handler(async () => {
-  assertAdmin();
-  const { serverCache } = await import("./server-cache");
-  const cached = serverCache.get("orders_list");
-  if (cached) return cached;
-
+export const getMyOrders = createServerFn({ method: "GET" }).handler(async () => {
+  const userId = await sessionUserId();
   const orders = await sql`
-    SELECT * FROM orders ORDER BY id DESC
+    SELECT o.* FROM orders o
+    JOIN users u ON u.id = ${userId}
+    WHERE o.user_id = u.id OR lower(o.customer_email) = lower(u.email)
+    ORDER BY o.id DESC
   `;
-  const orderItems = await sql`
-    SELECT * FROM order_items
-  `;
-
-  // Group items by order_id
-  const itemsMap = new Map();
-  for (const item of orderItems) {
-    if (!itemsMap.has(item.order_id)) {
-      itemsMap.set(item.order_id, []);
-    }
-    itemsMap.get(item.order_id).push(item);
-  }
-
-  const res = orders.map((o) => ({
-    ...o,
-    items: itemsMap.get(o.id) || [],
-  }));
-  serverCache.set("orders_list", res);
-  return res;
+  const ids = orders.map((o) => o.id as number);
+  const items = ids.length ? await sql`SELECT * FROM order_items WHERE order_id = ANY(${ids})` : [];
+  return orders.map((o) => ({ ...o, items: items.filter((it) => it.order_id === o.id) }));
 });
 
 export const updateOrderStatus = createServerFn({ method: "POST" })
   .validator((data: { id: number; status: string }) => data)
   .handler(async ({ data }) => {
-    assertAdmin();
+    await assertAdmin();
+    assertOrderStatus(data.status);
     const { serverCache } = await import("./server-cache");
     serverCache.delete("orders_list");
-    // 1. Update status
     const order = await sql`
       UPDATE orders
       SET status = ${data.status}
@@ -1092,14 +1028,12 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
       throw new Error("Order not found");
     }
 
-    // 2. Get order items
     const items = await sql`
       SELECT product_name as name, quantity, price
       FROM order_items
       WHERE order_id = ${data.id}
     `;
 
-    // 3. Send email notifying status update
     sendOrderStatusEmail(
       order[0].id,
       order[0].customer_name,
@@ -1112,32 +1046,22 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
     return order[0];
   });
 
-export const getOrderStatus = createServerFn({ method: "GET" })
-  .validator((data: { id: number }) => data)
-  .handler(async ({ data }) => {
-    const order = await sql`
-      SELECT * FROM orders WHERE id = ${data.id}
-    `;
-
-    if (order.length === 0) {
-      return null;
-    }
-
-    const items = await sql`
-      SELECT * FROM order_items WHERE order_id = ${data.id}
-    `;
-
-    return {
-      ...order[0],
-      items,
-    };
-  });
-
 export const sendVerificationEmail = createServerFn({ method: "POST" })
   .validator((data: { email: string }) => data)
-  .handler(async ({ data }) => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+  .handler(async ({ data: input }) => {
+    const email = input.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Please enter a valid email address.");
+    const { getClientIp } = await import("./server-cookies");
+    const { assertUnderLimit, recordAttempt } = await import("./rate-limit");
+    const ipKey = `otp-send-ip:${getClientIp() ?? "unknown"}`;
+    await assertUnderLimit(`otp-send:${email}`, 5, 15);
+    await assertUnderLimit(ipKey, 20, 60);
+    await recordAttempt(`otp-send:${email}`);
+    await recordAttempt(ipKey);
+    const data = { email };
+
+    const code = crypto.randomInt(100000, 1000000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     // Save to database
     await sql`
@@ -1145,10 +1069,9 @@ export const sendVerificationEmail = createServerFn({ method: "POST" })
       VALUES (${data.email}, ${code}, ${expiresAt})
     `;
 
-    console.log(`[VERIFICATION CODE GENERATED] Email: ${data.email}, Code: ${code}`);
-
-    try {
-      await resend?.emails.send({
+    // Resend v6 reports failures in the return value instead of throwing.
+    const sent = resend
+      ? await resend.emails.send({
         from: "Nadeem Traders <onboarding@resend.dev>",
         to: data.email,
         subject: "Verify Your Email Address — Nadeem Traders",
@@ -1164,34 +1087,38 @@ export const sendVerificationEmail = createServerFn({ method: "POST" })
             <p style="font-size: 10px; color: #94a3b8; text-align: center;">&copy; ${new Date().getFullYear()} Nadeem Traders. All rights reserved.</p>
           </div>
         `
-      });
-      return { success: true };
-    } catch (err: any) {
-      console.error(`Resend failed to send verification email to ${data.email}:`, err);
-      // For local testing (Resend API key restriction), we return success and pass the code in dev mode to avoid blocking developer testing
-      return { 
-        success: true, 
-        warning: "Resend Sandbox Mode: Verification code sent. Since Resend sandbox is restricted to test emails, we logged it. Code is " + code,
-        mockCode: process.env.NODE_ENV !== "production" ? code : undefined 
-      };
+      })
+      : { error: new Error("RESEND_API_KEY is not configured") };
+
+    if (sent.error) {
+      console.error(`Failed to send verification email to ${data.email}:`, sent.error);
+      if (process.env.NODE_ENV === "production") throw new Error("Could not send the verification email. Please try again.");
+      return { success: true, mockCode: code };
     }
+    return { success: true };
   });
 
 export const verifyEmailCodeAndLogin = createServerFn({ method: "POST" })
-  .validator((data: { email: string; code: string; username?: string; guestSessionId?: string; deviceInfo?: string; browser?: string; os?: string; ip?: string }) => data)
-  .handler(async ({ data }) => {
-    const { setSessionToken } = await import("./server-cookies");
+  .validator((data: { email: string; code: string; username?: string; deviceInfo?: string; browser?: string; os?: string }) => data)
+  .handler(async ({ data: input }) => {
+    const { setSessionToken, clearGuestToken, getGuestToken, getClientIp } = await import("./server-cookies");
+    const data = { ...input, email: input.email.trim().toLowerCase(), ip: getClientIp(), guestSessionId: await getGuestToken() };
 
-    // 1. Verify code matches and not expired
+    const { assertUnderLimit, recordAttempt, clearAttempts } = await import("./rate-limit");
+    const attemptKey = `otp-verify:${data.email}`;
+    await assertUnderLimit(attemptKey, 5, 15);
+
     const match = await sql`
       SELECT * FROM verification_codes 
-      WHERE email = ${data.email} AND code = ${data.code} AND expires_at > NOW()
+      WHERE email = ${data.email} AND code = ${String(data.code).trim()} AND expires_at > NOW()
       ORDER BY created_at DESC LIMIT 1
     `;
 
     if (match.length === 0) {
+      await recordAttempt(attemptKey);
       throw new Error("Invalid or expired verification code. Please try again.");
     }
+    await clearAttempts(attemptKey);
 
     // Delete verification codes for this email
     await sql`DELETE FROM verification_codes WHERE email = ${data.email}`;
@@ -1265,10 +1192,10 @@ export const verifyEmailCodeAndLogin = createServerFn({ method: "POST" })
       const guestCart = await sql`SELECT * FROM cart_items WHERE guest_session_id = ${data.guestSessionId}`;
       for (const item of guestCart) {
         await sql`
-          INSERT INTO cart_items (user_id, product_id, quantity)
-          VALUES (${user.id}, ${item.product_id}, ${item.quantity})
-          ON CONFLICT (user_id, product_id)
-          DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+          INSERT INTO cart_items (user_id, product_id, variant, quantity)
+          VALUES (${user.id}, ${item.product_id}, ${item.variant}, ${item.quantity})
+          ON CONFLICT (user_id, product_id, variant)
+          DO UPDATE SET quantity = LEAST(cart_items.quantity + EXCLUDED.quantity, 999)
         `;
       }
       await sql`DELETE FROM cart_items WHERE guest_session_id = ${data.guestSessionId}`;
@@ -1284,6 +1211,7 @@ export const verifyEmailCodeAndLogin = createServerFn({ method: "POST" })
         `;
       }
       await sql`DELETE FROM recently_viewed WHERE guest_session_id = ${data.guestSessionId}`;
+      await clearGuestToken();
     }
 
     return { success: true, user };
