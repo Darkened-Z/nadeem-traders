@@ -164,12 +164,13 @@ export function ModernProductCard({ product }: { product: any }) {
               alt={displayName}
               loading="lazy"
               onError={() => setImgError(true)}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none select-none"
+              draggable={false}
             />
           </picture>
         ) : (
           <div className="grid h-full w-full place-items-center">
-            <img src="/LOGO.png" alt="" className="h-14 w-14 object-contain opacity-60" />
+            <img src="/LOGO.png" alt="" className="h-14 w-14 object-contain opacity-60 pointer-events-none select-none" draggable={false} />
           </div>
         )}
         {!product.stock && (
@@ -273,12 +274,13 @@ export function CategoryTile({ category }: { category: any }) {
               alt={category.name}
               loading="lazy"
               onError={() => setImgError(true)}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none select-none"
+              draggable={false}
             />
           </picture>
         ) : (
           <div className="grid h-full w-full place-items-center">
-            <img src="/LOGO.png" alt="" className="h-14 w-14 object-contain opacity-60" />
+            <img src="/LOGO.png" alt="" className="h-14 w-14 object-contain opacity-60 pointer-events-none select-none" draggable={false} />
           </div>
         )}
       </div>
@@ -315,10 +317,30 @@ export function ProductRail({
   const internalRef = useRef<HTMLDivElement>(null);
   const ref = railRef || internalRef;
 
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      // If user scrolls vertically with mouse wheel (not horizontal trackpad or shiftKey)
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && !e.shiftKey) {
+        // Prevent Chromium from swallowing vertical wheel in horizontal scroll container
+        e.preventDefault();
+        window.scrollBy({ top: e.deltaY, behavior: "auto" });
+      }
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, [ref]);
+
   return (
     <div
       ref={ref}
-      className="-mx-4 flex snap-x snap-mandatory scroll-pl-4 gap-3 overflow-x-auto px-4 pb-2 pt-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:gap-5 sm:px-0"
+      className="-mx-4 flex snap-x snap-mandatory sm:snap-none scroll-pl-4 gap-3 overflow-x-auto px-4 pb-2 pt-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:gap-5 sm:px-0"
+      style={{ touchAction: "pan-y" }}
     >
       {products.map((item, i) => (
         <div
