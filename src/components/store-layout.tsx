@@ -317,30 +317,12 @@ export function ProductRail({
   const internalRef = useRef<HTMLDivElement>(null);
   const ref = railRef || internalRef;
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const onWheel = (e: WheelEvent) => {
-      // If user scrolls vertically with mouse wheel (not horizontal trackpad or shiftKey)
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && !e.shiftKey) {
-        // Prevent Chromium from swallowing vertical wheel in horizontal scroll container
-        e.preventDefault();
-        window.scrollBy({ top: e.deltaY, behavior: "auto" });
-      }
-    };
-
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => {
-      el.removeEventListener("wheel", onWheel);
-    };
-  }, [ref]);
-
+  // overflow-x-auto alone also makes the y-axis scrollable, so a hover lift on a card turns the rail
+  // into a vertical scroller that captures the mouse wheel; overflow-y-hidden lets the wheel reach the page.
   return (
     <div
       ref={ref}
-      className="-mx-4 flex snap-x snap-mandatory sm:snap-none scroll-pl-4 gap-3 overflow-x-auto px-4 pb-2 pt-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:gap-5 sm:px-0"
-      style={{ touchAction: "pan-y" }}
+      className="-mx-4 flex snap-x snap-mandatory sm:snap-none scroll-pl-4 gap-3 overflow-x-auto overflow-y-hidden px-4 pb-2 pt-1 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:gap-5 sm:px-0"
     >
       {products.map((item, i) => (
         <div
