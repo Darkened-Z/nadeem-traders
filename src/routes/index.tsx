@@ -26,8 +26,16 @@ export const Route = createFileRoute("/")({
       {
         rel: "preload",
         as: "image",
+        href: "/hero/slide-1-mobile.webp",
+        type: "image/webp",
+        media: "(max-width: 640px)",
+      },
+      {
+        rel: "preload",
+        as: "image",
         href: "/hero/slide-1.webp",
         type: "image/webp",
+        media: "(min-width: 641px)",
       },
     ],
   }),
@@ -73,8 +81,8 @@ function HomePage() {
               <MapPin className="h-3.5 w-3.5 fill-foreground text-foreground shrink-0" />
             </strong>
             <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-              <img src="/logos/indrive.svg" alt="inDrive" className="h-4 sm:h-5 w-auto object-contain" />
-              <img src="/logos/yango.svg" alt="Yango" className="h-4 sm:h-5 w-auto object-contain" />
+              <img src="/logos/indrive.svg" alt="inDrive" loading="lazy" decoding="async" className="h-4 sm:h-5 w-auto object-contain" />
+              <img src="/logos/yango.svg" alt="Yango" loading="lazy" decoding="async" className="h-4 sm:h-5 w-auto object-contain" />
             </div>
           </li>
         </ul>
@@ -318,13 +326,23 @@ function Hero() {
               tabIndex={isActive ? 0 : -1}
               className={`absolute inset-0 transition-opacity duration-1000 ${isActive ? "opacity-100" : "pointer-events-none opacity-0"}`}
             >
-              <img
-                src={slide.image}
-                alt={slide.line}
-                loading={i === 0 ? "eager" : "lazy"}
-                fetchPriority={i === 0 ? "high" : "auto"}
-                className={`h-full w-full object-cover transition-transform duration-[6000ms] ease-out ${isActive ? "scale-110" : "scale-100"}`}
-              />
+              <picture>
+                {i === 0 && (
+                  <source
+                    media="(max-width: 640px)"
+                    srcSet="/hero/slide-1-mobile.webp"
+                    type="image/webp"
+                  />
+                )}
+                <img
+                  src={slide.image}
+                  alt={slide.line}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding={i === 0 ? "sync" : "async"}
+                  fetchPriority={i === 0 ? "high" : "auto"}
+                  className={`h-full w-full object-cover transition-transform duration-[6000ms] ease-out ${isActive ? "scale-110" : "scale-100"}`}
+                />
+              </picture>
             </Link>
           );
         })}
@@ -385,7 +403,7 @@ function Hero() {
                     <span
                       className={`block aspect-square overflow-hidden transition-opacity ${isActive ? "opacity-100" : "opacity-45 group-hover:opacity-80"}`}
                     >
-                      <img src={slide.image.replace("slide-", "thumb-")} alt="" className="h-full w-full object-cover" />
+                      <img src={slide.image.replace("slide-", "thumb-")} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                     </span>
                     <span className="mt-2 block h-0.5 w-full bg-white/15">
                       {isActive && (

@@ -501,6 +501,7 @@ export function StoreLayout({
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const root = document.documentElement;
+    root.classList.add("reveal-on");
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -510,28 +511,13 @@ export function StoreLayout({
           }
         }
       },
-      { rootMargin: "0px 0px -6% 0px", threshold: 0.05 },
+      { rootMargin: "60px", threshold: 0.01 },
     );
-    const seen = new WeakSet<Element>();
-    const scan = () => {
-      document.querySelectorAll("[data-reveal]:not(.revealed)").forEach((el) => {
-        if (seen.has(el)) return;
-        seen.add(el);
-        const rect = el.getBoundingClientRect();
-        if (rect.top < window.innerHeight && rect.bottom > 0 && rect.left < window.innerWidth) {
-          el.classList.add("revealed");
-        } else {
-          io.observe(el);
-        }
-      });
-    };
-    scan();
-    root.classList.add("reveal-on");
-    const mo = new MutationObserver(scan);
-    mo.observe(document.body, { childList: true, subtree: true });
+    document.querySelectorAll("[data-reveal]:not(.revealed)").forEach((el) => {
+      io.observe(el);
+    });
     return () => {
       io.disconnect();
-      mo.disconnect();
       root.classList.remove("reveal-on");
     };
   }, []);
