@@ -22,6 +22,14 @@ export const Route = createFileRoute("/")({
           "Dry fruits, seeds aur masalay — duniya bhar se chun kar aapke kitchen tak. Cash on delivery across Pakistan.",
       },
     ],
+    links: [
+      {
+        rel: "preload",
+        as: "image",
+        href: "/hero/slide-1.webp",
+        type: "image/webp",
+      },
+    ],
   }),
   component: HomePage,
 });
@@ -110,14 +118,16 @@ function TrendingSection({ products }: { products: any[] }) {
   );
 }
 
-const STEP_IMAGES = ["/hero/slide-1.jpg", "/hero/slide-2.jpg", "/hero/slide-5.jpg"];
+const STEP_IMAGES = ["/hero/slide-1.webp", "/hero/slide-2.webp", "/hero/slide-5.webp"];
 
 function OrderSteps() {
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [isMobileOrReduced, setIsMobileOrReduced] = useState(false);
   useEffect(() => {
-    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    const isMobile = window.innerWidth < 768;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setIsMobileOrReduced(isMobile || reduced);
   }, []);
-  return reducedMotion ? <StepsSimple /> : <StepsShowcase />;
+  return isMobileOrReduced ? <StepsSimple /> : <StepsShowcase />;
 }
 
 function StepsShowcase() {
@@ -250,11 +260,11 @@ function StepsSimple() {
 }
 
 const HERO_SLIDES = [
-  { image: "/hero/slide-1.jpg", label: "Shop All", line: "Poori Dukaan, Ek Click Pe", href: "/shop", color: "#6B4226" },
-  { image: "/hero/slide-2.jpg", label: "Daawat Season", line: "Daawat Ka Plan? Saman Humara", href: "/shop", color: "#2F6B3A" },
-  { image: "/hero/slide-3.jpg", label: "Spices", line: "Lal Mirch, Full Garmi", href: "/category/spices", color: "#A1281C" },
-  { image: "/hero/slide-4.jpg", label: "Whole Spices", line: "Daig Ka Asli Raaz: Sabut Masalay", href: "/category/whole-spices", color: "#8A6100" },
-  { image: "/hero/slide-5.jpg", label: "Seeds", line: "Chotay Seeds, Achi Immunity", href: "/category/seeds", color: "#2F6B3A" },
+  { image: "/hero/slide-1.webp", label: "Shop All", line: "Poori Dukaan, Ek Click Pe", href: "/shop", color: "#6B4226" },
+  { image: "/hero/slide-2.webp", label: "Daawat Season", line: "Daawat Ka Plan? Saman Humara", href: "/shop", color: "#2F6B3A" },
+  { image: "/hero/slide-3.webp", label: "Spices", line: "Lal Mirch, Full Garmi", href: "/category/spices", color: "#A1281C" },
+  { image: "/hero/slide-4.webp", label: "Whole Spices", line: "Daig Ka Asli Raaz: Sabut Masalay", href: "/category/whole-spices", color: "#8A6100" },
+  { image: "/hero/slide-5.webp", label: "Seeds", line: "Chotay Seeds, Achi Immunity", href: "/category/seeds", color: "#2F6B3A" },
 ];
 
 const SLIDE_MS = 5000;

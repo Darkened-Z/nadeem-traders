@@ -154,13 +154,19 @@ export function ModernProductCard({ product }: { product: any }) {
         className="group relative block aspect-[4/3] w-full overflow-hidden bg-muted"
       >
         {product.image_url && !imgError ? (
-          <img
-            src={product.image_url}
-            alt={displayName}
-            loading="lazy"
-            onError={() => setImgError(true)}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+          <picture>
+            <source
+              srcSet={product.image_url.replace(/\.jpe?g$/, ".webp")}
+              type="image/webp"
+            />
+            <img
+              src={product.image_url}
+              alt={displayName}
+              loading="lazy"
+              onError={() => setImgError(true)}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          </picture>
         ) : (
           <div className="grid h-full w-full place-items-center">
             <img src="/LOGO.png" alt="" className="h-14 w-14 object-contain opacity-60" />
@@ -257,13 +263,19 @@ export function CategoryTile({ category }: { category: any }) {
     <Link data-reveal to={`/category/${category.id}` as any} className="group flex w-full flex-col overflow-hidden">
       <div className="aspect-[4/3] overflow-hidden" style={{ backgroundColor: categoryTint(meta.color) }}>
         {category.image_url && !imgError ? (
-          <img
-            src={category.image_url}
-            alt={category.name}
-            loading="lazy"
-            onError={() => setImgError(true)}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
+          <picture>
+            <source
+              srcSet={category.image_url.replace(/\.jpe?g$/, ".webp")}
+              type="image/webp"
+            />
+            <img
+              src={category.image_url}
+              alt={category.name}
+              loading="lazy"
+              onError={() => setImgError(true)}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          </picture>
         ) : (
           <div className="grid h-full w-full place-items-center">
             <img src="/LOGO.png" alt="" className="h-14 w-14 object-contain opacity-60" />
