@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { Fragment, useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Coins, Loader2, Save, Search, RefreshCw, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
@@ -11,22 +11,31 @@ export const Route = createFileRoute("/admin/rates")({
   component: RatesPage,
 });
 
+type Option = { id: number; name: string; price: number | null; weight: string | null; image_url: string | null };
+
+// Products with options are priced per option; every other product has one rate.
+const productKey = (id: number) => `p${id}`;
+const optionKey = (id: number) => `o${id}`;
+
 function RatesPage() {
   const qc = useQueryClient();
   const { data: products = [], isLoading } = useAdminQuery(["products"], () => adminListProducts());
-  const [rates, setRates] = useState<Record<number, number | null>>({});
+  const [rates, setRates] = useState<Record<string, number | null>>({});
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [saving, setSaving] = useState(false);
 
-  // Initialize edited rates when products load
-  const currentRates = useMemo(() => {
-    const map: Record<number, number | null> = {};
+  const original = useMemo(() => {
+    const map: Record<string, number | null> = {};
     for (const p of products as any[]) {
-      map[p.id] = rates[p.id] !== undefined ? rates[p.id] : p.price;
+      const options = (p.variants ?? []) as Option[];
+      if (options.length === 0) map[productKey(p.id)] = p.price;
+      for (const o of options) map[optionKey(o.id)] = o.price;
     }
     return map;
-  }, [products, rates]);
+  }, [products]);
+
+  const rateOf = (key: string) => (rates[key] !== undefined ? rates[key] : original[key]);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -49,42 +58,31 @@ function RatesPage() {
     });
   }, [products, search, selectedCategory]);
 
-  const changedCount = useMemo(() => {
-    let count = 0;
-    for (const p of products as any[]) {
-      const edited = currentRates[p.id];
-      if (edited !== p.price) count++;
-    }
-    return count;
-  }, [products, currentRates]);
+  const changedKeys = Object.keys(original).filter((k) => rates[k] !== undefined && rates[k] !== original[k]);
+  const changedCount = changedKeys.length;
 
-  const handlePriceChange = (id: number, val: string) => {
+  const handlePriceChange = (key: string, val: string) => {
     const trimmed = val.trim();
     if (!trimmed) {
-      setRates((prev) => ({ ...prev, [id]: null }));
+      setRates((prev) => ({ ...prev, [key]: null }));
       return;
     }
     const num = Number(trimmed);
     if (!Number.isNaN(num) && num >= 0) {
-      setRates((prev) => ({ ...prev, [id]: Math.round(num) }));
+      setRates((prev) => ({ ...prev, [key]: Math.round(num) }));
     }
   };
 
-  const toggleRatePoochein = (id: number) => {
-    setRates((prev) => {
-      const current = prev[id] !== undefined ? prev[id] : (products as any[]).find((x) => x.id === id)?.price;
-      return { ...prev, [id]: current === null ? 0 : null };
-    });
+  const toggleRatePoochein = (key: string) => {
+    setRates((prev) => ({ ...prev, [key]: rateOf(key) === null ? 0 : null }));
   };
 
   const saveAll = async () => {
     setSaving(true);
     try {
-      const updates = (products as any[]).map((p) => ({
-        id: p.id,
-        price: currentRates[p.id],
-      }));
-      await adminBatchUpdateRates({ data: { rates: updates } });
+      const pick = (prefix: string) =>
+        changedKeys.filter((k) => k.startsWith(prefix)).map((k) => ({ id: Number(k.slice(1)), price: rates[k] }));
+      await adminBatchUpdateRates({ data: { rates: pick("p"), optionRates: pick("o") } });
       toast.success("All daily rates updated and published to storefront!");
       setRates({});
       await qc.invalidateQueries({ queryKey: ["admin"] });
@@ -98,6 +96,52 @@ function RatesPage() {
   const resetAll = () => {
     setRates({});
     toast.info("Reverted unsaved rate changes");
+  };
+
+  const rateCells = (key: string) => {
+    const currentPrice = rateOf(key);
+    const isUnpriced = currentPrice === null;
+    const isChanged = currentPrice !== original[key];
+    return (
+      <>
+        <td className="py-3 pr-4 text-right">
+          <div className="flex items-center justify-end gap-1.5">
+            <span className="text-xs text-[#8A8A8A]">Rs.</span>
+            <input
+              type="number"
+              min="0"
+              step="10"
+              placeholder="Rate Poochein"
+              disabled={isUnpriced}
+              value={isUnpriced ? "" : (currentPrice ?? "")}
+              onChange={(e) => handlePriceChange(key, e.target.value)}
+              className={`w-28 rounded-lg border px-2.5 py-1 text-right text-xs font-semibold focus:outline-none focus:ring-1 ${
+                isUnpriced
+                  ? "bg-[#F1F1F1] text-[#8A8A8A] border-transparent"
+                  : isChanged
+                  ? "border-[#D97706] bg-white text-[#92400E] ring-[#D97706]"
+                  : "border-[#8A8A8A] bg-white text-[#303030] focus:border-[#303030]"
+              }`}
+            />
+          </div>
+        </td>
+        <td className="py-3 pr-4 text-center">
+          <button
+            type="button"
+            onClick={() => toggleRatePoochein(key)}
+            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+              isUnpriced
+                ? "bg-[#25D366]/15 text-[#075E54] font-semibold"
+                : "bg-[#F1F1F1] text-[#616161] hover:bg-[#E5E5E5]"
+            }`}
+            title="If enabled, customers see 'Rate Poochein' on WhatsApp instead of adding to cart"
+          >
+            <MessageSquare className="h-3 w-3" />
+            {isUnpriced ? "Rate Poochein" : "Fixed Rate"}
+          </button>
+        </td>
+      </>
+    );
   };
 
   return (
@@ -174,72 +218,58 @@ function RatesPage() {
             </thead>
             <tbody className="divide-y divide-[#EBEBEB]">
               {filtered.map((p) => {
-                const currentPrice = currentRates[p.id];
-                const isUnpriced = currentPrice === null;
-                const isChanged = currentPrice !== p.price;
-
+                const options = (p.variants ?? []) as Option[];
+                const rowChanged =
+                  options.length === 0
+                    ? changedKeys.includes(productKey(p.id))
+                    : options.some((o) => changedKeys.includes(optionKey(o.id)));
                 return (
-                  <tr key={p.id} className={`hover:bg-[#FAFAFA] ${isChanged ? "bg-[#FFFDEB]" : ""}`}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <Thumb src={p.image_url} alt="" />
-                        <div>
-                          <p className="font-semibold text-[#303030]">{p.name}</p>
-                          {p.origin && <p className="text-[11px] text-[#8A8A8A]">Origin: {p.origin}</p>}
+                  <Fragment key={p.id}>
+                    <tr className={`hover:bg-[#FAFAFA] ${rowChanged ? "bg-[#FFFDEB]" : ""}`}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Thumb src={p.image_url} alt="" />
+                          <div>
+                            <p className="font-semibold text-[#303030]">{p.name}</p>
+                            {p.origin && <p className="text-[11px] text-[#8A8A8A]">Origin: {p.origin}</p>}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-
-                    <td className="hidden py-3 pr-3 font-serif text-sm sm:table-cell text-[#303030]">
-                      {p.name_ur || "—"}
-                    </td>
-
-                    <td className="hidden py-3 pr-3 text-xs md:table-cell text-[#616161]">
-                      <Badge tone="default">{p.category_name}</Badge>
-                    </td>
-
-                    <td className="py-3 pr-3 text-xs font-medium text-[#4A4A4A]">
-                      {p.weight || "1kg"}
-                    </td>
-
-                    <td className="py-3 pr-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <span className="text-xs text-[#8A8A8A]">Rs.</span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="10"
-                          placeholder="Rate Poochein"
-                          disabled={isUnpriced}
-                          value={isUnpriced ? "" : currentPrice}
-                          onChange={(e) => handlePriceChange(p.id, e.target.value)}
-                          className={`w-28 rounded-lg border px-2.5 py-1 text-right text-xs font-semibold focus:outline-none focus:ring-1 ${
-                            isUnpriced
-                              ? "bg-[#F1F1F1] text-[#8A8A8A] border-transparent"
-                              : isChanged
-                              ? "border-[#D97706] bg-white text-[#92400E] ring-[#D97706]"
-                              : "border-[#8A8A8A] bg-white text-[#303030] focus:border-[#303030]"
-                          }`}
-                        />
-                      </div>
-                    </td>
-
-                    <td className="py-3 pr-4 text-center">
-                      <button
-                        type="button"
-                        onClick={() => toggleRatePoochein(p.id)}
-                        className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                          isUnpriced
-                            ? "bg-[#25D366]/15 text-[#075E54] font-semibold"
-                            : "bg-[#F1F1F1] text-[#616161] hover:bg-[#E5E5E5]"
-                        }`}
-                        title="If enabled, customers see 'Rate Poochein' on WhatsApp instead of adding to cart"
+                      </td>
+                      <td className="hidden py-3 pr-3 font-serif text-sm sm:table-cell text-[#303030]">
+                        {p.name_ur || "—"}
+                      </td>
+                      <td className="hidden py-3 pr-3 text-xs md:table-cell text-[#616161]">
+                        <Badge tone="default">{p.category_name}</Badge>
+                      </td>
+                      {options.length === 0 ? (
+                        <>
+                          <td className="py-3 pr-3 text-xs font-medium text-[#4A4A4A]">{p.weight || "—"}</td>
+                          {rateCells(productKey(p.id))}
+                        </>
+                      ) : (
+                        <td colSpan={3} className="py-3 pr-4 text-right text-xs text-[#8A8A8A]">
+                          {options.length} options, priced below
+                        </td>
+                      )}
+                    </tr>
+                    {options.map((o) => (
+                      <tr
+                        key={o.id}
+                        className={`hover:bg-[#FAFAFA] ${changedKeys.includes(optionKey(o.id)) ? "bg-[#FFFDEB]" : ""}`}
                       >
-                        <MessageSquare className="h-3 w-3" />
-                        {isUnpriced ? "Rate Poochein" : "Fixed Rate"}
-                      </button>
-                    </td>
-                  </tr>
+                        <td className="py-2 pl-14 pr-4">
+                          <div className="flex items-center gap-2">
+                            <Thumb src={o.image_url || p.image_url} alt="" />
+                            <p className="text-[13px] text-[#303030]">{o.name}</p>
+                          </div>
+                        </td>
+                        <td className="hidden sm:table-cell" />
+                        <td className="hidden md:table-cell" />
+                        <td className="py-2 pr-3 text-xs font-medium text-[#4A4A4A]">{o.weight || p.weight || "—"}</td>
+                        {rateCells(optionKey(o.id))}
+                      </tr>
+                    ))}
+                  </Fragment>
                 );
               })}
             </tbody>

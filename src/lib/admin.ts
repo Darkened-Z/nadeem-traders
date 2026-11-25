@@ -136,7 +136,13 @@ export const adminOverview = createServerFn({ method: "GET" }).handler(async () 
 export const adminListProducts = createServerFn({ method: "GET" }).handler(async () => {
   await assertAdmin();
   return db()`
-    SELECT p.*, c.name AS category_name
+    SELECT p.*, c.name AS category_name,
+      COALESCE(
+        (SELECT json_agg(json_build_object('id', v.id, 'name', v.name, 'price', v.price, 'weight', v.weight, 'image_url', v.image_url)
+                ORDER BY v.position, v.id)
+         FROM product_variants v WHERE v.product_id = p.id),
+        '[]'::json
+      ) AS variants
     FROM products p LEFT JOIN categories c ON c.id = p.category_id
     ORDER BY c.position NULLS LAST, c.id, p.id
   `;
@@ -308,18 +314,23 @@ export const adminListOrders = createServerFn({ method: "GET" })
   });
 
 export const adminBatchUpdateRates = createServerFn({ method: "POST" })
-  .validator((data: { rates: { id: number; price: number | null }[] }) => data)
+  .validator((data: { rates: { id: number; price: number | null }[]; optionRates?: { id: number; price: number | null }[] }) => data)
   .handler(async ({ data }) => {
     await assertAdmin();
     const q = db();
+    const optionRates = data.optionRates ?? [];
     await q.begin(async (tx) => {
       for (const r of data.rates) {
         const p = r.price == null ? null : Math.round(r.price);
         await tx`UPDATE products SET price = ${p} WHERE id = ${r.id}`;
       }
+      for (const r of optionRates) {
+        const p = r.price == null ? null : Math.round(r.price);
+        await tx`UPDATE product_variants SET price = ${p} WHERE id = ${r.id}`;
+      }
     });
     await bustStoreCache();
-    return { ok: true, count: data.rates.length };
+    return { ok: true, count: data.rates.length + optionRates.length };
   });
 
 export const adminUpdateOrderTracking = createServerFn({ method: "POST" })

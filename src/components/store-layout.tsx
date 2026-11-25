@@ -19,8 +19,8 @@ import {
   subscribeCheckoutModal,
   openCartDrawer,
 } from "../lib/cart-store";
-import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, getProductClassifications, cleanProductTitle, variantImage } from "../lib/catalog";
-export { getProductClassifications, cleanProductTitle };
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, productOptions, optionView, cleanProductTitle } from "../lib/catalog";
+export { cleanProductTitle };
 
 export const WHATSAPP_NUMBER = "923000000000";
 
@@ -122,20 +122,17 @@ export function useStoreData() {
 }
 
 export function ModernProductCard({ product }: { product: any }) {
-  const classifications = getProductClassifications(product);
+  const classifications = productOptions(product);
   const [selectedVariant, setSelectedVariant] = useState(classifications[0]?.name || "");
   const [justAdded, setJustAdded] = useState(false);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const displayName = cleanProductTitle(product.name);
-  const imageSrc = variantImage(product, selectedVariant);
+  const view = optionView(product, selectedVariant);
+  const imageSrc = view.image_url;
 
   useEffect(() => {
+    setSelectedVariant(classifications[0]?.name || "");
     setFailedSrc(null);
-    if (classifications.length > 0) {
-      setSelectedVariant(classifications[0].name);
-    } else {
-      setSelectedVariant("");
-    }
   }, [product?.id]);
 
   useEffect(() => {
@@ -143,11 +140,12 @@ export function ModernProductCard({ product }: { product: any }) {
   }, [selectedVariant]);
 
   const handleAdd = () => {
-    if (!product.stock) return;
+    if (!product.stock || view.price == null) return;
     const baseName = displayName || product.name;
+    const sold = { ...product, price: view.price, weight: view.weight, image_url: view.image_url };
     const itemToAdd = selectedVariant
-      ? { ...product, name: `${baseName} (${selectedVariant})`, variant: selectedVariant }
-      : { ...product, name: baseName };
+      ? { ...sold, name: `${baseName} (${selectedVariant})`, variant: selectedVariant }
+      : { ...sold, name: baseName };
     addToBag(itemToAdd, 1);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
@@ -210,7 +208,7 @@ export function ModernProductCard({ product }: { product: any }) {
           </p>
         )}
         <p className="mt-0.5 text-xs text-muted-foreground">
-          {[product.origin, product.weight].filter(Boolean).join(" · ")}
+          {[product.origin, view.weight].filter(Boolean).join(" · ")}
         </p>
 
         {classifications.length > 0 && (
@@ -219,7 +217,7 @@ export function ModernProductCard({ product }: { product: any }) {
               const isSel = selectedVariant === c.name;
               return (
                 <button
-                  key={c.id}
+                  key={c.name}
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
@@ -233,7 +231,7 @@ export function ModernProductCard({ product }: { product: any }) {
                   }`}
                   title={`${c.name} (${c.name_ur})`}
                 >
-                  <span className="truncate block">{c.shortName || c.name.split("/")[0].trim()}</span>
+                  <span className="truncate block">{c.short_name || c.name.split("/")[0].trim()}</span>
                 </button>
               );
             })}
@@ -242,17 +240,15 @@ export function ModernProductCard({ product }: { product: any }) {
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
           {(() => {
-            const catalogMatch = CATALOG_PRODUCTS.find((cp) => cp.name.toLowerCase() === product.name.toLowerCase());
-            const displayPrice = product.price != null ? Number(product.price) : (catalogMatch?.price ?? 450);
             return (
               <>
                 <span className="text-sm font-semibold text-foreground">
-                  Rs. {displayPrice.toLocaleString()}
+                  {view.price != null ? `Rs. ${Number(view.price).toLocaleString()}` : "Rate Poochein"}
                 </span>
                 <button
                   type="button"
                   onClick={handleAdd}
-                  disabled={!product.stock}
+                  disabled={!product.stock || view.price == null}
                   aria-label={`Add ${product.name} to bag`}
                   className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 border border-foreground px-3 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
                 >

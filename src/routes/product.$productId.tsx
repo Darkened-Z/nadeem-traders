@@ -4,7 +4,7 @@ import { Plus, Minus, Loader2, ChevronLeft, MapPin, ShieldCheck, Truck } from "l
 import { recordRecentlyViewedDb } from "../lib/actions";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import { getProductDetailInfo } from "../lib/product-descriptions";
-import { CATALOG_PRODUCTS, variantImage } from "../lib/catalog";
+import { productOptions, optionView } from "../lib/catalog";
 import {
   StoreLayout,
   ProductRail,
@@ -12,7 +12,6 @@ import {
   getCategoryMeta,
   addToBag,
   rateLink,
-  getProductClassifications,
   cleanProductTitle,
 } from "../components/store-layout";
 
@@ -33,7 +32,7 @@ function ProductDetailsPage() {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
   const product = products.find((p) => p.id === Number(productId)) || null;
-  const classifications = getProductClassifications(product);
+  const classifications = productOptions(product);
   const [selectedVariant, setSelectedVariant] = useState(classifications[0]?.name || "");
 
   const relatedProducts = product
@@ -43,12 +42,8 @@ function ProductDetailsPage() {
   useEffect(() => {
     if (!product) return;
     setQty(1);
+    setSelectedVariant(classifications[0]?.name || "");
     setFailedSrc(null);
-    if (classifications.length > 0) {
-      setSelectedVariant(classifications[0].name);
-    } else {
-      setSelectedVariant("");
-    }
     recordRecentlyViewedDb({ data: { productId: product.id } }).catch(() => {});
   }, [product?.id]);
 
@@ -83,19 +78,25 @@ function ProductDetailsPage() {
   const categoryColor = product.category_name ? getCategoryMeta(product.category_name).color : undefined;
   const displayName = product ? cleanProductTitle(product.name) : "";
   const details = getProductDetailInfo(displayName || product.name);
-  const catalogMatch = CATALOG_PRODUCTS.find(
-    (cp) => cp.name.toLowerCase() === (displayName || product.name).toLowerCase()
-  );
-  const effectivePrice = product.price != null ? Number(product.price) : (catalogMatch?.price ?? 450);
-  const effectiveWeight = product.weight || catalogMatch?.weight || "Standard Pack";
-  const effectiveProduct = { ...product, name: displayName || product.name, price: effectivePrice, weight: effectiveWeight };
+  const view = optionView(product, selectedVariant);
+  const effectivePrice = view.price;
+  const effectiveWeight = view.weight || "Standard Pack";
+  const canBuy = !!product.stock && effectivePrice != null;
+  const effectiveProduct = {
+    ...product,
+    name: displayName || product.name,
+    price: effectivePrice,
+    weight: effectiveWeight,
+    image_url: view.image_url,
+  };
 
-  const imageSrc = variantImage(product, selectedVariant);
+  const imageSrc = view.image_url;
   const targetProduct = selectedVariant
     ? { ...effectiveProduct, name: `${displayName || product.name} (${selectedVariant})`, variant: selectedVariant }
     : effectiveProduct;
 
   const buyNow = () => {
+    if (!canBuy) return;
     cartStore.addToCart(targetProduct, qty);
     openCheckoutModal();
   };
@@ -168,10 +169,10 @@ function ProductDetailsPage() {
                   <dd className="font-semibold">{product.origin}</dd>
                 </div>
               )}
-              {product.weight && (
+              {view.weight && (
                 <div className="flex gap-1.5">
                   <dt className="text-muted-foreground">Pack</dt>
-                  <dd className="font-semibold">{product.weight}</dd>
+                  <dd className="font-semibold">{view.weight}</dd>
                 </div>
               )}
             </dl>
@@ -187,7 +188,7 @@ function ProductDetailsPage() {
                     const active = selectedVariant === c.name;
                     return (
                       <button
-                        key={c.id}
+                        key={c.name}
                         type="button"
                         onClick={() => setSelectedVariant(c.name)}
                         className={`flex flex-col items-center justify-center p-3 text-center border transition-all ${
@@ -211,7 +212,7 @@ function ProductDetailsPage() {
             <div className="mt-5">
               <div className="flex items-baseline gap-3">
                 <p className="font-display text-3xl sm:text-4xl font-semibold">
-                  Rs. {effectivePrice.toLocaleString()}
+                  {effectivePrice != null ? `Rs. ${effectivePrice.toLocaleString()}` : "Rate Poochein"}
                 </p>
                 <span className="text-xs sm:text-sm text-muted-foreground font-medium">
                   / {effectiveWeight}
@@ -238,7 +239,7 @@ function ProductDetailsPage() {
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
-                {qty > 1 && (
+                {qty > 1 && effectivePrice != null && (
                   <span className="text-sm text-muted-foreground font-medium">
                     Total: <strong className="text-foreground font-semibold">Rs. {(effectivePrice * qty).toLocaleString()}</strong>
                   </span>
@@ -249,7 +250,7 @@ function ProductDetailsPage() {
                 <button
                   type="button"
                   onClick={() => addToBag(targetProduct, qty)}
-                  disabled={!product.stock}
+                  disabled={!canBuy}
                   className="h-12 border border-foreground bg-background text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
                 >
                   {product.stock ? "Add To Bag" : "Out Of Stock"}
@@ -257,7 +258,7 @@ function ProductDetailsPage() {
                 <button
                   type="button"
                   onClick={buyNow}
-                  disabled={!product.stock}
+                  disabled={!canBuy}
                   className="h-12 bg-foreground text-sm font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   Buy Now

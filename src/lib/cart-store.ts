@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getCartItems, addToCartDb, updateCartItemQuantityDb, removeFromCartDb } from "./actions";
 import { toast } from "sonner";
-import { cleanProductTitle, variantImage } from "./catalog";
+import { cleanProductTitle } from "./catalog";
 
 export interface CartItem {
   key: string; // product id + chosen option, one cart line each
@@ -91,7 +91,7 @@ export const cartStore = {
 
   async load() {
     try {
-      const items = await getCartItems();
+      const items: any[] = await getCartItems();
       if (items && items.length > 0) {
         cartState = items.map((item) => {
           const baseName = cleanProductTitle(item.name) || item.name;
@@ -108,7 +108,7 @@ export const cartStore = {
             wholesale_min_qty: item.wholesale_min_qty || 1,
             emoji: item.emoji || "🌾",
             quantity: item.quantity,
-            image_url: variantImage(item, variant),
+            image_url: item.image_url,
           };
         });
       } else {
@@ -156,7 +156,7 @@ export const cartStore = {
         wholesale_min_qty: product.wholesale_min_qty || 1,
         emoji: product.emoji || "🌾",
         quantity: qty,
-        image_url: variantImage(product, variant),
+        image_url: product.image_url || null,
       });
     }
 

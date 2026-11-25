@@ -298,6 +298,22 @@ export async function initDb() {
     // The roasted cashews used to be a separate product; it is now the "Roasted & Salted" option of Cashews (id 2).
     await sql`UPDATE products SET status = 'draft' WHERE id = 5 AND name = 'Cashews' AND image_url = '/products/kaju-roasted.jpg'`;
 
+    // Options of a product (e.g. Cashews Plain / Roasted), each sold at its own price, pack size and photo.
+    await sql`
+      CREATE TABLE IF NOT EXISTS product_variants (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        short_name TEXT,
+        name_ur TEXT,
+        price INTEGER,
+        weight TEXT,
+        image_url TEXT,
+        position INTEGER NOT NULL DEFAULT 0,
+        UNIQUE(product_id, name)
+      )
+    `;
+
     // 20. Wishlist Items Table
     await sql`
       CREATE TABLE IF NOT EXISTS wishlist_items (
@@ -365,12 +381,30 @@ export async function initDb() {
     } catch {}
 
     await seedCatalogIfEmpty();
+    await seedProductOptionsIfEmpty();
 
     console.log("Tables created/altered successfully.");
 
   } catch (error) {
     console.error("Failed to initialize database:", error);
     throw error;
+  }
+}
+
+async function seedProductOptionsIfEmpty() {
+  const [{ n }] = await sql`SELECT count(*)::int AS n FROM product_variants`;
+  if (n > 0) return;
+  const { OPTION_SEED } = await import("./catalog");
+  for (const [productName, options] of Object.entries(OPTION_SEED)) {
+    const [product] = await sql`SELECT id FROM products WHERE name = ${productName} ORDER BY id LIMIT 1`;
+    if (!product) continue;
+    for (const [position, o] of options.entries()) {
+      await sql`
+        INSERT INTO product_variants (product_id, name, short_name, name_ur, price, weight, image_url, position)
+        VALUES (${product.id}, ${o.name}, ${o.short_name}, ${o.name_ur}, ${o.price}, ${o.weight}, ${o.image_url}, ${position})
+        ON CONFLICT (product_id, name) DO NOTHING
+      `;
+    }
   }
 }
 

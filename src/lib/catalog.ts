@@ -18,7 +18,7 @@ type Seed = [
 
 const ITEMS: (Seed | null)[] = [
   ["Almonds", "بادام", "USA", 1, "almonds", 1800, "500g"],
-  ["Cashew Nuts", "کاجو", "Vietnam", 1, "cashews", 950, "250g"],
+  ["Cashews", "کاجو", "Vietnam", 1, "cashews", 950, "250g"],
   ["Pistachios", "پستہ", "Iran", 1, "pista", 1450, "250g"],
   ["Walnuts", "اخروٹ", "China", 1, "walnuts", 980, "250g"],
   null, // was a second "Cashews" (roasted); now the Roasted option of Cashews. Slot kept so ids match the database.
@@ -47,61 +47,72 @@ const ITEMS: (Seed | null)[] = [
   ["Ispaghol Chilka", "اسپغول چھلکا", "India", 5, "ispaghol", 450, "100g"],
 ];
 
-export interface ProductClassification {
-  id: string;
+export interface ProductOption {
   name: string;
-  name_ur: string;
-  shortName?: string;
-  image?: string;
+  short_name: string | null;
+  name_ur: string | null;
+  price: number | null;
+  weight: string | null;
+  image_url: string | null;
 }
 
-export const PRODUCT_CLASSIFICATIONS: Record<string, ProductClassification[]> = {
-  // Walnuts (Cap vs Without Cap)
-  walnuts: [
-    { id: "cap", name: "Cap", shortName: "Cap", name_ur: "ثابت اخروٹ (چھلکے والا)", image: "/products/walnuts.jpg" },
-    { id: "without-cap", name: "Without Cap", shortName: "Without Cap", name_ur: "اخروٹ گری (بغیر ٹوپی)", image: "/products/walnut-kernels.jpg" },
+// Initial product_variants rows (rate sheet of Nov 2026), keyed by product name. After seeding, prices are managed
+// on the admin Daily Rates page.
+export const OPTION_SEED: Record<string, ProductOption[]> = {
+  Cashews: [
+    { name: "Plain", short_name: null, name_ur: "سادہ کاجو", price: 1039, weight: "200g", image_url: "/products/cashews.jpg" },
+    { name: "Roasted", short_name: null, name_ur: "بھنے ہوئے کاجو", price: 1099, weight: "200g", image_url: "/products/kaju-roasted.jpg" },
   ],
-  // Cloves (Capped vs Uncapped)
-  cloves: [
-    { id: "capped", name: "Capped / Topi", shortName: "Capped", name_ur: "ٹوپی والا لونگ", image: "/products/cloves-capped.jpg" },
-    { id: "uncapped", name: "Uncapped / Headless", shortName: "Uncapped", name_ur: "بغیر ٹوپی لونگ", image: "/products/cloves-uncapped.jpg" },
+  Pistachios: [
+    { name: "In-Shell", short_name: null, name_ur: "چھلکے والا پستہ", price: 1349, weight: "200g", image_url: "/products/pista.jpg" },
+    { name: "Without Shell", short_name: null, name_ur: "پستہ مغز (بغیر چھلکا)", price: 2449, weight: "200g", image_url: "/products/pista-kernels.jpg" },
   ],
-  // Pistachios (In-Shell vs Without Shell)
-  pista: [
-    { id: "inshell", name: "In-Shell", shortName: "In-Shell", name_ur: "چھلکے والا پستہ", image: "/products/pista.jpg" },
-    { id: "without-shell", name: "Without Shell", shortName: "Without Shell", name_ur: "پستہ مغز (بغیر چھلکا)", image: "/products/pista-kernels.jpg" },
+  Walnuts: [
+    { name: "Cap", short_name: null, name_ur: "ثابت اخروٹ (چھلکے والا)", price: 399, weight: "250g", image_url: "/products/walnuts.jpg" },
+    { name: "Without Cap", short_name: null, name_ur: "اخروٹ گری (بغیر ٹوپی)", price: 759, weight: "200g", image_url: "/products/walnut-kernels.jpg" },
   ],
-  // Cashews (Plain vs Roasted)
-  cashews: [
-    { id: "plain", name: "Plain", shortName: "Plain", name_ur: "سادہ کاجو", image: "/products/cashews.jpg" },
-    { id: "roasted", name: "Roasted", shortName: "Roasted", name_ur: "بھنے ہوئے کاجو", image: "/products/kaju-roasted.jpg" },
+  Cloves: [
+    { name: "Capped", short_name: null, name_ur: "ٹوپی والا لونگ", price: 599, weight: "100g", image_url: "/products/cloves-capped.jpg" },
+    { name: "Uncapped", short_name: null, name_ur: "بغیر ٹوپی لونگ", price: 599, weight: "100g", image_url: "/products/cloves-uncapped.jpg" },
   ],
-  // Garam Masala (Whole vs Powder)
-  "garam-masala": [
-    { id: "whole", name: "Whole", shortName: "Whole", name_ur: "ثابت گرم مصالحہ", image: "/products/garam-masala.jpg" },
-    { id: "powder", name: "Powder", shortName: "Powder", name_ur: "پسا ہوا گرم مصالحہ", image: "/products/garam-masala-powder.jpg" },
+  "Garam Masala": [
+    { name: "Whole", short_name: null, name_ur: "ثابت گرم مصالحہ", price: 949, weight: "200g", image_url: "/products/garam-masala.jpg" },
+    { name: "Powder", short_name: null, name_ur: "پسا ہوا گرم مصالحہ", price: 999, weight: "200g", image_url: "/products/garam-masala-powder.jpg" },
   ],
-  // Black Pepper (Whole vs Powder)
-  "black-pepper": [
-    { id: "whole", name: "Whole", shortName: "Whole", name_ur: "ثابت کالی مرچ", image: "/products/black-pepper.jpg" },
-    { id: "powder", name: "Powder", shortName: "Powder", name_ur: "پسی ہوئی کالی مرچ", image: "/products/black-pepper-powder.jpg" },
+  "Black Pepper": [
+    { name: "Whole", short_name: null, name_ur: "ثابت کالی مرچ", price: 789, weight: "200g", image_url: "/products/black-pepper.jpg" },
+    { name: "Powder", short_name: null, name_ur: "پسی ہوئی کالی مرچ", price: 799, weight: "200g", image_url: "/products/black-pepper-powder.jpg" },
   ],
-  // Red Chilli (Powder vs Whole)
-  "red-chilli": [
-    { id: "powder", name: "Powder", shortName: "Powder", name_ur: "پسی ہوئی لال مرچ", image: "/products/red-chilli-powder.jpg" },
-    { id: "whole", name: "Whole", shortName: "Whole", name_ur: "ثابت لال مرچ", image: "/products/red-chilli.jpg" },
+  "Red Chilli": [
+    { name: "Powder", short_name: null, name_ur: "پسی ہوئی لال مرچ", price: 299, weight: "200g", image_url: "/products/red-chilli-powder.jpg" },
+    { name: "Whole", short_name: null, name_ur: "ثابت لال مرچ", price: 299, weight: "200g", image_url: "/products/red-chilli.jpg" },
   ],
-  // Turmeric (Powder vs Whole Root)
-  turmeric: [
-    { id: "powder", name: "Powder", shortName: "Powder", name_ur: "ہلدی پاؤڈر", image: "/products/haldi-powder.jpg" },
-    { id: "whole-root", name: "Whole Root", shortName: "Whole Root", name_ur: "ثابت گانٹھ", image: "/products/haldi-whole.jpg" },
+  Turmeric: [
+    { name: "Powder", short_name: null, name_ur: "ہلدی پاؤڈر", price: 359, weight: "200g", image_url: "/products/haldi-powder.jpg" },
+    { name: "Whole Root", short_name: null, name_ur: "ثابت گانٹھ", price: 359, weight: "200g", image_url: "/products/haldi-whole.jpg" },
   ],
-  // Zeera (White vs Black)
-  zeera: [
-    { id: "white", name: "White", shortName: "White", name_ur: "سفید زیرہ", image: "/products/zeera.jpg" },
-    { id: "black", name: "Black", shortName: "Black", name_ur: "کالا زیرہ (شاہ زیرہ)", image: "/products/zeera-black.jpg" },
+  "Cumin Seeds": [
+    { name: "White", short_name: null, name_ur: "سفید زیرہ", price: 499, weight: "200g", image_url: "/products/zeera.jpg" },
+    { name: "Black", short_name: null, name_ur: "کالا زیرہ (شاہ زیرہ)", price: 499, weight: "200g", image_url: "/products/zeera-black.jpg" },
   ],
 };
+
+export function productOptions(product?: { variants?: ProductOption[] | null } | null): ProductOption[] {
+  return product?.variants ?? [];
+}
+
+// Price, pack size and photo of a product as sold in the chosen option.
+export function optionView(
+  product: { price?: number | null; weight?: string | null; image_url?: string | null; variants?: ProductOption[] | null },
+  variant?: string | null,
+) {
+  const option = productOptions(product).find((o) => o.name === variant);
+  return {
+    price: option ? option.price : (product.price ?? null),
+    weight: option?.weight ?? product.weight ?? null,
+    image_url: option?.image_url ?? product.image_url ?? null,
+  };
+}
 
 export function cleanProductTitle(name?: string | null): string {
   if (!name) return "";
@@ -126,58 +137,6 @@ export function cleanProductTitle(name?: string | null): string {
   return n.replace(/\s*\([^)]*\)/g, "").trim();
 }
 
-export function variantImage(product: { name?: string | null; image_url?: string | null }, variant?: string | null) {
-  if (!variant) return product.image_url ?? null;
-  const options = getProductClassifications(product);
-  const vNorm = variant.toLowerCase().trim();
-  const option = options.find((c) => {
-    const cName = c.name.toLowerCase();
-    const cId = c.id.toLowerCase();
-    const cShort = (c.shortName || "").toLowerCase();
-    if (cName === vNorm || cId === vNorm || cShort === vNorm) return true;
-    if ((vNorm.includes("without cap") || vNorm.includes("uncapped") || vNorm.includes("without shell") || vNorm.includes("shelled") || vNorm.includes("kernels") || vNorm.includes("giri")) && (c.id === "kernels" || c.id === "without-shell" || c.id === "without-cap")) return true;
-    if ((vNorm.includes("with cap") || vNorm.includes("capped") || vNorm.includes("in-shell") || vNorm.includes("cap")) && (c.id === "inshell" || c.id === "capped" || c.id === "cap")) return true;
-    if ((vNorm.includes("whole root") || vNorm.includes("root") || vNorm.includes("ganth")) && (c.id === "whole-root" || c.id === "whole")) return true;
-    if ((vNorm.includes("powder") || vNorm.includes("pisa") || vNorm.includes("pisi")) && c.id === "powder") return true;
-    if ((vNorm.includes("whole") || vNorm.includes("sabat") || vNorm.includes("sabit")) && (c.id === "whole" || c.id === "inshell")) return true;
-    if ((vNorm.includes("roasted") || vNorm.includes("salted") || vNorm.includes("bhuna")) && c.id === "roasted") return true;
-    if ((vNorm.includes("plain") || vNorm.includes("raw") || vNorm.includes("sada")) && c.id === "plain") return true;
-    if ((vNorm.includes("black") || vNorm.includes("kala") || vNorm.includes("shah")) && (c.id === "black" || c.id === "kala")) return true;
-    if ((vNorm.includes("white") || vNorm.includes("safaid") || vNorm.includes("safed")) && (c.id === "white" || c.id === "safaid")) return true;
-    return false;
-  });
-  return option?.image ?? product.image_url ?? null;
-}
-
-// Cart lines and order items carry the chosen option; "" means the product has none.
-export function normalizeVariant(product: { name?: string | null }, variant?: string | null) {
-  const options = getProductClassifications(product);
-  if (options.length === 0) return "";
-  return options.find((c) => c.name === variant)?.name ?? options[0].name;
-}
-
-export function getProductClassifications(product?: { name?: string | null; id?: number | null }): ProductClassification[] {
-  if (!product || !product.name) return [];
-  const n = product.name.toLowerCase().trim();
-
-  // Exclude standalone products from matching generic substring keywords:
-  if (n.includes("round") || n.includes("gol mirch") || n.includes("flakes") || n.includes("dara mirch")) {
-    return [];
-  }
-
-  if (n.includes("walnut") || n.includes("akhrot")) return PRODUCT_CLASSIFICATIONS.walnuts;
-  if (n.includes("clove") || n.includes("laung") || n.includes("long")) return PRODUCT_CLASSIFICATIONS.cloves;
-  if (n.includes("pista") || n.includes("pistachio")) return PRODUCT_CLASSIFICATIONS.pista;
-  if (n.includes("kaju") || n.includes("cashew")) return PRODUCT_CLASSIFICATIONS.cashews;
-  if (n.includes("garam masala")) return PRODUCT_CLASSIFICATIONS["garam-masala"];
-  if (n.includes("black pepper") || n.includes("kaali mirch") || n.includes("kali mirch")) return PRODUCT_CLASSIFICATIONS["black-pepper"];
-  if (n.includes("red chilli") || n.includes("laal mirch")) return PRODUCT_CLASSIFICATIONS["red-chilli"];
-  if (n.includes("turmeric") || n.includes("haldi")) return PRODUCT_CLASSIFICATIONS.turmeric;
-  if (n.includes("zeera") || n.includes("cumin")) return PRODUCT_CLASSIFICATIONS.zeera;
-
-  return [];
-}
-
 export const CATALOG_PRODUCTS = ITEMS.flatMap((row, i) => {
   if (!row) return [];
   const [name, name_ur, origin, category_id, image, price, weight] = row;
@@ -194,5 +153,6 @@ export const CATALOG_PRODUCTS = ITEMS.flatMap((row, i) => {
   category_id,
   category_name: CATALOG_CATEGORIES.find((c) => c.id === category_id)!.name,
   image_url: `/products/${image}.jpg`,
+  variants: OPTION_SEED[name] ?? [],
   }];
 });

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "./db";
-import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, cleanProductTitle, normalizeVariant } from "./catalog";
+import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, cleanProductTitle, type ProductOption } from "./catalog";
 import { assertAdmin } from "./admin";
 import { assertOrderStatus } from "./order-status";
 import { Resend } from "resend";
@@ -323,6 +323,28 @@ async function sessionUserId() {
   return requireSessionUserId();
 }
 
+async function optionsByProduct(productIds: number[]): Promise<Map<number, ProductOption[]>> {
+  const map = new Map<number, ProductOption[]>();
+  if (productIds.length === 0) return map;
+  const rows = await sql`
+    SELECT product_id, name, short_name, name_ur, price, weight, image_url FROM product_variants
+    WHERE product_id = ANY(${productIds})
+    ORDER BY position, id
+  `;
+  for (const r of rows) {
+    const list = map.get(r.product_id) ?? [];
+    list.push({ name: r.name, short_name: r.short_name, name_ur: r.name_ur, price: r.price, weight: r.weight, image_url: r.image_url });
+    map.set(r.product_id, list);
+  }
+  return map;
+}
+
+// A product with options always sells as one of them; unknown or missing choices fall back to the first.
+function pickOption(options: ProductOption[] | undefined, variant?: string | null): ProductOption | null {
+  if (!options || options.length === 0) return null;
+  return options.find((o) => o.name === variant) ?? options[0];
+}
+
 function assertQuantity(quantity: number) {
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
     throw new Error("Invalid quantity");
@@ -333,22 +355,32 @@ function assertQuantity(quantity: number) {
 export const getCartItems = createServerFn({ method: "POST" }).handler(async () => {
   if (!sql) return [];
   const { userId, guestSessionId } = await cartOwner();
-  if (userId) {
-    return await sql`
-      SELECT c.id as cart_item_id, c.quantity, c.variant, p.*, cat.name as category_name
-      FROM cart_items c
-      JOIN products p ON c.product_id = p.id
-      LEFT JOIN categories cat ON p.category_id = cat.id
-      WHERE c.user_id = ${userId}
-    `;
-  }
-  return await sql`
-    SELECT c.id as cart_item_id, c.quantity, c.variant, p.*, cat.name as category_name
-    FROM cart_items c
-    JOIN products p ON c.product_id = p.id
-    LEFT JOIN categories cat ON p.category_id = cat.id
-    WHERE c.guest_session_id = ${guestSessionId!}
-  `;
+  const rows = userId
+    ? await sql`
+        SELECT c.id as cart_item_id, c.quantity, c.variant, p.*, cat.name as category_name
+        FROM cart_items c
+        JOIN products p ON c.product_id = p.id
+        LEFT JOIN categories cat ON p.category_id = cat.id
+        WHERE c.user_id = ${userId}
+      `
+    : await sql`
+        SELECT c.id as cart_item_id, c.quantity, c.variant, p.*, cat.name as category_name
+        FROM cart_items c
+        JOIN products p ON c.product_id = p.id
+        LEFT JOIN categories cat ON p.category_id = cat.id
+        WHERE c.guest_session_id = ${guestSessionId!}
+      `;
+  const options = await optionsByProduct([...new Set(rows.map((r) => r.id as number))]);
+  return rows.map((r: Record<string, any>) => {
+    const option = pickOption(options.get(r.id), r.variant);
+    return {
+      ...r,
+      variant: option?.name ?? "",
+      price: option ? option.price : r.price,
+      weight: option?.weight ?? r.weight,
+      image_url: option?.image_url ?? r.image_url,
+    };
+  });
 });
 
 export const addToCartDb = createServerFn({ method: "POST" })
@@ -356,9 +388,10 @@ export const addToCartDb = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (!sql) return { success: true };
     assertQuantity(data.quantity);
-    const [product] = await sql`SELECT name FROM products WHERE id = ${data.productId}`;
+    const [product] = await sql`SELECT id FROM products WHERE id = ${data.productId}`;
     if (!product) throw new Error("Product not found");
-    const variant = normalizeVariant(product, data.variant);
+    const options = await optionsByProduct([product.id]);
+    const variant = pickOption(options.get(product.id), data.variant)?.name ?? "";
     const { userId, guestSessionId } = await cartOwner();
     if (userId) {
       await sql`
@@ -747,7 +780,6 @@ const PRODUCT_IMAGE_FALLBACKS: Record<string, string> = {
   "Kalonji": "/products/kalonji.jpg",
   "Green Cardamom": "/products/green-cardamom.jpg",
   "Black Cardamom": "/products/black-cardamom.jpg",
-  "Cloves": "/products/cloves.jpg",
   "Oats": "/products/oats.jpg",
   "Ispaghol Chilka": "/products/ispaghol.jpg",
   "Ispaghol": "/products/ispaghol.jpg",
@@ -836,6 +868,8 @@ export const getProducts = createServerFn({ method: "GET" }).handler(
       }
       return { ...p, name, name_ur, image_url: img };
     });
+    const options = await optionsByProduct(mapped.map((p) => p.id as number));
+    for (const p of mapped) p.variants = options.get(p.id) ?? [];
     serverCache.set("products", mapped, 30_000);
     return mapped;
   }
@@ -863,13 +897,16 @@ async function priceCart(items: CartLineInput[]): Promise<{ lines: PricedLine[];
     FROM products WHERE id = ANY(${ids})
   `;
   const byId = new Map(rows.map((r) => [r.id as number, r]));
+  const options = await optionsByProduct(ids);
   const merged = new Map<string, PricedLine>();
   for (const item of items) {
     const p = byId.get(item.product_id);
-    if (!p || p.status !== "active" || p.stock === false || p.price == null) {
+    const option = p ? pickOption(options.get(p.id), item.variant) : null;
+    const price = option ? option.price : p?.price;
+    if (!p || p.status !== "active" || p.stock === false || price == null) {
       throw new Error(`${p?.name ?? "A product in your cart"} is not available for online order right now.`);
     }
-    const variant = normalizeVariant(p, item.variant);
+    const variant = option?.name ?? "";
     const key = `${p.id}|${variant}`;
     const existing = merged.get(key);
     if (existing) {
@@ -882,8 +919,7 @@ async function priceCart(items: CartLineInput[]): Promise<{ lines: PricedLine[];
       product_id: p.id,
       product_name: variant ? `${baseName} (${variant})` : baseName,
       quantity: item.quantity,
-      // Every option of a product sells at the product's price.
-      price: Number(p.price),
+      price: Number(price),
     });
   }
   const lines = [...merged.values()];
