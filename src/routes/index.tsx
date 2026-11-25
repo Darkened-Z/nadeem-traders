@@ -128,14 +128,15 @@ function TrendingSection({ products }: { products: any[] }) {
 
 const STEP_IMAGES = ["/hero/slide-1.webp", "/hero/slide-2.webp", "/hero/slide-5.webp"];
 
+// Both variants are server-rendered and CSS picks one, so phones never flash the tall dark showcase
+// while waiting for JavaScript to swap it out.
 function OrderSteps() {
-  const [isMobileOrReduced, setIsMobileOrReduced] = useState(false);
-  useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setIsMobileOrReduced(isMobile || reduced);
-  }, []);
-  return isMobileOrReduced ? <StepsSimple /> : <StepsShowcase />;
+  return (
+    <>
+      <StepsSimple />
+      <StepsShowcase />
+    </>
+  );
 }
 
 function StepsShowcase() {
@@ -149,6 +150,7 @@ function StepsShowcase() {
     const update = () => {
       frame = 0;
       const rect = el.getBoundingClientRect();
+      if (rect.height === 0) return;
       const headerH = window.innerWidth >= 640 ? 64 : 56;
       const travel = rect.height - (window.innerHeight - headerH);
       const p = Math.min(1, Math.max(0, (headerH - rect.top) / travel));
@@ -174,7 +176,7 @@ function StepsShowcase() {
   const current = STEPS[step];
 
   return (
-    <section ref={containerRef} className="relative h-[320vh] bg-[#141311] text-white" aria-label="Order Kaise Karein?">
+    <section ref={containerRef} className="relative hidden h-[320vh] bg-[#141311] text-white md:motion-safe:block" aria-label="Order Kaise Karein?">
       <div className="sticky top-14 h-[calc(100svh-3.5rem)] overflow-hidden sm:top-16 sm:h-[calc(100svh-4rem)]">
         {STEP_IMAGES.map((src, i) => (
           <img
@@ -246,7 +248,7 @@ function StepsShowcase() {
 
 function StepsSimple() {
   return (
-    <section className="stack-section relative bg-background">
+    <section className="stack-section relative bg-background md:motion-safe:hidden">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
         <h2 data-reveal className="font-display text-[1.75rem] font-semibold sm:text-4xl">Order Kaise Karein?</h2>
         <ol className="mt-6 grid gap-6 sm:grid-cols-3 sm:gap-8">
