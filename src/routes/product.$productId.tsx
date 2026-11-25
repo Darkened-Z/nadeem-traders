@@ -115,11 +115,7 @@ function ProductDetailsPage() {
         <div className="mt-4 grid gap-6 md:grid-cols-2 md:gap-12">
           <div className="-mx-4 aspect-[4/3] overflow-hidden bg-muted sm:mx-0">
             {imageSrc && imageSrc !== failedSrc ? (
-              <picture key={imageSrc}>
-                <source
-                  srcSet={imageSrc.replace(/\.jpe?g$/, ".webp")}
-                  type="image/webp"
-                />
+              imageSrc.startsWith("data:") ? (
                 <img
                   src={imageSrc}
                   alt={selectedVariant ? `${displayName || product.name} (${selectedVariant})` : displayName || product.name}
@@ -129,7 +125,23 @@ function ProductDetailsPage() {
                   onError={() => setFailedSrc(imageSrc)}
                   className="h-full w-full object-cover transition-opacity duration-300"
                 />
-              </picture>
+              ) : (
+                <picture key={imageSrc}>
+                  <source
+                    srcSet={imageSrc.replace(/\.jpe?g$/, ".webp")}
+                    type="image/webp"
+                  />
+                  <img
+                    src={imageSrc}
+                    alt={selectedVariant ? `${displayName || product.name} (${selectedVariant})` : displayName || product.name}
+                    ref={(el) => {
+                      if (el?.complete && el.naturalWidth === 0) setFailedSrc(imageSrc);
+                    }}
+                    onError={() => setFailedSrc(imageSrc)}
+                    className="h-full w-full object-cover transition-opacity duration-300"
+                  />
+                </picture>
+              )
             ) : (
               <div className="grid h-full w-full place-items-center">
                 <img src="/LOGO.png" alt="" className="h-24 w-24 object-contain opacity-60" />

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { adminDeleteCategory, adminListCategories, adminMoveCategory, adminSaveCategory } from "../lib/admin";
 import { useAdminQuery } from "../components/admin-shell";
 import { Button, EmptyState, Field, Modal, PageHeader, Thumb, errorMessage, inputClass } from "../components/admin-ui";
+import { AdminImageUploadField } from "../components/admin-image-upload";
 
 export const Route = createFileRoute("/admin/categories")({
   component: CategoriesPage,
@@ -158,9 +159,12 @@ function CategoriesPage() {
                 className={`${inputClass} font-urdu text-lg sm:text-lg`}
               />
             </Field>
-            <Field label="Image link" help="e.g. /categories/seeds.jpg">
-              <input value={editing.image_url} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} className={inputClass} />
-            </Field>
+            <AdminImageUploadField
+              value={editing.image_url}
+              onChange={(url) => setEditing({ ...editing, image_url: url })}
+              label="Category Image"
+              help="Drop a category photo, or select from store library."
+            />
           </div>
         </Modal>
       )}

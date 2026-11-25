@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { adminDeleteProducts, adminGetProduct, adminListCategories, adminSaveProduct, type ProductInput } from "../lib/admin";
 import { useAdminQuery } from "../components/admin-shell";
 import { Button, Card, Field, PageHeader, errorMessage, inputClass } from "../components/admin-ui";
+import { AdminImageUploadField } from "../components/admin-image-upload";
 
 export const Route = createFileRoute("/admin/products/$productId")({
   component: ProductEditor,
@@ -193,23 +194,12 @@ function ProductEditor() {
           </Card>
 
           <Card title="Media">
-            <div className="flex flex-col gap-4 sm:flex-row">
-              <div className="grid aspect-square w-full shrink-0 place-items-center overflow-hidden rounded-lg border border-dashed border-[#C9C9C9] bg-[#F7F7F7] sm:w-40">
-                {form.image_url && imgOk ? (
-                  <img src={form.image_url} alt="" onError={() => setImgOk(false)} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="p-3 text-center text-xs text-[#616161]">
-                    <ImageIcon className="mx-auto mb-1 h-6 w-6 text-[#8A8A8A]" />
-                    {form.image_url ? "Image not found" : "No image"}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <Field label="Image link" help="Paste an image URL, or a file path like /products/green-cardamom.jpg">
-                  <input value={form.image_url} onChange={(e) => set("image_url", e.target.value)} placeholder="/products/name.jpg" className={inputClass} />
-                </Field>
-              </div>
-            </div>
+            <AdminImageUploadField
+              value={form.image_url}
+              onChange={(url) => set("image_url", url)}
+              label="Product Photo"
+              help="Drag & drop any photo from your device, or choose from our existing store library. Images are automatically optimized to crisp WebP."
+            />
           </Card>
 
           <Card title="Pricing">
