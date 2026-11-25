@@ -81,25 +81,10 @@ export const PRODUCT_CLASSIFICATIONS: Record<string, ProductClassification[]> = 
     { id: "whole", name: "Whole Masala", shortName: "Whole", name_ur: "ثابت گرم مصالحہ", image: "/products/garam-masala.jpg" },
     { id: "powder", name: "Ground Powder", shortName: "Powder", name_ur: "پسا ہوا گرم مصالحہ", image: "/products/garam-masala-powder.jpg" },
   ],
-  // Red Chilli
+  // Red Chilli (Whole Stem Cut vs Fine Powder)
   "red-chilli": [
     { id: "whole", name: "Whole (Stem Cut)", shortName: "Whole", name_ur: "ثابت لال مرچ", image: "/products/red-chilli.jpg" },
     { id: "powder", name: "Powder", shortName: "Powder", name_ur: "پسی ہوئی لال مرچ", image: "/products/red-chilli-powder.jpg" },
-  ],
-  // Black Pepper
-  "black-pepper": [
-    { id: "whole", name: "Whole", shortName: "Whole", name_ur: "ثابت کالی مرچ", image: "/products/black-pepper.jpg" },
-    { id: "powder", name: "Ground Powder", shortName: "Powder", name_ur: "پسی ہوئی کالی مرچ", image: "/products/black-pepper.jpg" },
-  ],
-  // Turmeric
-  turmeric: [
-    { id: "powder", name: "Powder", shortName: "Powder", name_ur: "ہلدی پاؤڈر", image: "/products/haldi-powder.jpg" },
-    { id: "whole", name: "Whole Root", shortName: "Whole Root", name_ur: "ثابت گانٹھ", image: "/products/haldi-powder.jpg" },
-  ],
-  // Zeera (Cumin)
-  zeera: [
-    { id: "safaid", name: "White Cumin", shortName: "White", name_ur: "سفید زیرہ", image: "/products/zeera.jpg" },
-    { id: "kala", name: "Black Cumin", shortName: "Black", name_ur: "کالا زیرہ", image: "/products/zeera.jpg" },
   ],
 };
 
@@ -117,7 +102,8 @@ export function cleanProductTitle(name?: string | null): string {
     return "Cashews";
   }
   if (/^chilli flakes/i.test(n) || /dara mirch/i.test(n)) return "Chilli Flakes";
-  if (/^gol mirch/i.test(n) || /^round red chilli/i.test(n)) return "Round Red Chilli";
+  if (/^gol mirch/i.test(n) || /^round red chilli/i.test(n) || /round chilli/i.test(n)) return "Round Red Chilli";
+  if (/^red chilli/i.test(n) || /^laal mirch/i.test(n)) return "Red Chilli";
   if (/^zeera/i.test(n) || /^cumin/i.test(n)) return "Cumin Seeds";
   if (/^garam masala/i.test(n)) return "Garam Masala";
   // Strip any bracketed Roman Urdu like (Akhrot), (Kaali Mirch), etc.
@@ -153,16 +139,21 @@ export function normalizeVariant(product: { name?: string | null }, variant?: st
 
 export function getProductClassifications(product?: { name?: string | null; id?: number | null }): ProductClassification[] {
   if (!product || !product.name) return [];
-  const n = product.name.toLowerCase();
+  const n = product.name.toLowerCase().trim();
+
+  // Exclude standalone products from matching generic substring keywords:
+  if (n.includes("round") || n.includes("gol mirch") || n.includes("flakes") || n.includes("dara mirch")) {
+    return [];
+  }
+
   if (n.includes("walnut") || n.includes("akhrot")) return PRODUCT_CLASSIFICATIONS.walnuts;
   if (n.includes("clove") || n.includes("laung") || n.includes("long")) return PRODUCT_CLASSIFICATIONS.cloves;
-  if (n.includes("black pepper") || n.includes("kaali mirch") || n.includes("kali mirch")) return PRODUCT_CLASSIFICATIONS["black-pepper"];
-  if (n.includes("garam masala")) return PRODUCT_CLASSIFICATIONS["garam-masala"];
-  if (n.includes("red chilli") || n.includes("laal mirch")) return PRODUCT_CLASSIFICATIONS["red-chilli"];
-  if (n.includes("turmeric") || n.includes("haldi")) return PRODUCT_CLASSIFICATIONS.turmeric;
   if (n.includes("pista") || n.includes("pistachio")) return PRODUCT_CLASSIFICATIONS.pista;
   if (n.includes("kaju") || n.includes("cashew")) return PRODUCT_CLASSIFICATIONS.cashews;
-  if (n.includes("zeera") || n.includes("cumin")) return PRODUCT_CLASSIFICATIONS.zeera;
+  if (n.includes("garam masala")) return PRODUCT_CLASSIFICATIONS["garam-masala"];
+  if (n.includes("red chilli") || n.includes("laal mirch")) return PRODUCT_CLASSIFICATIONS["red-chilli"];
+
+  // Black pepper, turmeric, zeera have NO variants:
   return [];
 }
 
