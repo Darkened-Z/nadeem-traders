@@ -130,12 +130,17 @@ export function ModernProductCard({ product }: { product: any }) {
   const imageSrc = variantImage(product, selectedVariant);
 
   useEffect(() => {
+    setFailedSrc(null);
     if (classifications.length > 0) {
       setSelectedVariant(classifications[0].name);
     } else {
       setSelectedVariant("");
     }
   }, [product?.id]);
+
+  useEffect(() => {
+    setFailedSrc(null);
+  }, [selectedVariant]);
 
   const handleAdd = () => {
     if (!product.stock) return;
@@ -217,7 +222,7 @@ export function ModernProductCard({ product }: { product: any }) {
                   }`}
                   title={`${c.name} (${c.name_ur})`}
                 >
-                  <span className="truncate block">{c.name.split("/")[0].trim()}</span>
+                  <span className="truncate block">{c.shortName || c.name.split("/")[0].trim()}</span>
                 </button>
               );
             })}

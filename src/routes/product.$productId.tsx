@@ -43,6 +43,7 @@ function ProductDetailsPage() {
   useEffect(() => {
     if (!product) return;
     setQty(1);
+    setFailedSrc(null);
     if (classifications.length > 0) {
       setSelectedVariant(classifications[0].name);
     } else {
@@ -50,6 +51,10 @@ function ProductDetailsPage() {
     }
     recordRecentlyViewedDb({ data: { productId: product.id } }).catch(() => {});
   }, [product?.id]);
+
+  useEffect(() => {
+    setFailedSrc(null);
+  }, [selectedVariant]);
 
   if (isLoading && !product) {
     return (
@@ -110,16 +115,21 @@ function ProductDetailsPage() {
         <div className="mt-4 grid gap-6 md:grid-cols-2 md:gap-12">
           <div className="-mx-4 aspect-[4/3] overflow-hidden bg-muted sm:mx-0">
             {imageSrc && imageSrc !== failedSrc ? (
-              <img
-                key={imageSrc}
-                src={imageSrc}
-                alt={selectedVariant ? `${displayName || product.name} (${selectedVariant})` : displayName || product.name}
-                ref={(el) => {
-                  if (el?.complete && el.naturalWidth === 0) setFailedSrc(imageSrc);
-                }}
-                onError={() => setFailedSrc(imageSrc)}
-                className="h-full w-full object-cover"
-              />
+              <picture key={imageSrc}>
+                <source
+                  srcSet={imageSrc.replace(/\.jpe?g$/, ".webp")}
+                  type="image/webp"
+                />
+                <img
+                  src={imageSrc}
+                  alt={selectedVariant ? `${displayName || product.name} (${selectedVariant})` : displayName || product.name}
+                  ref={(el) => {
+                    if (el?.complete && el.naturalWidth === 0) setFailedSrc(imageSrc);
+                  }}
+                  onError={() => setFailedSrc(imageSrc)}
+                  className="h-full w-full object-cover transition-opacity duration-300"
+                />
+              </picture>
             ) : (
               <div className="grid h-full w-full place-items-center">
                 <img src="/LOGO.png" alt="" className="h-24 w-24 object-contain opacity-60" />
