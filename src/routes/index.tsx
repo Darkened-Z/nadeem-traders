@@ -388,42 +388,6 @@ function Hero() {
             </Link>
           </div>
 
-          <div style={{ animationDelay: "480ms" }} className="animate-fade-up mt-9 lg:mt-12">
-            <p className="text-xs font-semibold uppercase tracking-wider text-white/50">Aaj Ki Picks</p>
-            <div className="mt-3 flex gap-2.5 lg:gap-3">
-              {HERO_SLIDES.map((slide, i) => {
-                const isActive = i === active;
-                return (
-                  <button
-                    key={slide.image}
-                    type="button"
-                    onClick={() => setActive(i)}
-                    aria-label={`Show slide ${i + 1}: ${slide.label}`}
-                    aria-current={isActive}
-                    className="group w-full max-w-[76px] text-left"
-                  >
-                    <span
-                      className={`block aspect-square overflow-hidden transition-opacity ${isActive ? "opacity-100" : "opacity-45 group-hover:opacity-80"}`}
-                    >
-                      <img src={slide.image.replace("slide-", "thumb-")} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                    </span>
-                    <span className="mt-2 block h-0.5 w-full bg-white/15">
-                      {isActive && (
-                        <span
-                          key={active}
-                          className="hero-progress block h-full bg-white"
-                          style={{
-                            animationDuration: `${SLIDE_MS}ms`,
-                            animationPlayState: paused || reducedMotion ? "paused" : "running",
-                          }}
-                        />
-                      )}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </div>
     </section>

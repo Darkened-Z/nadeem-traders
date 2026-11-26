@@ -332,7 +332,7 @@ function ProductDetailsPage() {
                   <ShieldCheck className="h-4 w-4 text-[#C5A56E] shrink-0 mt-0.5" />
                   <div>
                     <strong className="block font-semibold text-foreground">100% Purity</strong>
-                    <span className="text-[11px] text-muted-foreground">Unadulterated mandi source.</span>
+                    <span className="text-[11px] text-muted-foreground">Unadulterated source.</span>
                   </div>
                 </div>
 
