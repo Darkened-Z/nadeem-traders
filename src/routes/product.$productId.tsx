@@ -192,7 +192,10 @@ function ProductDetailsPage() {
                       <button
                         key={c.name}
                         type="button"
-                        onClick={() => setSelectedVariant(c.name)}
+                        onClick={() => {
+                          setSelectedVariant(c.name);
+                          track("option_selected", { product_id: product.id, product_name: product.name, option: c.name, where: "product_page" });
+                        }}
                         className={`flex flex-col items-center justify-center p-3 text-center border transition-all ${
                           active
                             ? "border-foreground bg-foreground text-background shadow-xs font-semibold"

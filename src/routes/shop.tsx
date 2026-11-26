@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { Search, X } from "lucide-react";
+import { track } from "../lib/analytics";
 import {
   StoreLayout,
   ModernProductCard,
@@ -53,6 +54,14 @@ function ShopPage() {
     if (sortOption === "price-desc") list.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
     return list;
   }, [products, searchQuery, selectedCategory, selectedBrand, sortOption]);
+
+  // Logged once typing settles; zero-result searches show demand for products not in the catalogue.
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) return;
+    const timer = setTimeout(() => track("searched", { query: q.toLowerCase(), results: sortedProducts.length }), 1200);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const isBrowsing = !searchQuery.trim() && selectedCategory === null && selectedBrand === null;
 

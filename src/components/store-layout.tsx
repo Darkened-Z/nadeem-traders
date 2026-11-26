@@ -20,7 +20,7 @@ import {
   openCartDrawer,
 } from "../lib/cart-store";
 import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, productOptions, optionView, cleanProductTitle } from "../lib/catalog";
-import { track } from "../lib/analytics";
+import { track, identifyCustomer } from "../lib/analytics";
 export { cleanProductTitle };
 
 export const WHATSAPP_NUMBER = "923000000000";
@@ -108,7 +108,10 @@ export function useStoreData() {
 
       try {
         const session = await restoreSession();
-        if (session && session.success && mounted) setCurrentUser(session.user);
+        if (session && session.success && mounted) {
+          setCurrentUser(session.user);
+          identifyCustomer(session.user);
+        }
       } catch {}
 
       await cartStore.load();
@@ -224,6 +227,7 @@ export function ModernProductCard({ product }: { product: any }) {
                     e.preventDefault();
                     e.stopPropagation();
                     setSelectedVariant(c.name);
+                    track("option_selected", { product_id: product.id, product_name: product.name, option: c.name, where: "card" });
                   }}
                   className={`flex-1 rounded py-1 px-1.5 text-center text-[10px] font-medium transition-colors ${
                     isSel
@@ -580,6 +584,7 @@ export function StoreLayout({
   });
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
+  const lastCheckoutField = useRef<string | null>(null);
   const [couponInput, setCouponInput] = useState("");
   const [isCheckingCoupon, setIsCheckingCoupon] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<{
@@ -618,6 +623,11 @@ export function StoreLayout({
     try {
       const res = await validateCoupon({
         data: { code: couponInput.trim(), items: cart.map((item) => ({ product_id: item.id, variant: item.variant, quantity: item.quantity })) },
+      });
+      track(res.valid ? "coupon_applied" : "coupon_rejected", {
+        code: couponInput.trim().toUpperCase(),
+        discount: res.valid ? res.discount_amount : null,
+        reason: res.valid ? null : res.message,
       });
       if (res.valid) {
         setAppliedCoupon({
@@ -685,7 +695,28 @@ export function StoreLayout({
     window.location.href = `/shop?q=${encodeURIComponent(searchQuery.trim())}`;
   };
 
+  // Records which field a shopper left the checkout on; values are never sent, only whether each was filled.
+  const checkoutAbandoned = (how: string) =>
+    track("checkout_abandoned", {
+      how,
+      last_field: lastCheckoutField.current,
+      filled_name: !!checkoutForm.name.trim(),
+      filled_phone: !!checkoutForm.phone.trim(),
+      filled_email: !!checkoutForm.email.trim(),
+      filled_address: !!checkoutForm.address.trim(),
+      items: cart.length,
+    });
+
+  useEffect(() => {
+    if (!isCheckoutOpen || createdOrderId) return;
+    const onLeave = () => checkoutAbandoned("left_page");
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+  });
+
   const closeCheckout = () => {
+    if (!createdOrderId) checkoutAbandoned("closed");
+    lastCheckoutField.current = null;
     setIsCheckoutOpen(false);
     setCreatedOrderId(null);
   };
@@ -1066,7 +1097,15 @@ export function StoreLayout({
             ) : (
               <>
                 <h3 className="font-display text-2xl font-semibold">Checkout</h3>
-                <form onSubmit={handlePlaceOrder} className="mt-5 space-y-4">
+                <form
+                  onSubmit={handlePlaceOrder}
+                  onFocus={(e) => {
+                    const el = e.target as Element as HTMLInputElement;
+                    lastCheckoutField.current =
+                      el.tagName === "TEXTAREA" ? "address" : el.type === "tel" ? "phone" : el.type === "email" ? "email" : /SAVE10/.test(el.placeholder) ? "coupon" : el.type === "text" ? "name" : el.type;
+                  }}
+                  className="mt-5 space-y-4"
+                >
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <label className="block text-sm font-medium">
                       Full name

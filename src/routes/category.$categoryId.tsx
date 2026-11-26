@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, Search, X } from "lucide-react";
+import { track } from "../lib/analytics";
 import {
   StoreLayout,
   ModernProductCard,
@@ -39,6 +40,10 @@ function CategoryPage() {
       null
     );
   }, [categories, categoryId]);
+
+  useEffect(() => {
+    if (category) track("category_viewed", { category_id: category.id, category_name: category.name });
+  }, [category?.id]);
 
   const sortedProducts = useMemo(() => {
     if (!category) return [];

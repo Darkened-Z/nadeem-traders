@@ -17,6 +17,7 @@ import {
 } from "../lib/actions";
 import { toast } from "sonner";
 import { useCart, cartStore } from "../lib/cart-store";
+import { resetCustomer } from "../lib/analytics";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -187,6 +188,7 @@ function DashboardPage() {
     try {
       await logoutCustomer();
       sessionStorage.removeItem("nadeem_user");
+      resetCustomer();
       toast.success("Successfully logged out.");
       window.location.href = "/";
     } catch (e) {
