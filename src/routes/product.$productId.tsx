@@ -5,6 +5,7 @@ import { recordRecentlyViewedDb } from "../lib/actions";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import { getProductDetailInfo } from "../lib/product-descriptions";
 import { productOptions, optionView } from "../lib/catalog";
+import { track } from "../lib/analytics";
 import {
   StoreLayout,
   ProductRail,
@@ -45,6 +46,7 @@ function ProductDetailsPage() {
     setSelectedVariant(classifications[0]?.name || "");
     setFailedSrc(null);
     recordRecentlyViewedDb({ data: { productId: product.id } }).catch(() => {});
+    track("product_viewed", { product_id: product.id, product_name: product.name, category: product.category_name });
   }, [product?.id]);
 
   useEffect(() => {

@@ -20,6 +20,7 @@ import {
   openCartDrawer,
 } from "../lib/cart-store";
 import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, productOptions, optionView, cleanProductTitle } from "../lib/catalog";
+import { track } from "../lib/analytics";
 export { cleanProductTitle };
 
 export const WHATSAPP_NUMBER = "923000000000";
@@ -511,6 +512,14 @@ export function StoreLayout({
     };
   }, []);
 
+  useEffect(() => {
+    if (isCartOpen) track("cart_viewed", { items: cart.length });
+  }, [isCartOpen]);
+
+  useEffect(() => {
+    if (isCheckoutOpen) track("checkout_started", { items: cart.length });
+  }, [isCheckoutOpen]);
+
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -642,6 +651,7 @@ export function StoreLayout({
     }
 
     setIsSubmittingOrder(true);
+    track("checkout_submitted", { items: cart.length, coupon: appliedCoupon?.code ?? null });
     try {
       const result = await createOrder({
         data: {
@@ -654,12 +664,14 @@ export function StoreLayout({
         },
       });
       setCreatedOrderId(result.id);
+      track("order_placed", { order_id: result.id, items: cart.length, total: result.total });
       clearCartDb().catch(() => {});
       cartStore.clearCartLocal();
       setAppliedCoupon(null);
       setCouponInput("");
     } catch (err) {
       console.error(err);
+      track("order_failed", { reason: err instanceof Error ? err.message : "unknown" });
       toast.error(err instanceof Error && err.message ? err.message : "Order nahi ho saka. Please try again.");
     } finally {
       setIsSubmittingOrder(false);

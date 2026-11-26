@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getCartItems, addToCartDb, updateCartItemQuantityDb, removeFromCartDb } from "./actions";
+import { track } from "./analytics";
 import { toast } from "sonner";
 import { cleanProductTitle } from "./catalog";
 
@@ -137,6 +138,7 @@ export const cartStore = {
   addToCart(product: any, qty: number = 1) {
     const variant: string = product.variant ?? "";
     const key = lineKey(product.id, variant);
+    track("added_to_cart", { product_id: product.id, product_name: product.name, variant, quantity: qty, price: product.price });
     const existingIndex = cartState.findIndex((item) => item.key === key);
 
     let targetQty = qty;
