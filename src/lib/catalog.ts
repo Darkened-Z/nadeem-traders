@@ -71,10 +71,6 @@ export const OPTION_SEED: Record<string, ProductOption[]> = {
     { name: "Cap", short_name: null, name_ur: "ثابت اخروٹ (چھلکے والا)", price: 399, weight: "250g", image_url: "/products/walnuts.jpg" },
     { name: "Without Cap", short_name: null, name_ur: "اخروٹ گری (بغیر ٹوپی)", price: 759, weight: "200g", image_url: "/products/walnut-kernels.jpg" },
   ],
-  Cloves: [
-    { name: "Capped", short_name: null, name_ur: "ٹوپی والا لونگ", price: 599, weight: "100g", image_url: "/products/cloves-capped.jpg" },
-    { name: "Uncapped", short_name: null, name_ur: "بغیر ٹوپی لونگ", price: 599, weight: "100g", image_url: "/products/cloves-uncapped.jpg" },
-  ],
   "Garam Masala": [
     { name: "Whole", short_name: null, name_ur: "ثابت گرم مصالحہ", price: 949, weight: "200g", image_url: "/products/garam-masala.jpg" },
     { name: "Powder", short_name: null, name_ur: "پسا ہوا گرم مصالحہ", price: 999, weight: "200g", image_url: "/products/garam-masala-powder.jpg" },
