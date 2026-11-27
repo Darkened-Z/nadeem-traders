@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Plus, Minus, Loader2, ChevronLeft, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { getProductSeo, recordRecentlyViewedDb, truncateWords, type ProductSeoData } from "../lib/actions";
-import { breadcrumbJsonLd, productJsonLd } from "../lib/structured-data";
+import { breadcrumbJsonLd, productJsonLd, toAbsoluteUrl } from "../lib/structured-data";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import { getProductDetailInfo } from "../lib/product-descriptions";
 import { productOptions, optionView } from "../lib/catalog";
@@ -61,10 +61,23 @@ function buildProductHead(product: ProductSeoData | null | undefined) {
   }
   breadcrumbs.push({ name, path: `/product/${product.id}` });
 
+  const ogImage =
+    toAbsoluteUrl(product.options[0]?.image_url) ?? toAbsoluteUrl(product.image_url);
+
   return {
     meta: [
       { title },
       { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:type", content: "product" },
+      ...(ogImage ? [{ property: "og:image", content: ogImage }] : []),
+      ...(lowestPrice != null
+        ? [
+            { property: "product:price:amount", content: String(lowestPrice) },
+            { property: "product:price:currency", content: "PKR" },
+          ]
+        : []),
       { "script:ld+json": productJsonLd(product, name, description) },
       { "script:ld+json": breadcrumbJsonLd(breadcrumbs) },
     ],
