@@ -1,7 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useState, type FormEvent } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, Package, Tags, ShoppingCart, ExternalLink, LogOut, Menu, X, Loader2, Lock, Coins, Users, Settings, Ticket, BarChart3, Activity } from "lucide-react";
+import { Home, Package, Tags, ShoppingCart, ExternalLink, LogOut, Menu, X, Loader2, Lock, Coins, Users, Settings, Ticket, BarChart3, Activity, SearchCheck } from "lucide-react";
 import { adminLogin, adminLogout, adminSession } from "../lib/admin";
 import { Button, inputClass } from "./admin-ui";
 
@@ -45,6 +45,7 @@ const NAV = [
   { to: "/admin/customers", label: "Customers", icon: Users },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/admin/visitors", label: "Visitors & Funnel", icon: Activity },
+  { to: "/admin/search", label: "Google Search", icon: SearchCheck },
   { to: "/admin/settings", label: "Store Settings", icon: Settings },
 ];
 
