@@ -29,6 +29,7 @@ import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as SellWithUsRouteImport } from './routes/sell-with-us'
 import { Route as ShippingPolicyRouteImport } from './routes/shipping-policy'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsOfUseRouteImport } from './routes/terms-of-use'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
@@ -144,6 +145,11 @@ const ShopRoute = ShopRouteImport.update({
   path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsOfUseRoute = TermsOfUseRouteImport.update({
   id: '/terms-of-use',
   path: '/terms-of-use',
@@ -236,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/sell-with-us': typeof SellWithUsRoute
   '/shipping-policy': typeof ShippingPolicyRoute
   '/shop': typeof ShopRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/categories': typeof AdminCategoriesRoute
@@ -271,6 +278,7 @@ export interface FileRoutesByTo {
   '/sell-with-us': typeof SellWithUsRoute
   '/shipping-policy': typeof ShippingPolicyRoute
   '/shop': typeof ShopRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/categories': typeof AdminCategoriesRoute
@@ -308,6 +316,7 @@ export interface FileRoutesById {
   '/sell-with-us': typeof SellWithUsRoute
   '/shipping-policy': typeof ShippingPolicyRoute
   '/shop': typeof ShopRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms-of-use': typeof TermsOfUseRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/categories': typeof AdminCategoriesRoute
@@ -346,6 +355,7 @@ export interface FileRouteTypes {
     | '/sell-with-us'
     | '/shipping-policy'
     | '/shop'
+    | '/sitemap.xml'
     | '/terms-of-use'
     | '/admin/analytics'
     | '/admin/categories'
@@ -381,6 +391,7 @@ export interface FileRouteTypes {
     | '/sell-with-us'
     | '/shipping-policy'
     | '/shop'
+    | '/sitemap.xml'
     | '/terms-of-use'
     | '/admin/analytics'
     | '/admin/categories'
@@ -417,6 +428,7 @@ export interface FileRouteTypes {
     | '/sell-with-us'
     | '/shipping-policy'
     | '/shop'
+    | '/sitemap.xml'
     | '/terms-of-use'
     | '/admin/analytics'
     | '/admin/categories'
@@ -454,6 +466,7 @@ export interface RootRouteChildren {
   SellWithUsRoute: typeof SellWithUsRoute
   ShippingPolicyRoute: typeof ShippingPolicyRoute
   ShopRoute: typeof ShopRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsOfUseRoute: typeof TermsOfUseRoute
   CategoryCategoryIdRoute: typeof CategoryCategoryIdRoute
   ProductProductIdRoute: typeof ProductProductIdRoute
@@ -599,6 +612,13 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms-of-use': {
@@ -753,6 +773,7 @@ const rootRouteChildren: RootRouteChildren = {
   SellWithUsRoute: SellWithUsRoute,
   ShippingPolicyRoute: ShippingPolicyRoute,
   ShopRoute: ShopRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsOfUseRoute: TermsOfUseRoute,
   CategoryCategoryIdRoute: CategoryCategoryIdRoute,
   ProductProductIdRoute: ProductProductIdRoute,
