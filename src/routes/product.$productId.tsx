@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Plus, Minus, Loader2, ChevronLeft, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { getProductSeo, recordRecentlyViewedDb, truncateWords, type ProductSeoData } from "../lib/actions";
+import { breadcrumbJsonLd, productJsonLd } from "../lib/structured-data";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import { getProductDetailInfo } from "../lib/product-descriptions";
 import { productOptions, optionView } from "../lib/catalog";
@@ -54,8 +55,19 @@ function buildProductHead(product: ProductSeoData | null | undefined) {
   const clipped = truncateWords(body, maxBody);
   const description = clipped ? `${clipped}. ${suffix}` : suffix;
 
+  const breadcrumbs = [{ name: "Home", path: "/" }];
+  if (product.category_id != null && product.category_name) {
+    breadcrumbs.push({ name: product.category_name, path: `/category/${product.category_id}` });
+  }
+  breadcrumbs.push({ name, path: `/product/${product.id}` });
+
   return {
-    meta: [{ title }, { name: "description", content: description }],
+    meta: [
+      { title },
+      { name: "description", content: description },
+      { "script:ld+json": productJsonLd(product, name, description) },
+      { "script:ld+json": breadcrumbJsonLd(breadcrumbs) },
+    ],
   };
 }
 

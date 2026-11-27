@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { ArrowRight, MapPin } from "lucide-react";
+import { organizationJsonLd, websiteJsonLd } from "../lib/structured-data";
 import {
   StoreLayout,
   ProductRail,
@@ -21,6 +22,8 @@ export const Route = createFileRoute("/")({
         content:
           "Dry fruits, seeds aur masalay — duniya bhar se chun kar aapke kitchen tak. Cash on delivery across Pakistan.",
       },
+      { "script:ld+json": organizationJsonLd() },
+      { "script:ld+json": websiteJsonLd() },
     ],
     links: [
       {
