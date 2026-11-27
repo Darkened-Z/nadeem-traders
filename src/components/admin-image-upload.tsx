@@ -35,12 +35,7 @@ export const STORE_IMAGE_CATALOG: { name: string; path: string }[] = [
   { name: "Sunflower Seeds", path: "/products/sunflower-seeds.jpg" },
   { name: "Flax Seeds (Alsi)", path: "/products/flax-seeds.jpg" },
   { name: "Ispaghol Husk", path: "/products/ispaghol.jpg" },
-  { name: "Himalayan Pink Salt", path: "/products/pink-salt.jpg" },
-  { name: "Kainat 1121 Basmati Rice", path: "/products/kainat-rice.jpg" },
-  { name: "Chana Dal", path: "/products/chana-dal.jpg" },
-  { name: "Masoor Dal", path: "/products/masoor-dal.jpg" },
-  { name: "Pure Sunflower Cooking Oil", path: "/products/sunflower-oil.jpg" },
-  { name: "White Sugar", path: "/products/white-sugar.jpg" },
+  { name: "Oats (Jau)", path: "/products/oats.jpg" },
 ];
 
 /**
@@ -331,7 +326,7 @@ export function AdminImageUploadField({
           <div className="space-y-4">
             <input
               type="text"
-              placeholder="Search store images (e.g. Badam, Cloves, Rice)..."
+              placeholder="Search store images (e.g. Badam, Cloves, Zeera)..."
               value={gallerySearch}
               onChange={(e) => setGallerySearch(e.target.value)}
               className={`${inputClass} text-xs`}

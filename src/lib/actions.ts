@@ -1423,3 +1423,112 @@ export const verifyEmailCodeAndLogin = createServerFn({ method: "POST" })
 
     return { success: true, user };
   });
+
+export const getStoreSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const { serverCache } = await import("./server-cache");
+  const cached = serverCache.get("store_settings");
+  if (cached) return cached;
+  const { readStoreSettings } = await import("./admin");
+  const settings = await readStoreSettings();
+  serverCache.set("store_settings", settings, 30_000);
+  return settings;
+});
+
+type InquiryInput =
+  | { kind: "contact"; name: string; email: string; subject: string; message: string }
+  | { kind: "bulk"; companyName: string; contactPerson: string; phone: string; city: string; itemsQuery: string }
+  | { kind: "supplier"; supplierName: string; city: string; phone: string; catalogType: string };
+
+function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function cleanInquiryField(raw: unknown, label: string, maxLen = 2000): string {
+  const val = String(raw ?? "").trim();
+  if (!val) throw new Error(`${label} is required.`);
+  return val.slice(0, maxLen);
+}
+
+function buildInquiryEmail(data: InquiryInput): { subject: string; rows: Array<[string, string]>; replyTo?: string } {
+  if (data.kind === "contact") {
+    const email = cleanInquiryField(data.email, "Email", 200);
+    return {
+      subject: `[Contact] ${cleanInquiryField(data.subject, "Subject", 200)}`,
+      replyTo: email,
+      rows: [
+        ["Name", cleanInquiryField(data.name, "Name", 150)],
+        ["Email", email],
+        ["Subject", cleanInquiryField(data.subject, "Subject", 200)],
+        ["Message", cleanInquiryField(data.message, "Message", 4000)],
+      ],
+    };
+  }
+  if (data.kind === "bulk") {
+    return {
+      subject: `[Bulk Order Inquiry] ${cleanInquiryField(data.companyName, "Business name", 200)} (${cleanInquiryField(data.city, "City", 120)})`,
+      rows: [
+        ["Business / Organization", cleanInquiryField(data.companyName, "Business name", 200)],
+        ["Contact Person", cleanInquiryField(data.contactPerson, "Contact person", 150)],
+        ["Phone / WhatsApp", cleanInquiryField(data.phone, "Phone", 60)],
+        ["City", cleanInquiryField(data.city, "City", 120)],
+        ["Requirements", cleanInquiryField(data.itemsQuery, "Required commodities", 4000)],
+      ],
+    };
+  }
+  return {
+    subject: `[Supplier Application] ${cleanInquiryField(data.supplierName, "Supplier name", 200)} (${cleanInquiryField(data.city, "City", 120)})`,
+    rows: [
+      ["Mill / Grower / Company", cleanInquiryField(data.supplierName, "Supplier name", 200)],
+      ["Origin City", cleanInquiryField(data.city, "Origin city", 120)],
+      ["Contact Phone", cleanInquiryField(data.phone, "Contact phone", 60)],
+      ["Commodities & Capacity", cleanInquiryField(data.catalogType, "Commodities", 4000)],
+    ],
+  };
+}
+
+export const submitInquiry = createServerFn({ method: "POST" })
+  .validator((data: InquiryInput) => data)
+  .handler(async ({ data }) => {
+    const { getClientIp } = await import("./server-cookies");
+    const ip = getClientIp() || "unknown";
+    if (Boolean(sql)) {
+      const { assertUnderLimit, recordAttempt } = await import("./rate-limit");
+      const key = `inquiry:${ip}`;
+      await assertUnderLimit(key, 10, 15);
+      await recordAttempt(key);
+    }
+
+    const { subject, rows, replyTo } = buildInquiryEmail(data);
+    const adminEmail = process.env.ADMIN_EMAIL || "technicalsubhan7801@gmail.com";
+    const rowsHtml = rows
+      .map(
+        ([k, v]) =>
+          `<tr><td style="padding:8px 12px;font-weight:bold;border-bottom:1px solid #eee;vertical-align:top;width:180px;">${escapeHtml(k)}</td><td style="padding:8px 12px;border-bottom:1px solid #eee;white-space:pre-line;">${escapeHtml(v)}</td></tr>`,
+      )
+      .join("");
+
+    const sent = resend
+      ? await resend.emails.send({
+          from: "Nadeem Traders <onboarding@resend.dev>",
+          to: adminEmail,
+          ...(replyTo ? { replyTo } : {}),
+          subject,
+          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e5e5e5;border-radius:10px;"><h2 style="margin-top:0;color:#141311;">${escapeHtml(subject)}</h2><table style="width:100%;border-collapse:collapse;font-size:14px;color:#333;">${rowsHtml}</table></div>`,
+        })
+      : { error: new Error("RESEND_API_KEY is not configured") };
+
+    if (sent.error) {
+      console.error("Failed to send inquiry email:", sent.error);
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("Could not submit your request right now. Please contact us via WhatsApp or phone.");
+      }
+      return { success: true, devSimulated: true };
+    }
+
+    return { success: true };
+  });

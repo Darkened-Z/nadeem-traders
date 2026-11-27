@@ -3,10 +3,11 @@ import { Fragment, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Loader2, Download, Truck, ExternalLink, MessageCircle, Save, Printer, X } from "lucide-react";
 import { toast } from "sonner";
-import { adminListOrders, adminUpdateOrderTracking } from "../lib/admin";
+import { adminListOrders, adminUpdateOrderTracking, adminGetSettings } from "../lib/admin";
+import { DEFAULT_STORE_SETTINGS, type StoreSettings } from "../lib/store-settings";
 import { updateOrderStatus } from "../lib/actions";
 import { ORDER_STATUSES as STATUSES } from "../lib/order-status";
-import { useAdminInfiniteQuery } from "../components/admin-shell";
+import { useAdminInfiniteQuery, useAdminQuery } from "../components/admin-shell";
 import { Badge, Button, EmptyState, PageHeader, errorMessage, inputClass } from "../components/admin-ui";
 
 const COURIERS = ["PostEx", "TCS", "M&P", "Leopards", "Trax"];
@@ -25,6 +26,8 @@ function formatPakPhone(raw?: string | null): string {
 
 function OrdersPage() {
   const qc = useQueryClient();
+  const { data: settingsData } = useAdminQuery(["settings"], () => adminGetSettings());
+  const storeSettings = settingsData ?? DEFAULT_STORE_SETTINGS;
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useAdminInfiniteQuery(
     ["orders"],
     (beforeId: number | undefined) => adminListOrders({ data: { beforeId } }),
@@ -378,12 +381,26 @@ function OrdersPage() {
         </div>
       )}
 
-      {printOrder && <PrintInvoiceModal order={printOrder} onClose={() => setPrintOrder(null)} />}
+      {printOrder && (
+        <PrintInvoiceModal
+          order={printOrder}
+          settings={storeSettings}
+          onClose={() => setPrintOrder(null)}
+        />
+      )}
     </>
   );
 }
 
-function PrintInvoiceModal({ order, onClose }: { order: any; onClose: () => void }) {
+function PrintInvoiceModal({
+  order,
+  settings,
+  onClose,
+}: {
+  order: any;
+  settings: StoreSettings;
+  onClose: () => void;
+}) {
   const handlePrint = () => {
     window.print();
   };
@@ -420,7 +437,9 @@ function PrintInvoiceModal({ order, onClose }: { order: any; onClose: () => void
               <div>
                 <h1 className="text-xl font-bold tracking-tight uppercase text-black">Nadeem Traders</h1>
                 <p className="text-xs font-semibold text-[#78350F]">100% PURITY GUARANTEED · APKA TRUSTED STOP</p>
-                <p className="text-[11px] text-[#4A4A4A]">Gala Mandi, Pakistan · WhatsApp / Support: +92 300 0000000</p>
+                <p className="text-[11px] text-[#4A4A4A]">
+                  {settings.store_address} · WhatsApp / Support: {settings.store_phone}
+                </p>
               </div>
             </div>
             <div className="text-right">
@@ -450,7 +469,7 @@ function PrintInvoiceModal({ order, onClose }: { order: any; onClose: () => void
             <div className="rounded border border-black/20 p-3">
               <p className="font-bold uppercase tracking-wider text-[#616161]">Shipper (Sender)</p>
               <p className="mt-1 font-semibold text-black">Nadeem Traders</p>
-              <p className="text-[#4A4A4A]">Gala Mandi, Pakistan</p>
+              <p className="text-[#4A4A4A]">{settings.store_address}</p>
               <p className="text-[#4A4A4A]">Verified Kiryana &amp; Dry Fruits Source</p>
             </div>
             <div className="rounded border-2 border-black p-3 bg-yellow-50/30">

@@ -1,17 +1,23 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
 import { ShoppingBag, Search, Plus, Minus, X, Check, Menu, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   getCategories,
   getProducts,
   getBrands,
+  getStoreSettings,
   createOrder,
   validateCoupon,
   restoreSession,
   clearCartDb,
   getUserAddresses,
 } from "../lib/actions";
+import {
+  DEFAULT_STORE_SETTINGS,
+  sanitizeWhatsappNumber,
+  type StoreSettings,
+} from "../lib/store-settings";
 import {
   useCart,
   cartStore,
@@ -23,7 +29,38 @@ import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, productOptions, optionView, clean
 import { track, identifyCustomer } from "../lib/analytics";
 export { cleanProductTitle };
 
-export const WHATSAPP_NUMBER = "923000000000";
+export const WHATSAPP_NUMBER = DEFAULT_STORE_SETTINGS.whatsapp_number;
+
+let cachedStoreSettings: StoreSettings = DEFAULT_STORE_SETTINGS;
+const storeSettingsListeners = new Set<(s: StoreSettings) => void>();
+let storeSettingsFetch: Promise<StoreSettings> | null = null;
+
+function publishStoreSettings(next: StoreSettings) {
+  cachedStoreSettings = next;
+  storeSettingsListeners.forEach((cb) => cb(next));
+}
+
+function loadStoreSettingsOnce(): Promise<StoreSettings> {
+  if (!storeSettingsFetch) {
+    storeSettingsFetch = getStoreSettings()
+      .then((res) => {
+        const merged: StoreSettings = { ...DEFAULT_STORE_SETTINGS, ...res };
+        publishStoreSettings(merged);
+        return merged;
+      })
+      .catch(() => cachedStoreSettings)
+      .finally(() => {
+        storeSettingsFetch = null;
+      });
+  }
+  return storeSettingsFetch;
+}
+
+const StoreSettingsContext = createContext<StoreSettings>(DEFAULT_STORE_SETTINGS);
+
+export function useStoreSettings(): StoreSettings {
+  return useContext(StoreSettingsContext);
+}
 
 export interface CategoryMeta {
   slug: string;
@@ -88,18 +125,33 @@ export function useStoreData() {
   const [products, setProducts] = useState<any[]>(DEFAULT_PRODUCTS);
   const [brands, setBrands] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings>(cachedStoreSettings);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const onSettings = (next: StoreSettings) => setStoreSettings(next);
+    storeSettingsListeners.add(onSettings);
+    return () => {
+      storeSettingsListeners.delete(onSettings);
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
     const init = async () => {
       setIsLoading(true);
       try {
-        const [cats, prods, brs] = await Promise.all([getCategories(), getProducts(), getBrands()]);
+        const [cats, prods, brs, settings] = await Promise.all([
+          getCategories(),
+          getProducts(),
+          getBrands(),
+          loadStoreSettingsOnce(),
+        ]);
         if (!mounted) return;
         if (cats && cats.length > 0) setCategories(cats);
         if (prods && prods.length > 0) setProducts(prods);
         if (brs && brs.length > 0) setBrands(brs);
+        if (settings) setStoreSettings(settings);
       } catch (e) {
         console.error("Using default catalog:", e);
       } finally {
@@ -122,7 +174,7 @@ export function useStoreData() {
     };
   }, []);
 
-  return { categories, products, brands, currentUser, isLoading };
+  return { categories, products, brands, currentUser, isLoading, storeSettings };
 }
 
 export function ModernProductCard({ product }: { product: any }) {
@@ -268,9 +320,10 @@ export function ModernProductCard({ product }: { product: any }) {
   );
 }
 
-export function rateLink(product: any, variant?: string) {
+export function rateLink(product: any, variant?: string, whatsappNumber?: string) {
   const label = variant ? `${product.name} (${variant})` : product.name;
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  const phone = sanitizeWhatsappNumber(whatsappNumber ?? cachedStoreSettings.whatsapp_number);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(
     `Assalam o Alaikum! Mujhe ${label} ka rate bata dein.`,
   )}`;
 }
@@ -493,13 +546,30 @@ export function StoreLayout({
   categories = DEFAULT_CATEGORIES,
   products = DEFAULT_PRODUCTS,
   currentUser = null,
+  storeSettings: propSettings,
 }: {
   children: ReactNode;
   categories?: any[];
   products?: any[];
   currentUser?: any;
+  storeSettings?: StoreSettings;
 }) {
   const cart = useCart();
+  const [settings, setSettings] = useState<StoreSettings>(propSettings ?? cachedStoreSettings);
+  const whatsappNumber = sanitizeWhatsappNumber(settings.whatsapp_number);
+
+  useEffect(() => {
+    if (propSettings) {
+      setSettings(propSettings);
+      return;
+    }
+    const onSettings = (next: StoreSettings) => setSettings(next);
+    storeSettingsListeners.add(onSettings);
+    loadStoreSettingsOnce();
+    return () => {
+      storeSettingsListeners.delete(onSettings);
+    };
+  }, [propSettings]);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -725,8 +795,14 @@ export function StoreLayout({
     "mt-1.5 w-full border border-border bg-card px-3 py-3 text-base sm:text-sm focus:border-foreground focus:outline-none";
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <header
+    <StoreSettingsContext.Provider value={settings}>
+      <div className="min-h-screen flex flex-col bg-background text-foreground">
+        {settings.announcement_text?.trim() && (
+          <div className="bg-[#141311] px-3 py-1.5 text-center text-[11px] font-medium tracking-wide text-[#E6E1D6]">
+            {settings.announcement_text}
+          </div>
+        )}
+        <header
         className={`sticky top-0 z-40 border-b border-gold/25 bg-primary text-primary-foreground transition-shadow duration-300 ${
           scrolled ? "shadow-[0_10px_28px_-14px_rgba(7,46,34,0.6)]" : ""
         }`}
@@ -1243,7 +1319,7 @@ export function StoreLayout({
       )}
 
       <a
-        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Assalam o Alaikum Nadeem Traders, I need help with an order.")}`}
+        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Assalam o Alaikum Nadeem Traders, I need help with an order.")}`}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
@@ -1254,6 +1330,7 @@ export function StoreLayout({
         </svg>
         <span className="hidden text-sm font-semibold sm:inline">WhatsApp us</span>
       </a>
-    </div>
+      </div>
+    </StoreSettingsContext.Provider>
   );
 }

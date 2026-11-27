@@ -36,7 +36,7 @@ function ShippingPolicyPage() {
           <div className="space-y-2">
             <h3 className="font-display text-base font-bold text-foreground">2. Bulk & Freight Bilty</h3>
             <p>
-              Large orders involving 25kg–50kg sacks or multiple oil cartons are dispatched via registered goods transport (bilty) or dedicated commercial vehicles from our Punjab hub.
+              Large orders involving 25kg–50kg sacks or bulk dry fruit, spice, and seed cartons are dispatched via registered goods transport (bilty) or dedicated commercial vehicles from our Punjab hub.
             </p>
           </div>
         </div>
