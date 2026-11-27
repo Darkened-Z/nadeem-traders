@@ -50,7 +50,7 @@ function DeliveryInfoPage() {
             {
               icon: ShieldCheck,
               title: "Moisture-Sealed Packing",
-              desc: "Spices and dry fruits are heat-sealed in food-grade pouches; grains and pulses ship in durable woven sacks.",
+              desc: "Spices, dry fruits, seeds, and special items are heat-sealed in moisture-barrier food-grade pouches for transit protection.",
             },
           ].map((c) => {
             const Icon = c.icon;

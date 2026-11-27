@@ -40,7 +40,7 @@ function SellWithUsPage() {
             Partner as a Verified Supplier
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Are you an authentic rice mill, spice processor, or orchard grower? Supply your commodities directly through Nadeem Traders.
+            Are you a spice processor, seed supplier, or orchard grower? Supply your commodities directly through Nadeem Traders.
           </p>
         </div>
 
