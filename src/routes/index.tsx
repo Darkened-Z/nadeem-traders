@@ -16,11 +16,15 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Nadeem Traders — Apka Trusted Stop" },
+      { title: "Nadeem Traders – Dry Fruits, Spices & Seeds Online in Pakistan | Cash on Delivery" },
       {
         name: "description",
         content:
           "Dry fruits, seeds aur masalay — duniya bhar se chun kar aapke kitchen tak. Cash on delivery across Pakistan.",
+      },
+      {
+        property: "og:title",
+        content: "Nadeem Traders – Dry Fruits, Spices & Seeds Online in Pakistan | Cash on Delivery",
       },
       { "script:ld+json": organizationJsonLd() },
       { "script:ld+json": websiteJsonLd() },

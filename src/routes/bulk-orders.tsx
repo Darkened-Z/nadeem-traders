@@ -11,7 +11,7 @@ export const Route = createFileRoute("/bulk-orders")({
       {
         name: "description",
         content:
-          "Request commercial bulk quotes for 25kg–50kg sacks of basmati rice, pulses, spices, and edible oils. Apka Trusted Stop.",
+          "Request commercial bulk quotes for bulk dry fruits, whole spices, ground masalay, edible seeds, and special items. Apka Trusted Stop.",
       },
     ],
   }),
@@ -64,7 +64,7 @@ function BulkOrdersPage() {
                 {
                   icon: Building2,
                   title: "Direct Mandi & Mill Billing",
-                  desc: "Volume-tiered quotations for 50kg grain bags, 16kg ghee tins, and bulk spice cartons.",
+                  desc: "Volume-tiered quotations for bulk dry fruit sacks, edible seed bags, and wholesale spice cartons.",
                 },
                 {
                   icon: ShieldCheck,
@@ -192,7 +192,7 @@ function BulkOrdersPage() {
                     rows={4}
                     value={form.itemsQuery}
                     onChange={(e) => setForm({ ...form, itemsQuery: e.target.value })}
-                    placeholder="e.g. 20 bags of 1121 Kainat Basmati Rice (25kg), 10 cartons Sunflower Oil, 15kg Kunri Red Chilli Powder..."
+                    placeholder="e.g. 25kg American Almonds, 10kg Iranian Pistachios, 15kg Kunri Red Chilli Powder, 10kg Whole Black Pepper..."
                     className="mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-xs focus:border-primary focus:outline-none resize-none"
                   />
                 </div>

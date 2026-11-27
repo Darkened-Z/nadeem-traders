@@ -16,7 +16,7 @@ export const Route = createFileRoute("/shop")({
       { title: "All products | Nadeem Traders" },
       {
         name: "description",
-        content: "Spices, basmati rice, pulses, dry fruits aur cooking oil. Cash on delivery across Pakistan.",
+        content: "Dry fruits, spices, whole spices, seeds aur special items. Cash on delivery across Pakistan.",
       },
     ],
   }),

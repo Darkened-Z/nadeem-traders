@@ -8,7 +8,7 @@ export const Route = createFileRoute("/categories")({
       {
         name: "description",
         content:
-          "Dry Fruits, Spices, Pulses & Lentils, Rice & Grains, Cooking Oils, Sugar & Salt — Nadeem Traders.",
+          "Dry Fruits, Seeds, Spices, Whole Spices, and Special Items — Nadeem Traders.",
       },
     ],
   }),

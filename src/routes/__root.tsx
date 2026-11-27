@@ -102,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         {
           name: "description",
           content:
-            "Born from the earth, refined by craft. Direct-from-source culinary spices, aged basmati rice, orchard dry fruits, and pulses across Pakistan.",
+            "Direct-from-source dry fruits, whole spices, ground masalay, edible seeds, and special items across Pakistan. Cash on delivery.",
         },
         { name: "author", content: "Nadeem Traders" },
         { property: "og:site_name", content: "Nadeem Traders" },
