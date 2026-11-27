@@ -135,7 +135,7 @@ function ContactPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-xs font-semibold text-primary-foreground hover:bg-primary/95 disabled:opacity-50"
+              className="rounded inline-flex items-center justify-center gap-2 btn-gold px-6 py-3 text-xs font-semibold disabled:opacity-50"
             >
               <Send className="h-4 w-4" /> {submitting ? "Sending..." : "Send Message"}
             </button>

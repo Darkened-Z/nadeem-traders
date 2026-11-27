@@ -23,7 +23,7 @@ function BrandsPage() {
 
   const filteredProducts = selectedBrand ? products.filter((p) => p.brand === selectedBrand) : products;
   const chip = (active: boolean) =>
-    `shrink-0 px-4 py-2 text-sm font-medium ${active ? "bg-foreground text-background" : "border border-border bg-card"}`;
+    `shrink-0 px-4 py-2 text-sm font-medium ${active ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`;
 
   return (
     <StoreLayout categories={categories} products={products} currentUser={currentUser}>

@@ -101,7 +101,7 @@ function SellWithUsPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-xs font-semibold text-primary-foreground hover:bg-primary/95 disabled:opacity-50"
+            className="rounded w-full inline-flex items-center justify-center gap-2 btn-gold py-3 text-xs font-semibold disabled:opacity-50"
           >
             <Send className="h-4 w-4" />{" "}
             {submitting ? "Submitting Application..." : "Submit Supplier Application"}

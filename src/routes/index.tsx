@@ -183,7 +183,7 @@ function StepsShowcase() {
   const current = STEPS[step];
 
   return (
-    <section ref={containerRef} className="relative hidden h-[320vh] bg-[#141311] text-white md:motion-safe:block" aria-label="Order Kaise Karein?">
+    <section ref={containerRef} className="relative hidden h-[320vh] bg-emerald-deep text-white md:motion-safe:block" aria-label="Order Kaise Karein?">
       <div className="sticky top-14 h-[calc(100svh-3.5rem)] overflow-hidden sm:top-16 sm:h-[calc(100svh-4rem)]">
         {STEP_IMAGES.map((src, i) => (
           <img
@@ -195,19 +195,19 @@ function StepsShowcase() {
             style={{ transform: "scale(calc(1.02 + var(--p, 0) * 0.18))" }}
           />
         ))}
-        <div className="absolute inset-0 bg-[#141311]/75" />
+        <div className="absolute inset-0 bg-emerald-deep/80" />
 
         <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-between px-4 py-8 sm:px-6 sm:py-12">
           <div>
             <div className="flex items-baseline justify-between gap-4">
               <h2 className="font-display text-3xl font-semibold sm:text-5xl">Order Kaise Karein?</h2>
-              <span className="hidden shrink-0 text-sm font-semibold text-[#E6CE9C] sm:inline">3 Steps. Bas.</span>
+              <span className="hidden shrink-0 text-sm font-semibold text-gold-light sm:inline">3 Steps. Bas.</span>
             </div>
             <div className="mt-5 grid grid-cols-3 gap-2">
               {STEPS.map((s, i) => (
                 <span key={s.title} className="block h-1 bg-white/20">
                   <span
-                    className="block h-full origin-left bg-[#E6CE9C]"
+                    className="block h-full origin-left bg-gold"
                     style={{ transform: `scaleX(var(--s${i}, 0))` }}
                   />
                 </span>
@@ -219,7 +219,7 @@ function StepsShowcase() {
             <div className="flex items-end gap-5 sm:gap-8">
               <span
                 key={`n${step}`}
-                className="animate-step-num font-display text-[9rem] font-bold leading-[0.78] lining-nums text-[#E6CE9C] sm:text-[14rem] lg:text-[18rem]"
+                className="animate-step-num font-display text-[9rem] font-bold leading-[0.78] lining-nums text-gold-light sm:text-[14rem] lg:text-[18rem]"
               >
                 {step + 1}
               </span>
@@ -277,11 +277,11 @@ function StepsSimple() {
 }
 
 const HERO_SLIDES = [
-  { image: "/hero/slide-1.webp", label: "Shop All", line: "Poori Dukaan, Ek Click Pe", href: "/shop", color: "#6B4226" },
-  { image: "/hero/slide-2.webp", label: "Daawat Season", line: "Daawat Ka Plan? Saman Humara", href: "/shop", color: "#2F6B3A" },
-  { image: "/hero/slide-3.webp", label: "Spices", line: "Lal Mirch, Full Garmi", href: "/category/spices", color: "#A1281C" },
-  { image: "/hero/slide-4.webp", label: "Whole Spices", line: "Daig Ka Asli Raaz: Sabut Masalay", href: "/category/whole-spices", color: "#8A6100" },
-  { image: "/hero/slide-5.webp", label: "Seeds", line: "Chotay Seeds, Achi Immunity", href: "/category/seeds", color: "#2F6B3A" },
+  { image: "/hero/slide-1.webp", label: "Shop All", line: "Poori Dukaan, Ek Click Pe", href: "/shop", color: "#0B4A36" },
+  { image: "/hero/slide-2.webp", label: "Daawat Season", line: "Daawat Ka Plan? Saman Humara", href: "/shop", color: "#0E3D2E" },
+  { image: "/hero/slide-3.webp", label: "Spices", line: "Lal Mirch, Full Garmi", href: "/category/spices", color: "#14563F" },
+  { image: "/hero/slide-4.webp", label: "Whole Spices", line: "Daig Ka Asli Raaz: Sabut Masalay", href: "/category/whole-spices", color: "#09392A" },
+  { image: "/hero/slide-5.webp", label: "Seeds", line: "Chotay Seeds, Achi Immunity", href: "/category/seeds", color: "#0E3D2E" },
 ];
 
 const SLIDE_MS = 5000;
@@ -308,7 +308,7 @@ function Hero() {
 
   return (
     <section
-      className="relative overflow-hidden bg-[#141311] text-white lg:h-[min(86vh,760px)] lg:min-h-[600px]"
+      className="relative overflow-hidden bg-emerald-deep text-white lg:h-[min(86vh,760px)] lg:min-h-[600px]"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
@@ -359,11 +359,11 @@ function Hero() {
 
         <Link
           to={current.href as any}
-          className="absolute left-3 top-3 flex items-center gap-3 px-3.5 py-2.5 text-white transition-colors duration-500 lg:bottom-10 lg:left-auto lg:right-10 lg:top-auto lg:px-5 lg:py-4"
+          className="absolute left-3 top-3 flex items-center gap-3 border-l-2 border-gold px-3.5 py-2.5 text-white transition-colors duration-500 lg:bottom-10 lg:left-auto lg:right-10 lg:top-auto lg:px-5 lg:py-4"
           style={{ backgroundColor: current.color }}
         >
           <div>
-            <p className="text-[11px] font-semibold text-white/80 lg:text-xs">{current.label}</p>
+            <p className="text-[11px] font-semibold text-gold-light lg:text-xs">{current.label}</p>
             <p className="text-sm font-semibold leading-tight lg:text-lg">{current.line}</p>
           </div>
           <ArrowRight className="h-4 w-4 shrink-0 lg:h-5 lg:w-5" />
@@ -372,7 +372,7 @@ function Hero() {
 
       <div className="relative z-10 mx-auto -mt-14 max-w-7xl px-4 pb-10 sm:-mt-20 sm:px-6 lg:mt-0 lg:flex lg:h-full lg:items-center lg:pb-0">
         <div className="hero-parallax-text lg:max-w-[46%]">
-          <p className="animate-fade-up text-sm font-semibold text-[#E6CE9C]">Apka Trusted Stop</p>
+          <p className="animate-fade-up text-sm font-semibold text-gold-light">Apka Trusted Stop</p>
           <h1 style={{ animationDelay: "120ms" }} className="animate-fade-up mt-3 font-display text-[2.5rem] font-semibold leading-[1.02] sm:text-6xl xl:text-7xl">
             Good Food Starts With Good Ingredients.
           </h1>
@@ -382,14 +382,13 @@ function Hero() {
           <div style={{ animationDelay: "360ms" }} className="animate-fade-up mt-7 flex gap-3">
             <Link
               to="/shop"
-              className="btn-swipe flex-1 bg-white py-3.5 text-center text-sm font-semibold text-[#141311] sm:flex-none sm:px-8"
+              className="btn-gold flex-1 py-3.5 text-center text-sm font-semibold sm:flex-none sm:px-8"
             >
               Shop Now
             </Link>
             <Link
               to="/categories"
-              className="btn-swipe flex-1 border border-white/60 py-3.5 text-center text-sm font-semibold text-white sm:flex-none sm:px-8"
-              style={{ "--swipe": "#fff" } as React.CSSProperties}
+              className="btn-swipe flex-1 border border-gold-light/70 py-3.5 text-center text-sm font-semibold text-gold-light sm:flex-none sm:px-8"
             >
               Categories
             </Link>
@@ -406,7 +405,7 @@ function WhatsAppBand() {
     "Assalam o Alaikum! Mujhe larger quantity / custom quotation chahiye. Meri requirement:",
   )}`;
   return (
-    <section className="stack-section sticky top-14 bg-[#141311] text-white sm:top-16">
+    <section className="stack-section sticky top-14 bg-emerald-deep text-white sm:top-16">
       <div data-reveal className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-14">
         <div>
           <h2 className="font-display text-3xl font-semibold leading-tight sm:text-4xl">
@@ -421,8 +420,7 @@ function WhatsAppBand() {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-swipe shrink-0 bg-[#25D366] px-7 py-3.5 text-center text-sm font-semibold text-[#0B3D1F]"
-          style={{ "--swipe": "#fff", "--swipe-fg": "#0B3D1F" } as React.CSSProperties}
+          className="btn-gold shrink-0 px-7 py-3.5 text-center text-sm font-semibold"
         >
           Contact For Quotation
         </a>

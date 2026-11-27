@@ -114,7 +114,7 @@ function BulkOrdersPage() {
                 <button
                   type="button"
                   onClick={() => setSubmitted(false)}
-                  className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground"
+                  className="rounded btn-gold px-5 py-2.5 text-xs font-semibold"
                 >
                   Submit Another Inquiry
                 </button>
@@ -200,7 +200,7 @@ function BulkOrdersPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-primary py-3 text-xs font-semibold text-primary-foreground hover:bg-primary/95 disabled:opacity-50 transition"
+                  className="rounded w-full inline-flex items-center justify-center gap-2 btn-gold py-3 text-xs font-semibold disabled:opacity-50"
                 >
                   <Send className="h-4 w-4" />{" "}
                   {submitting ? "Submitting Request..." : "Submit Commercial Inquiry"}

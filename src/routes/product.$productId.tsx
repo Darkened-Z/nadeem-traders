@@ -133,7 +133,7 @@ function ProductDetailsPage() {
           <h1 className="font-display text-3xl font-semibold">Product Nahi Mila</h1>
           <Link
             to="/shop"
-            className="mt-6 inline-block bg-foreground px-6 py-3 text-sm font-semibold text-background"
+            className="btn-gold mt-6 inline-block px-6 py-3 text-sm font-semibold"
           >
             All products
           </Link>
@@ -263,8 +263,8 @@ function ProductDetailsPage() {
                         }}
                         className={`flex flex-col items-center justify-center p-3 text-center border transition-all ${
                           active
-                            ? "border-foreground bg-foreground text-background shadow-xs font-semibold"
-                            : "border-border bg-card text-foreground hover:border-foreground/50"
+                            ? "border-primary bg-primary text-primary-foreground shadow-xs font-semibold"
+                            : "border-border bg-card text-foreground hover:border-gold"
                         }`}
                       >
                         <span className="text-sm font-semibold">{c.name}</span>
@@ -321,7 +321,7 @@ function ProductDetailsPage() {
                   type="button"
                   onClick={() => addToBag(targetProduct, qty)}
                   disabled={!canBuy}
-                  className="h-12 border border-foreground bg-background text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
+                  className="h-12 btn-gold-outline bg-background text-sm font-semibold text-foreground disabled:opacity-40"
                 >
                   {product.stock ? "Add To Bag" : "Out Of Stock"}
                 </button>
@@ -329,7 +329,7 @@ function ProductDetailsPage() {
                   type="button"
                   onClick={buyNow}
                   disabled={!canBuy}
-                  className="h-12 bg-foreground text-sm font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="btn-gold h-12 text-sm font-semibold disabled:opacity-40"
                 >
                   Buy Now
                 </button>
@@ -338,10 +338,10 @@ function ProductDetailsPage() {
 
             {/* Brand-Level Editorial Description */}
             <div className="mt-7 border-t border-border pt-6">
-              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#C5A56E]">
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-secondary">
                 Product Overview &amp; Heritage
               </span>
-              <p className="mt-2 text-sm sm:text-base font-serif italic text-foreground leading-relaxed border-l-2 border-[#C5A56E] pl-3">
+              <p className="mt-2 text-sm sm:text-base font-serif italic text-foreground leading-relaxed border-l-2 border-gold pl-3">
                 "{details.tagline}"
               </p>
               <p className="mt-3 text-xs sm:text-sm text-foreground/80 leading-relaxed font-light">
@@ -352,7 +352,7 @@ function ProductDetailsPage() {
               <div className="mt-5 space-y-4 rounded-xl border border-border bg-card/60 p-4 sm:p-5">
                 <div>
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#C5A56E]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-gold" />
                     Flavor &amp; Texture Profile
                   </h3>
                   <p className="mt-1 text-xs sm:text-sm text-muted-foreground pl-3.5">
@@ -362,7 +362,7 @@ function ProductDetailsPage() {
 
                 <div>
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#C5A56E]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-gold" />
                     Culinary Uses &amp; Pairing Ideas
                   </h3>
                   <ul className="mt-1.5 space-y-1 pl-3.5 text-xs sm:text-sm text-muted-foreground list-disc list-inside">
@@ -376,7 +376,7 @@ function ProductDetailsPage() {
 
                 <div>
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#C5A56E]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-gold" />
                     Key Health &amp; Nutrition Highlights
                   </h3>
                   <div className="mt-2 flex flex-wrap gap-1.5 pl-3.5">
@@ -399,7 +399,7 @@ function ProductDetailsPage() {
               {/* Trust & Dispatch Guarantees */}
               <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3 text-xs">
                 <div className="flex items-start gap-2 rounded-lg border border-border/80 bg-muted/30 p-2.5">
-                  <ShieldCheck className="h-4 w-4 text-[#C5A56E] shrink-0 mt-0.5" />
+                  <ShieldCheck className="h-4 w-4 text-secondary shrink-0 mt-0.5" />
                   <div>
                     <strong className="block font-semibold text-foreground">100% Purity</strong>
                     <span className="text-[11px] text-muted-foreground">Unadulterated source.</span>

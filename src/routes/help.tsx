@@ -70,7 +70,7 @@ function HelpPage() {
           </div>
           <Link
             to="/contact"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-primary-foreground"
+            className="rounded inline-flex items-center gap-1.5 btn-gold px-5 py-2.5 text-xs font-semibold"
           >
             Contact Support <ArrowRight className="h-3.5 w-3.5" />
           </Link>

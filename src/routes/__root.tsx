@@ -40,13 +40,13 @@ function NotFoundComponent() {
         <div className="mt-8 flex items-center justify-center gap-4">
           <Link
             to="/"
-            className="inline-flex items-center justify-center bg-primary px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-foreground transition hover:opacity-90"
+            className="inline-flex items-center justify-center btn-gold px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.2em]"
           >
             Return Home
           </Link>
           <Link
             to="/categories"
-            className="inline-flex items-center justify-center border border-foreground/30 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground transition hover:border-foreground"
+            className="inline-flex items-center justify-center btn-gold-outline px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-foreground"
           >
             Explore Collections
           </Link>
@@ -75,7 +75,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center bg-primary px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-foreground"
+            className="inline-flex items-center justify-center btn-gold px-6 py-2.5 text-[11px] font-semibold uppercase tracking-[0.2em]"
           >
             Try Again
           </button>

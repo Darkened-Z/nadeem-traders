@@ -117,7 +117,7 @@ function ShopPage() {
             type="button"
             onClick={() => setSelectedCategory(null)}
             className={`${chipBase} ${
-              selectedCategory === null ? "bg-foreground text-background" : "border border-border bg-card"
+              selectedCategory === null ? "bg-primary text-primary-foreground" : "border border-border bg-card"
             }`}
           >
             All

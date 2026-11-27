@@ -685,7 +685,7 @@ function DashboardPage() {
                 <button
                   type="submit"
                   disabled={trackingLoading}
-                  className="rounded-xl bg-gradient-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-soft hover:shadow-glow disabled:opacity-50 flex items-center gap-2"
+                  className="rounded btn-gold px-5 py-2.5 text-xs font-bold disabled:opacity-50 flex items-center gap-2"
                 >
                   {trackingLoading && <Loader2 className="h-3 w-3 animate-spin" />}
                   Track Status
@@ -827,7 +827,7 @@ function DashboardPage() {
                 {!isAddingAddress && (
                   <button
                     onClick={() => setIsAddingAddress(true)}
-                    className="rounded-xl bg-gradient-primary px-4 py-2 text-xs font-bold text-primary-foreground flex items-center gap-1.5 hover:shadow-glow transition"
+                    className="rounded btn-gold px-4 py-2 text-xs font-bold flex items-center gap-1.5"
                   >
                     <Plus className="h-4 w-4" /> Add Address
                   </button>
@@ -959,7 +959,7 @@ function DashboardPage() {
                     </button>
                     <button
                       type="submit"
-                      className="rounded-xl bg-gradient-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-soft hover:shadow-glow"
+                      className="rounded btn-gold px-5 py-2 text-xs font-bold"
                     >
                       Save Address
                     </button>
@@ -1071,7 +1071,7 @@ function DashboardPage() {
                 <div className="pt-4 flex justify-end">
                   <button
                     type="submit"
-                    className="rounded-xl bg-gradient-primary px-6 py-2.5 text-xs font-bold text-primary-foreground shadow-soft hover:shadow-glow"
+                    className="rounded btn-gold px-6 py-2.5 text-xs font-bold"
                   >
                     Save Preferences
                   </button>

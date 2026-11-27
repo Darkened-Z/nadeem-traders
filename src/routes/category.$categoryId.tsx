@@ -103,7 +103,7 @@ function CategoryPage() {
           <h1 className="font-display text-4xl font-semibold">Category Nahi Mili</h1>
           <Link
             to="/categories"
-            className="mt-6 inline-block bg-foreground px-7 py-3 text-sm font-semibold text-background"
+            className="btn-gold mt-6 inline-block px-7 py-3 text-sm font-semibold"
           >
             All categories
           </Link>

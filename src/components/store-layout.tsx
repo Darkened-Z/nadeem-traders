@@ -34,32 +34,32 @@ export interface CategoryMeta {
 export const CATEGORY_METADATA: Record<string, CategoryMeta> = {
   "Dry Fruits": {
     slug: "dry-fruits",
-    color: "#6B4226",
+    color: "#0B4A36",
     tagline: "Rozana Ki Tawanai. Duniya Bhar Ke Behtareen Dry Fruits.",
   },
   Seeds: {
     slug: "seeds",
-    color: "#2F6B3A",
+    color: "#14563F",
     tagline: "Chotay Seeds, Achi Immunity.",
   },
   Spices: {
     slug: "spices",
-    color: "#A1281C",
+    color: "#0E3D2E",
     tagline: "Khalis Masalay, Asli Zaiqa. Zero Artificial Rang.",
   },
   "Whole Spices": {
     slug: "whole-spices",
-    color: "#8A6100",
+    color: "#175E46",
     tagline: "Sabut Masalay, Poori Khushboo. Daig Ka Asli Raaz.",
   },
   "Special Items": {
     slug: "special-items",
-    color: "#1E3A5F",
+    color: "#09392A",
     tagline: "Healthy Choices, Roz Ke Liye.",
   },
 };
 
-const FALLBACK_COLORS = ["#6B4226", "#A1281C", "#2F6B3A", "#1E3A5F", "#8A6100", "#A3485F"];
+const FALLBACK_COLORS = ["#0B4A36", "#0E3D2E", "#14563F", "#09392A", "#175E46"];
 
 export function getCategoryMeta(name: string): CategoryMeta {
   if (CATEGORY_METADATA[name]) return CATEGORY_METADATA[name];
@@ -231,7 +231,7 @@ export function ModernProductCard({ product }: { product: any }) {
                   }}
                   className={`flex-1 rounded py-1 px-1.5 text-center text-[10px] font-medium transition-colors ${
                     isSel
-                      ? "bg-background text-foreground shadow-xs font-semibold"
+                      ? "bg-primary text-primary-foreground font-semibold"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                   title={`${c.name} (${c.name_ur})`}
@@ -255,7 +255,7 @@ export function ModernProductCard({ product }: { product: any }) {
                   onClick={handleAdd}
                   disabled={!product.stock || view.price == null}
                   aria-label={`Add ${product.name} to bag`}
-                  className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 border border-foreground px-3 text-xs font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-40"
+                  className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 btn-gold-outline px-3 text-xs font-semibold text-foreground disabled:opacity-40"
                 >
                   {justAdded ? <Check className="h-4 w-4 animate-pop" /> : "Add"}
                 </button>
@@ -320,12 +320,12 @@ export function CategoryTile({ category }: { category: any }) {
         <span className="min-w-0">
           <span className="block text-sm sm:text-base font-semibold leading-tight">{category.name}</span>
           {category.name_ur && (
-            <span lang="ur" className="font-urdu block text-xs text-white/80 sm:text-sm">
+            <span lang="ur" className="font-urdu block text-xs text-gold-light sm:text-sm">
               {category.name_ur}
             </span>
           )}
         </span>
-        <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="h-4 w-4 shrink-0 text-gold transition-transform group-hover:translate-x-0.5" />
       </div>
     </Link>
   );
@@ -366,7 +366,7 @@ export function ProductRail({
   );
 }
 
-export const categoryTint = (color: string) => `color-mix(in srgb, ${color} 20%, #fdfbf7)`;
+export const categoryTint = (color: string) => `color-mix(in srgb, ${color} 14%, #f8f4ea)`;
 
 export function CategorySection({ category, items }: { category: any; items: any[] }) {
   const meta = getCategoryMeta(category.name);
@@ -727,11 +727,11 @@ export function StoreLayout({
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header
-        className={`sticky top-0 z-40 border-b border-border bg-background transition-shadow duration-300 ${
-          scrolled ? "shadow-[0_8px_24px_-14px_rgba(20,19,17,0.35)]" : ""
+        className={`sticky top-0 z-40 border-b border-gold/25 bg-primary text-primary-foreground transition-shadow duration-300 ${
+          scrolled ? "shadow-[0_10px_28px_-14px_rgba(7,46,34,0.6)]" : ""
         }`}
       >
-        <div className="scroll-progress absolute inset-x-0 -bottom-px h-0.5 bg-[#C5A56E]" aria-hidden="true" />
+        <div className="scroll-progress absolute inset-x-0 -bottom-px h-0.5 bg-gold" aria-hidden="true" />
         <div className="mx-auto flex h-14 sm:h-16 max-w-7xl items-center gap-2 px-3 sm:px-6">
           <button
             type="button"
@@ -750,13 +750,13 @@ export function StoreLayout({
           </Link>
 
           <nav className="ml-10 hidden items-center gap-7 text-sm lg:flex">
-            <Link to="/categories" className="hover:underline underline-offset-4">
+            <Link to="/categories" className="transition-colors hover:text-gold-light">
               Categories
             </Link>
-            <Link to="/shop" className="hover:underline underline-offset-4">
+            <Link to="/shop" className="transition-colors hover:text-gold-light">
               All products
             </Link>
-            <Link to="/contact" className="hover:underline underline-offset-4">
+            <Link to="/contact" className="transition-colors hover:text-gold-light">
               Contact
             </Link>
           </nav>
@@ -778,7 +778,7 @@ export function StoreLayout({
             >
               <ShoppingBag key={bagBump} className={`h-5 w-5 ${bagBump ? "animate-bump" : ""}`} />
               {totalItems > 0 && (
-                <span className="absolute right-0.5 top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-foreground px-1 text-[11px] font-semibold text-background">
+                <span className="absolute right-0.5 top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-gold px-1 text-[11px] font-bold text-gold-foreground">
                   {totalItems}
                 </span>
               )}
@@ -787,17 +787,17 @@ export function StoreLayout({
         </div>
 
         {isSearchOpen && (
-          <div className="border-t border-border bg-background px-4 py-4 sm:px-6">
+          <div className="border-t border-gold/20 bg-emerald-deep px-4 py-4 sm:px-6">
             <div className="mx-auto max-w-2xl">
-              <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 border-b border-foreground pb-2">
-                <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 border-b border-gold pb-2">
+                <Search className="h-4 w-4 shrink-0 text-gold-light" />
                 <input
                   type="search"
                   autoFocus
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Kya Dhoond Rahe Ho? Badaam, Zeera, Chia…"
-                  className="w-full bg-transparent text-base focus:outline-none"
+                  className="w-full bg-transparent text-base placeholder:text-primary-foreground/55 focus:outline-none"
                 />
                 <button
                   type="button"
@@ -852,7 +852,7 @@ export function StoreLayout({
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/40 animate-fade-in" onClick={() => setIsNavDrawerOpen(false)} />
           <div className="absolute inset-y-0 left-0 flex w-[85vw] max-w-sm flex-col overflow-y-auto bg-background animate-slide-in-left">
-            <div className="flex h-14 items-center justify-between border-b border-border px-4">
+            <div className="flex h-14 items-center justify-between bg-primary px-4 text-primary-foreground">
               <span className="font-display text-xl font-semibold">Menu</span>
               <button
                 type="button"
@@ -907,7 +907,7 @@ export function StoreLayout({
 
       <main className="flex-1">{children}</main>
 
-      <footer className="relative bg-[#141311] text-[#E6E1D6]">
+      <footer className="relative border-t-2 border-gold bg-emerald-deep text-[#E9E4D6]">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             <div className="col-span-2 md:col-span-1">
@@ -915,15 +915,15 @@ export function StoreLayout({
                 <img src="/LOGO.png" alt="" className="h-9 w-9 object-contain" />
                 <span className="font-display text-2xl font-semibold text-white">Nadeem Traders</span>
               </div>
-              <p className="mt-2 text-sm text-[#C5A56E]">Apka Trusted Stop</p>
-              <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#A39E93]">
+              <p className="mt-2 text-sm text-gold">Apka Trusted Stop</p>
+              <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#A8BDB2]">
                 Duniya Bhar Se Chun Kar, Aapke Kitchen Tak. Asli Maal, Sahi Daam.
               </p>
             </div>
 
             <div>
               <h4 className="text-sm font-semibold text-white">Shop</h4>
-              <ul className="mt-3 space-y-2 text-sm text-[#A39E93]">
+              <ul className="mt-3 space-y-2 text-sm text-[#A8BDB2]">
                 {categories.map((cat) => (
                   <li key={cat.id}>
                     <Link to={`/category/${cat.id}` as any} className="hover:text-white">
@@ -936,7 +936,7 @@ export function StoreLayout({
 
             <div>
               <h4 className="text-sm font-semibold text-white">Help</h4>
-              <ul className="mt-3 space-y-2 text-sm text-[#A39E93]">
+              <ul className="mt-3 space-y-2 text-sm text-[#A8BDB2]">
                 <li><Link to="/contact" className="hover:text-white">Contact</Link></li>
                 <li><Link to="/delivery-info" className="hover:text-white">Delivery Info</Link></li>
                 <li><Link to="/help" className="hover:text-white">FAQ</Link></li>
@@ -946,7 +946,7 @@ export function StoreLayout({
 
             <div className="col-span-2 md:col-span-1">
               <h4 className="text-sm font-semibold text-white">Legal</h4>
-              <ul className="mt-3 space-y-2 text-sm text-[#A39E93]">
+              <ul className="mt-3 space-y-2 text-sm text-[#A8BDB2]">
                 <li><Link to="/privacy-policy" className="hover:text-white">Privacy Policy</Link></li>
                 <li><Link to="/terms-of-use" className="hover:text-white">Terms Of Use</Link></li>
                 <li><Link to="/shipping-policy" className="hover:text-white">Shipping Policy</Link></li>
@@ -954,7 +954,7 @@ export function StoreLayout({
             </div>
           </div>
 
-          <div className="mt-10 border-t border-white/10 pt-5 text-xs text-[#857F74]">
+          <div className="mt-10 border-t border-white/10 pt-5 text-xs text-[#7C978A]">
             © {new Date().getFullYear()} Nadeem Traders. Cash On Delivery Across Pakistan.
           </div>
         </div>
@@ -986,7 +986,7 @@ export function StoreLayout({
                   <Link
                     to="/shop"
                     onClick={() => setIsCartOpen(false)}
-                    className="mt-5 bg-foreground px-6 py-3 text-sm font-semibold text-background"
+                    className="btn-gold mt-5 px-6 py-3 text-sm font-semibold"
                   >
                     Start Shopping
                   </Link>
@@ -1056,7 +1056,7 @@ export function StoreLayout({
                     setIsCartOpen(false);
                     setIsCheckoutOpen(true);
                   }}
-                  className="w-full bg-foreground py-3.5 text-sm font-semibold text-background"
+                  className="btn-gold w-full py-3.5 text-sm font-semibold"
                 >
                   Checkout
                 </button>
@@ -1089,7 +1089,7 @@ export function StoreLayout({
                 <button
                   type="button"
                   onClick={closeCheckout}
-                  className="mt-6 w-full bg-foreground py-3.5 text-sm font-semibold text-background sm:w-auto sm:px-10"
+                  className="btn-gold mt-6 w-full py-3.5 text-sm font-semibold sm:w-auto sm:px-10"
                 >
                   Continue Shopping
                 </button>
@@ -1193,7 +1193,7 @@ export function StoreLayout({
                           type="button"
                           onClick={handleApplyCoupon}
                           disabled={isCheckingCoupon || !couponInput.trim()}
-                          className="border border-foreground bg-foreground px-4 py-2 text-xs font-semibold text-background disabled:opacity-40"
+                          className="bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary-glow disabled:opacity-40"
                         >
                           {isCheckingCoupon ? "Checking…" : "Apply"}
                         </button>
@@ -1231,7 +1231,7 @@ export function StoreLayout({
                   <button
                     type="submit"
                     disabled={isSubmittingOrder}
-                    className="w-full bg-foreground py-3.5 text-sm font-semibold text-background disabled:opacity-50"
+                    className="btn-gold w-full py-3.5 text-sm font-semibold disabled:opacity-50"
                   >
                     {isSubmittingOrder ? "Placing order…" : "Place Order"}
                   </button>
