@@ -902,8 +902,11 @@ export interface CategorySeoData {
   productNames: string[];
 }
 
-function categorySlug(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+export function truncateWords(text: string, max: number) {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[.,;:\s]+$/, "");
 }
 
 export const getProductSeo = createServerFn({ method: "GET" })
@@ -931,6 +934,10 @@ export const getProductSeo = createServerFn({ method: "GET" })
         })),
       };
     }
+    const { serverCache } = await import("./server-cache");
+    const cacheKey = `seo:product:${data.id}`;
+    const cached = serverCache.get(cacheKey);
+    if (cached) return cached as ProductSeoData;
     const rows = await sql`
       SELECT p.id, p.name, p.name_ur, c.name AS category_name, p.price, p.weight, p.image_url, p.origin, p.description
       FROM products p
@@ -951,7 +958,7 @@ export const getProductSeo = createServerFn({ method: "GET" })
     if (!img || img.includes("wikimedia")) {
       img = PRODUCT_IMAGE_FALLBACKS[titleName] || PRODUCT_IMAGE_FALLBACKS[String(p.name)] || img;
     }
-    return {
+    const result: ProductSeoData = {
       id: Number(p.id),
       name: String(p.name),
       name_ur: (p.name_ur as string | null) ?? null,
@@ -968,6 +975,8 @@ export const getProductSeo = createServerFn({ method: "GET" })
         image_url: (o.image_url as string | null) ?? null,
       })),
     };
+    serverCache.set(cacheKey, result, 30_000);
+    return result;
   });
 
 export const getCategorySeo = createServerFn({ method: "GET" })
@@ -976,10 +985,11 @@ export const getCategorySeo = createServerFn({ method: "GET" })
     const raw = data.id.toLowerCase();
     if (!raw) return null;
     const isNumeric = /^\d+$/.test(raw);
+    const { getCategoryMeta } = await import("../components/store-layout");
     if (!sql) {
       const cat = isNumeric
         ? MOCK_CATEGORIES.find((c) => c.id === Number(raw))
-        : MOCK_CATEGORIES.find((c) => c.name.toLowerCase() === raw || categorySlug(c.name) === raw);
+        : MOCK_CATEGORIES.find((c) => c.name.toLowerCase() === raw || getCategoryMeta(c.name).slug === raw);
       if (!cat) return null;
       const items = MOCK_PRODUCTS.filter((p) => p.category_id === cat.id);
       return {
@@ -989,10 +999,14 @@ export const getCategorySeo = createServerFn({ method: "GET" })
         productNames: items.slice(0, 4).map((p) => cleanProductTitle(p.name)),
       };
     }
+    const { serverCache } = await import("./server-cache");
+    const cacheKey = `seo:category:${raw}`;
+    const cached = serverCache.get(cacheKey);
+    if (cached) return cached as CategorySeoData;
     const cat = isNumeric
       ? (await sql`SELECT id, name FROM categories WHERE id = ${Number(raw)} LIMIT 1`)[0]
       : (await sql`SELECT id, name FROM categories ORDER BY position, id`).find(
-          (c) => String(c.name).toLowerCase() === raw || categorySlug(String(c.name)) === raw,
+          (c) => String(c.name).toLowerCase() === raw || getCategoryMeta(String(c.name)).slug === raw,
         );
     if (!cat) return null;
     const prodRows = await sql`
@@ -1000,12 +1014,14 @@ export const getCategorySeo = createServerFn({ method: "GET" })
       WHERE category_id = ${cat.id} AND status = 'active'
       ORDER BY id
     `;
-    return {
+    const result: CategorySeoData = {
       id: Number(cat.id),
       name: String(cat.name),
       productCount: prodRows.length,
       productNames: prodRows.slice(0, 4).map((p) => cleanProductTitle(String(p.name))),
     };
+    serverCache.set(cacheKey, result, 30_000);
+    return result;
   });
 
 export const getBrands = createServerFn({ method: "GET" }).handler(async () => {

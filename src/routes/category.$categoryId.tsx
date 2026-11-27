@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, Search, X } from "lucide-react";
-import { getCategorySeo, type CategorySeoData } from "../lib/actions";
+import { getCategorySeo, truncateWords, type CategorySeoData } from "../lib/actions";
 import { track } from "../lib/analytics";
 import {
   StoreLayout,
@@ -13,16 +13,15 @@ import {
 
 function buildCategoryHead(category: CategorySeoData | null | undefined) {
   if (!category) {
-    return {
-      meta: [
-        { title: "Category | Nadeem Traders" },
-        {
-          name: "description",
-          content: "Dry fruits, spices, whole spices and seeds. Cash on delivery across Pakistan.",
-        },
-        { name: "robots", content: "noindex" },
-      ],
-    };
+    const meta = [
+      { title: "Category | Nadeem Traders" },
+      {
+        name: "description",
+        content: "Dry fruits, spices, whole spices and seeds. Cash on delivery across Pakistan.",
+      },
+    ];
+    if (category === null) meta.push({ name: "robots", content: "noindex" });
+    return { meta };
   }
   const title = `${category.name} – Buy Online in Pakistan | Nadeem Traders`;
   const names = category.productNames.slice(0, 4);
@@ -33,14 +32,15 @@ function buildCategoryHead(category: CategorySeoData | null | undefined) {
   const description =
     full.length <= 155
       ? full
-      : `Shop ${category.name} online in Pakistan: ${names.slice(0, 3).join(", ")}. Cash on delivery at Nadeem Traders.`.slice(0, 155);
+      : `${truncateWords(`Shop ${category.name} online in Pakistan: ${names.slice(0, 3).join(", ")}. Cash on delivery at Nadeem Traders`, 154)}.`;
   return {
     meta: [{ title }, { name: "description", content: description }],
   };
 }
 
 export const Route = createFileRoute("/category/$categoryId")({
-  loader: ({ params }) => getCategorySeo({ data: { id: params.categoryId } }),
+  loader: ({ params }) => getCategorySeo({ data: { id: params.categoryId } }).catch(() => undefined),
+  staleTime: 5 * 60_000,
   head: ({ loaderData }) => buildCategoryHead(loaderData),
   component: CategoryPage,
 });

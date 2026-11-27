@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Plus, Minus, Loader2, ChevronLeft, MapPin, ShieldCheck, Truck } from "lucide-react";
-import { getProductSeo, recordRecentlyViewedDb, type ProductSeoData } from "../lib/actions";
+import { getProductSeo, recordRecentlyViewedDb, truncateWords, type ProductSeoData } from "../lib/actions";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import { getProductDetailInfo } from "../lib/product-descriptions";
 import { productOptions, optionView } from "../lib/catalog";
@@ -18,13 +18,12 @@ import {
 
 function buildProductHead(product: ProductSeoData | null | undefined) {
   if (!product) {
-    return {
-      meta: [
-        { title: "Product | Nadeem Traders" },
-        { name: "description", content: "Asli maal, sahi daam. Cash on delivery across Pakistan." },
-        { name: "robots", content: "noindex" },
-      ],
-    };
+    const meta = [
+      { title: "Product | Nadeem Traders" },
+      { name: "description", content: "Asli maal, sahi daam. Cash on delivery across Pakistan." },
+    ];
+    if (product === null) meta.push({ name: "robots", content: "noindex" });
+    return { meta };
   }
   const name = cleanProductTitle(product.name) || product.name;
   const pricedOptions = product.options.filter((o): o is typeof o & { price: number } => o.price != null);
@@ -48,14 +47,12 @@ function buildProductHead(product: ProductSeoData | null | undefined) {
   if (product.options.length > 0) {
     leadParts.push(`Options: ${product.options.map((o) => o.name).join(", ")}`);
   }
-  const lead = `${leadParts.join(". ")}. `;
-  const extra = product.description?.trim();
-  const maxBody = 155 - suffix.length;
-  let body = extra ? `${lead}${extra}. ` : lead;
-  if (body.length > maxBody) {
-    body = lead.length <= maxBody ? lead : `${lead.slice(0, maxBody - 2).trimEnd()} `;
-  }
-  const description = `${body}${suffix}`.slice(0, 155);
+  const lead = leadParts.map((p) => p.trim().replace(/\.+$/, "")).join(". ");
+  const extra = product.description?.trim().replace(/\.+$/, "");
+  const body = extra ? `${lead}. ${extra}` : lead;
+  const maxBody = 155 - suffix.length - 2;
+  const clipped = truncateWords(body, maxBody);
+  const description = clipped ? `${clipped}. ${suffix}` : suffix;
 
   return {
     meta: [{ title }, { name: "description", content: description }],
@@ -63,7 +60,8 @@ function buildProductHead(product: ProductSeoData | null | undefined) {
 }
 
 export const Route = createFileRoute("/product/$productId")({
-  loader: ({ params }) => getProductSeo({ data: { id: params.productId } }),
+  loader: ({ params }) => getProductSeo({ data: { id: params.productId } }).catch(() => undefined),
+  staleTime: 5 * 60_000,
   head: ({ loaderData }) => buildProductHead(loaderData),
   component: ProductDetailsPage,
 });
