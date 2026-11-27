@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /login
+Disallow: /*?q=
+Sitemap: https://nadeemtraders.com/sitemap.xml
