@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, Search, X } from "lucide-react";
 import { getCategorySeo, truncateWords, type CategorySeoData } from "../lib/actions";
-import { breadcrumbJsonLd } from "../lib/structured-data";
+import { breadcrumbJsonLd, toAbsoluteUrl } from "../lib/structured-data";
 import { track } from "../lib/analytics";
 import {
   StoreLayout,
@@ -34,10 +34,14 @@ function buildCategoryHead(category: CategorySeoData | null | undefined) {
     full.length <= 155
       ? full
       : `${truncateWords(`Shop ${category.name} online in Pakistan: ${names.slice(0, 3).join(", ")}. Cash on delivery at Nadeem Traders`, 154)}.`;
+  const ogImage = toAbsoluteUrl(category.image_url);
   return {
     meta: [
       { title },
       { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      ...(ogImage ? [{ property: "og:image", content: ogImage }] : []),
       {
         "script:ld+json": breadcrumbJsonLd([
           { name: "Home", path: "/" },

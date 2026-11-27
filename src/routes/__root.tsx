@@ -13,6 +13,13 @@ import { initAnalytics } from "@/lib/analytics";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
+import { SITE_URL } from "../lib/structured-data";
+
+function canonicalUrlFromMatches(matches: ReadonlyArray<{ pathname?: string }>): string {
+  const raw = (matches[matches.length - 1]?.pathname || "/").split("?")[0].split("#")[0];
+  const normalized = raw.length > 1 ? raw.replace(/\/+$/, "") : raw || "/";
+  return `${SITE_URL}${normalized.startsWith("/") ? normalized : `/${normalized}`}`;
+}
 
 function NotFoundComponent() {
   return (
@@ -82,42 +89,50 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Nadeem Traders — Apka Trusted Stop" },
-      {
-        name: "description",
-        content:
-          "Born from the earth, refined by craft. Direct-from-source culinary spices, aged basmati rice, orchard dry fruits, and pulses across Pakistan.",
-      },
-      { name: "author", content: "Nadeem Traders" },
-      {
-        property: "og:title",
-        content: "Nadeem Traders — Apka Trusted Stop",
-      },
-      {
-        property: "og:description",
-        content:
-          "Dry fruits, seeds aur masalay — duniya bhar se chun kar aapke kitchen tak. Cash on delivery across Pakistan.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/LOGO.png", type: "image/png" },
-      { rel: "shortcut icon", href: "/favicon.ico" },
-      { rel: "apple-touch-icon", href: "/LOGO.png" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap",
-      },
-    ],
-  }),
+  head: ({ matches }) => {
+    const canonicalUrl = canonicalUrlFromMatches(matches);
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { title: "Nadeem Traders — Apka Trusted Stop" },
+        {
+          name: "description",
+          content:
+            "Born from the earth, refined by craft. Direct-from-source culinary spices, aged basmati rice, orchard dry fruits, and pulses across Pakistan.",
+        },
+        { name: "author", content: "Nadeem Traders" },
+        { property: "og:site_name", content: "Nadeem Traders" },
+        {
+          property: "og:title",
+          content: "Nadeem Traders — Apka Trusted Stop",
+        },
+        {
+          property: "og:description",
+          content:
+            "Dry fruits, seeds aur masalay — duniya bhar se chun kar aapke kitchen tak. Cash on delivery across Pakistan.",
+        },
+        { property: "og:type", content: "website" },
+        { property: "og:locale", content: "en_PK" },
+        { property: "og:url", content: canonicalUrl },
+        { property: "og:image", content: `${SITE_URL}/BANNER.png` },
+        { name: "twitter:card", content: "summary_large_image" },
+      ],
+      links: [
+        { rel: "canonical", href: canonicalUrl },
+        { rel: "stylesheet", href: appCss },
+        { rel: "icon", href: "/LOGO.png", type: "image/png" },
+        { rel: "shortcut icon", href: "/favicon.ico" },
+        { rel: "apple-touch-icon", href: "/LOGO.png" },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        {
+          rel: "stylesheet",
+          href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap",
+        },
+      ],
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,

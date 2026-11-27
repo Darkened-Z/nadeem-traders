@@ -797,6 +797,14 @@ const CATEGORY_IMAGE_FALLBACKS: Record<string, string> = {
   "Sugar & Salt": "/categories/sugar-salt.jpg",
 };
 
+function resolveCategoryImageUrl(name: string, imageUrl?: string | null): string | null {
+  if (!imageUrl || imageUrl.includes("wikimedia")) {
+    const fb = CATEGORY_IMAGE_FALLBACKS[name];
+    if (fb) return fb;
+  }
+  return imageUrl ?? null;
+}
+
 // 1. Categories
 const MOCK_CATEGORIES = CATALOG_CATEGORIES;
 const MOCK_PRODUCTS = CATALOG_PRODUCTS;
@@ -814,13 +822,10 @@ export const getCategories = createServerFn({ method: "GET" }).handler(
     const cached = serverCache.get("categories");
     if (cached) return cached;
     const res = await sql`SELECT * FROM categories ORDER BY position, id`;
-    const mapped = (res as any[]).map((c) => {
-      if (!c.image_url || c.image_url.includes("wikimedia")) {
-        const fb = CATEGORY_IMAGE_FALLBACKS[c.name];
-        if (fb) return { ...c, image_url: fb };
-      }
-      return c;
-    });
+    const mapped = (res as any[]).map((c) => ({
+      ...c,
+      image_url: resolveCategoryImageUrl(c.name, c.image_url),
+    }));
     serverCache.set("categories", mapped, 30_000);
     return mapped;
   }
@@ -900,6 +905,7 @@ export interface ProductSeoData {
 export interface CategorySeoData {
   id: number;
   name: string;
+  image_url: string | null;
   productCount: number;
   productNames: string[];
 }
@@ -1001,6 +1007,7 @@ export const getCategorySeo = createServerFn({ method: "GET" })
       return {
         id: cat.id,
         name: cat.name,
+        image_url: resolveCategoryImageUrl(cat.name, cat.image_url),
         productCount: items.length,
         productNames: items.slice(0, 4).map((p) => cleanProductTitle(p.name)),
       };
@@ -1010,8 +1017,8 @@ export const getCategorySeo = createServerFn({ method: "GET" })
     const cached = serverCache.get(cacheKey);
     if (cached) return cached as CategorySeoData;
     const cat = isNumeric
-      ? (await sql`SELECT id, name FROM categories WHERE id = ${Number(raw)} LIMIT 1`)[0]
-      : (await sql`SELECT id, name FROM categories ORDER BY position, id`).find(
+      ? (await sql`SELECT id, name, image_url FROM categories WHERE id = ${Number(raw)} LIMIT 1`)[0]
+      : (await sql`SELECT id, name, image_url FROM categories ORDER BY position, id`).find(
           (c) => String(c.name).toLowerCase() === raw || getCategoryMeta(String(c.name)).slug === raw,
         );
     if (!cat) return null;
@@ -1020,9 +1027,11 @@ export const getCategorySeo = createServerFn({ method: "GET" })
       WHERE category_id = ${cat.id} AND status = 'active'
       ORDER BY id
     `;
+    const catName = String(cat.name);
     const result: CategorySeoData = {
       id: Number(cat.id),
-      name: String(cat.name),
+      name: catName,
+      image_url: resolveCategoryImageUrl(catName, (cat.image_url as string | null) ?? null),
       productCount: prodRows.length,
       productNames: prodRows.slice(0, 4).map((p) => cleanProductTitle(String(p.name))),
     };
