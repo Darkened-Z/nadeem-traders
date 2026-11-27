@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, Search, X } from "lucide-react";
 import { getCategorySeo, truncateWords, type CategorySeoData } from "../lib/actions";
+import { breadcrumbJsonLd } from "../lib/structured-data";
 import { track } from "../lib/analytics";
 import {
   StoreLayout,
@@ -34,7 +35,16 @@ function buildCategoryHead(category: CategorySeoData | null | undefined) {
       ? full
       : `${truncateWords(`Shop ${category.name} online in Pakistan: ${names.slice(0, 3).join(", ")}. Cash on delivery at Nadeem Traders`, 154)}.`;
   return {
-    meta: [{ title }, { name: "description", content: description }],
+    meta: [
+      { title },
+      { name: "description", content: description },
+      {
+        "script:ld+json": breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: category.name, path: `/category/${category.id}` },
+        ]),
+      },
+    ],
   };
 }
 

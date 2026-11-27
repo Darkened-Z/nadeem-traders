@@ -886,12 +886,14 @@ export interface ProductSeoData {
   id: number;
   name: string;
   name_ur: string | null;
+  category_id: number | null;
   category_name: string | null;
   price: number | null;
   weight: string | null;
   image_url: string | null;
   origin: string | null;
   description: string | null;
+  stock: boolean;
   options: ProductSeoOption[];
 }
 
@@ -920,12 +922,14 @@ export const getProductSeo = createServerFn({ method: "GET" })
         id: p.id,
         name: p.name,
         name_ur: p.name_ur ?? null,
+        category_id: p.category_id ?? null,
         category_name: p.category_name ?? null,
         price: p.price ?? null,
         weight: p.weight ?? null,
         image_url: p.image_url ?? null,
         origin: p.origin ?? null,
         description: null,
+        stock: p.stock !== false,
         options: (p.variants ?? []).map((v) => ({
           name: v.name,
           price: v.price ?? null,
@@ -939,7 +943,7 @@ export const getProductSeo = createServerFn({ method: "GET" })
     const cached = serverCache.get(cacheKey);
     if (cached) return cached as ProductSeoData;
     const rows = await sql`
-      SELECT p.id, p.name, p.name_ur, c.name AS category_name, p.price, p.weight, p.image_url, p.origin, p.description
+      SELECT p.id, p.name, p.name_ur, p.category_id, c.name AS category_name, p.price, p.weight, p.image_url, p.origin, p.description, p.stock
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       WHERE p.id = ${data.id} AND p.status = 'active'
@@ -962,12 +966,14 @@ export const getProductSeo = createServerFn({ method: "GET" })
       id: Number(p.id),
       name: String(p.name),
       name_ur: (p.name_ur as string | null) ?? null,
+      category_id: p.category_id != null ? Number(p.category_id) : null,
       category_name: (p.category_name as string | null) ?? null,
       price: p.price != null ? Number(p.price) : null,
       weight: (p.weight as string | null) ?? null,
       image_url: img,
       origin: (p.origin as string | null) ?? null,
       description: (p.description as string | null) ?? null,
+      stock: p.stock !== false,
       options: optRows.map((o) => ({
         name: String(o.name),
         price: o.price != null ? Number(o.price) : null,
