@@ -875,6 +875,155 @@ export const getProducts = createServerFn({ method: "GET" }).handler(
   }
 );
 
+export interface ProductSeoOption {
+  name: string;
+  price: number | null;
+  weight: string | null;
+  image_url: string | null;
+}
+
+export interface ProductSeoData {
+  id: number;
+  name: string;
+  name_ur: string | null;
+  category_name: string | null;
+  price: number | null;
+  weight: string | null;
+  image_url: string | null;
+  origin: string | null;
+  description: string | null;
+  options: ProductSeoOption[];
+}
+
+export interface CategorySeoData {
+  id: number;
+  name: string;
+  productCount: number;
+  productNames: string[];
+}
+
+export function truncateWords(text: string, max: number) {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[.,;:\s]+$/, "");
+}
+
+export const getProductSeo = createServerFn({ method: "GET" })
+  .validator((data: { id: number | string }) => ({ id: Number(data.id) }))
+  .handler(async ({ data }): Promise<ProductSeoData | null> => {
+    if (!Number.isInteger(data.id) || data.id < 1) return null;
+    if (!sql) {
+      const p = MOCK_PRODUCTS.find((item) => item.id === data.id);
+      if (!p) return null;
+      return {
+        id: p.id,
+        name: p.name,
+        name_ur: p.name_ur ?? null,
+        category_name: p.category_name ?? null,
+        price: p.price ?? null,
+        weight: p.weight ?? null,
+        image_url: p.image_url ?? null,
+        origin: p.origin ?? null,
+        description: null,
+        options: (p.variants ?? []).map((v) => ({
+          name: v.name,
+          price: v.price ?? null,
+          weight: v.weight ?? null,
+          image_url: v.image_url ?? null,
+        })),
+      };
+    }
+    const { serverCache } = await import("./server-cache");
+    const cacheKey = `seo:product:${data.id}`;
+    const cached = serverCache.get(cacheKey);
+    if (cached) return cached as ProductSeoData;
+    const rows = await sql`
+      SELECT p.id, p.name, p.name_ur, c.name AS category_name, p.price, p.weight, p.image_url, p.origin, p.description
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      WHERE p.id = ${data.id} AND p.status = 'active'
+      LIMIT 1
+    `;
+    if (rows.length === 0) return null;
+    const p = rows[0];
+    const optRows = await sql`
+      SELECT name, price, weight, image_url
+      FROM product_variants
+      WHERE product_id = ${p.id}
+      ORDER BY position, id
+    `;
+    const titleName = cleanProductTitle(p.name);
+    let img = (p.image_url as string | null) ?? null;
+    if (!img || img.includes("wikimedia")) {
+      img = PRODUCT_IMAGE_FALLBACKS[titleName] || PRODUCT_IMAGE_FALLBACKS[String(p.name)] || img;
+    }
+    const result: ProductSeoData = {
+      id: Number(p.id),
+      name: String(p.name),
+      name_ur: (p.name_ur as string | null) ?? null,
+      category_name: (p.category_name as string | null) ?? null,
+      price: p.price != null ? Number(p.price) : null,
+      weight: (p.weight as string | null) ?? null,
+      image_url: img,
+      origin: (p.origin as string | null) ?? null,
+      description: (p.description as string | null) ?? null,
+      options: optRows.map((o) => ({
+        name: String(o.name),
+        price: o.price != null ? Number(o.price) : null,
+        weight: (o.weight as string | null) ?? null,
+        image_url: (o.image_url as string | null) ?? null,
+      })),
+    };
+    serverCache.set(cacheKey, result, 30_000);
+    return result;
+  });
+
+export const getCategorySeo = createServerFn({ method: "GET" })
+  .validator((data: { id: number | string }) => ({ id: String(data.id ?? "").trim() }))
+  .handler(async ({ data }): Promise<CategorySeoData | null> => {
+    const raw = data.id.toLowerCase();
+    if (!raw) return null;
+    const isNumeric = /^\d+$/.test(raw);
+    const { getCategoryMeta } = await import("../components/store-layout");
+    if (!sql) {
+      const cat = isNumeric
+        ? MOCK_CATEGORIES.find((c) => c.id === Number(raw))
+        : MOCK_CATEGORIES.find((c) => c.name.toLowerCase() === raw || getCategoryMeta(c.name).slug === raw);
+      if (!cat) return null;
+      const items = MOCK_PRODUCTS.filter((p) => p.category_id === cat.id);
+      return {
+        id: cat.id,
+        name: cat.name,
+        productCount: items.length,
+        productNames: items.slice(0, 4).map((p) => cleanProductTitle(p.name)),
+      };
+    }
+    const { serverCache } = await import("./server-cache");
+    const cacheKey = `seo:category:${raw}`;
+    const cached = serverCache.get(cacheKey);
+    if (cached) return cached as CategorySeoData;
+    const cat = isNumeric
+      ? (await sql`SELECT id, name FROM categories WHERE id = ${Number(raw)} LIMIT 1`)[0]
+      : (await sql`SELECT id, name FROM categories ORDER BY position, id`).find(
+          (c) => String(c.name).toLowerCase() === raw || getCategoryMeta(String(c.name)).slug === raw,
+        );
+    if (!cat) return null;
+    const prodRows = await sql`
+      SELECT name FROM products
+      WHERE category_id = ${cat.id} AND status = 'active'
+      ORDER BY id
+    `;
+    const result: CategorySeoData = {
+      id: Number(cat.id),
+      name: String(cat.name),
+      productCount: prodRows.length,
+      productNames: prodRows.slice(0, 4).map((p) => cleanProductTitle(String(p.name))),
+    };
+    serverCache.set(cacheKey, result, 30_000);
+    return result;
+  });
+
 export const getBrands = createServerFn({ method: "GET" }).handler(async () => {
   if (!sql) return MOCK_BRANDS;
   const { serverCache } = await import("./server-cache");

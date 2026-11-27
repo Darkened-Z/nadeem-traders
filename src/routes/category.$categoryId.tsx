@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, Search, X } from "lucide-react";
+import { getCategorySeo, truncateWords, type CategorySeoData } from "../lib/actions";
 import { track } from "../lib/analytics";
 import {
   StoreLayout,
@@ -10,16 +11,37 @@ import {
   categoryTint,
 } from "../components/store-layout";
 
-export const Route = createFileRoute("/category/$categoryId")({
-  head: () => ({
-    meta: [
+function buildCategoryHead(category: CategorySeoData | null | undefined) {
+  if (!category) {
+    const meta = [
       { title: "Category | Nadeem Traders" },
       {
         name: "description",
-        content: "Dry fruits, spices, pulses, rice and cooking oils. Cash on delivery across Pakistan.",
+        content: "Dry fruits, spices, whole spices and seeds. Cash on delivery across Pakistan.",
       },
-    ],
-  }),
+    ];
+    if (category === null) meta.push({ name: "robots", content: "noindex" });
+    return { meta };
+  }
+  const title = `${category.name} – Buy Online in Pakistan | Nadeem Traders`;
+  const names = category.productNames.slice(0, 4);
+  const full =
+    names.length > 0
+      ? `Shop ${category.name} online in Pakistan including ${names.join(", ")}. ${category.productCount} products · Cash on delivery.`
+      : `Shop fresh ${category.name} online in Pakistan at Nadeem Traders. Cash on delivery across Pakistan.`;
+  const description =
+    full.length <= 155
+      ? full
+      : `${truncateWords(`Shop ${category.name} online in Pakistan: ${names.slice(0, 3).join(", ")}. Cash on delivery at Nadeem Traders`, 154)}.`;
+  return {
+    meta: [{ title }, { name: "description", content: description }],
+  };
+}
+
+export const Route = createFileRoute("/category/$categoryId")({
+  loader: ({ params }) => getCategorySeo({ data: { id: params.categoryId } }).catch(() => undefined),
+  staleTime: 5 * 60_000,
+  head: ({ loaderData }) => buildCategoryHead(loaderData),
   component: CategoryPage,
 });
 
