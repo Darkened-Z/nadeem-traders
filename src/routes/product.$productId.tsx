@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Plus, Minus, Loader2, ChevronLeft, MapPin, ShieldCheck, Truck } from "lucide-react";
-import { recordRecentlyViewedDb } from "../lib/actions";
+import { getProductSeo, recordRecentlyViewedDb, type ProductSeoData } from "../lib/actions";
 import { cartStore, openCheckoutModal } from "../lib/cart-store";
 import { getProductDetailInfo } from "../lib/product-descriptions";
 import { productOptions, optionView } from "../lib/catalog";
@@ -16,13 +16,55 @@ import {
   cleanProductTitle,
 } from "../components/store-layout";
 
+function buildProductHead(product: ProductSeoData | null | undefined) {
+  if (!product) {
+    return {
+      meta: [
+        { title: "Product | Nadeem Traders" },
+        { name: "description", content: "Asli maal, sahi daam. Cash on delivery across Pakistan." },
+        { name: "robots", content: "noindex" },
+      ],
+    };
+  }
+  const name = cleanProductTitle(product.name) || product.name;
+  const pricedOptions = product.options.filter((o): o is typeof o & { price: number } => o.price != null);
+  const cheapest =
+    pricedOptions.length > 0
+      ? pricedOptions.reduce((min, o) => (o.price < min.price ? o : min), pricedOptions[0])
+      : null;
+  const lowestPrice = cheapest ? cheapest.price : product.price;
+  const weight = cheapest?.weight ?? product.weight;
+  const title =
+    [
+      product.name_ur ? `${name} (${product.name_ur})` : name,
+      weight || null,
+      lowestPrice != null ? `– Rs ${lowestPrice}` : null,
+    ]
+      .filter(Boolean)
+      .join(" ") + " | Nadeem Traders";
+
+  const suffix = "Cash on delivery across Pakistan.";
+  const leadParts = [`Buy ${name}${product.origin ? ` from ${product.origin}` : ""}`];
+  if (product.options.length > 0) {
+    leadParts.push(`Options: ${product.options.map((o) => o.name).join(", ")}`);
+  }
+  const lead = `${leadParts.join(". ")}. `;
+  const extra = product.description?.trim();
+  const maxBody = 155 - suffix.length;
+  let body = extra ? `${lead}${extra}. ` : lead;
+  if (body.length > maxBody) {
+    body = lead.length <= maxBody ? lead : `${lead.slice(0, maxBody - 2).trimEnd()} `;
+  }
+  const description = `${body}${suffix}`.slice(0, 155);
+
+  return {
+    meta: [{ title }, { name: "description", content: description }],
+  };
+}
+
 export const Route = createFileRoute("/product/$productId")({
-  head: () => ({
-    meta: [
-      { title: "Product | Nadeem Traders" },
-      { name: "description", content: "Asli maal, sahi daam. Cash on delivery across Pakistan." },
-    ],
-  }),
+  loader: ({ params }) => getProductSeo({ data: { id: params.productId } }),
+  head: ({ loaderData }) => buildProductHead(loaderData),
   component: ProductDetailsPage,
 });
 

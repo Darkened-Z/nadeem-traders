@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { ChevronLeft, Search, X } from "lucide-react";
+import { getCategorySeo, type CategorySeoData } from "../lib/actions";
 import { track } from "../lib/analytics";
 import {
   StoreLayout,
@@ -10,16 +11,37 @@ import {
   categoryTint,
 } from "../components/store-layout";
 
+function buildCategoryHead(category: CategorySeoData | null | undefined) {
+  if (!category) {
+    return {
+      meta: [
+        { title: "Category | Nadeem Traders" },
+        {
+          name: "description",
+          content: "Dry fruits, spices, whole spices and seeds. Cash on delivery across Pakistan.",
+        },
+        { name: "robots", content: "noindex" },
+      ],
+    };
+  }
+  const title = `${category.name} – Buy Online in Pakistan | Nadeem Traders`;
+  const names = category.productNames.slice(0, 4);
+  const full =
+    names.length > 0
+      ? `Shop ${category.name} online in Pakistan including ${names.join(", ")}. ${category.productCount} products · Cash on delivery.`
+      : `Shop fresh ${category.name} online in Pakistan at Nadeem Traders. Cash on delivery across Pakistan.`;
+  const description =
+    full.length <= 155
+      ? full
+      : `Shop ${category.name} online in Pakistan: ${names.slice(0, 3).join(", ")}. Cash on delivery at Nadeem Traders.`.slice(0, 155);
+  return {
+    meta: [{ title }, { name: "description", content: description }],
+  };
+}
+
 export const Route = createFileRoute("/category/$categoryId")({
-  head: () => ({
-    meta: [
-      { title: "Category | Nadeem Traders" },
-      {
-        name: "description",
-        content: "Dry fruits, spices, pulses, rice and cooking oils. Cash on delivery across Pakistan.",
-      },
-    ],
-  }),
+  loader: ({ params }) => getCategorySeo({ data: { id: params.categoryId } }),
+  head: ({ loaderData }) => buildCategoryHead(loaderData),
   component: CategoryPage,
 });
 
