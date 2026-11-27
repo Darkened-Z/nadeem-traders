@@ -15,8 +15,11 @@ import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import { SITE_URL } from "../lib/structured-data";
 
-function canonicalUrlFromMatches(matches: ReadonlyArray<{ pathname?: string }>): string {
-  const raw = (matches[matches.length - 1]?.pathname || "/").split("?")[0].split("#")[0];
+function canonicalUrlFromMatches(matches: ReadonlyArray<{ pathname?: string; routeId?: string; loaderData?: unknown }>): string {
+  const last = matches[matches.length - 1];
+  const categoryId = last?.routeId === "/category/$categoryId" ? (last.loaderData as { id?: number } | null | undefined)?.id : undefined;
+  if (categoryId != null) return `${SITE_URL}/category/${categoryId}`;
+  const raw = (last?.pathname || "/").split("?")[0].split("#")[0];
   const normalized = raw.length > 1 ? raw.replace(/\/+$/, "") : raw || "/";
   return `${SITE_URL}${normalized.startsWith("/") ? normalized : `/${normalized}`}`;
 }
@@ -115,7 +118,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { property: "og:type", content: "website" },
         { property: "og:locale", content: "en_PK" },
         { property: "og:url", content: canonicalUrl },
-        { property: "og:image", content: `${SITE_URL}/BANNER.png` },
+        { property: "og:image", content: `${SITE_URL}/og-default.jpg` },
         { name: "twitter:card", content: "summary_large_image" },
       ],
       links: [
