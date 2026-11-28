@@ -8,6 +8,8 @@ type Strategy = (typeof STRATEGIES)[number];
 type Audit = {
   title?: string;
   score?: number | null;
+  scoreDisplayMode?: string;
+  explanation?: string;
   displayValue?: string;
   numericValue?: number;
   details?: { type?: string; overallSavingsMs?: number };
@@ -20,7 +22,7 @@ type PsiResponse = {
   error?: { message?: string };
   loadingExperience?: { overall_category?: string; metrics?: Record<string, FieldMetric> };
   lighthouseResult?: {
-    categories?: { performance?: { score?: number | null } };
+    categories?: Record<string, { score?: number | null; auditRefs?: { id: string; weight?: number }[] }>;
     audits?: Record<string, Audit>;
   };
 };
@@ -40,6 +42,13 @@ const FIELD = [
   { key: "FIRST_CONTENTFUL_PAINT_MS", short: "FCP", unit: "ms" },
 ] as const;
 
+const CATEGORIES = [
+  { id: "performance", label: "Performance" },
+  { id: "accessibility", label: "Accessibility" },
+  { id: "best-practices", label: "Best practices" },
+  { id: "seo", label: "SEO" },
+] as const;
+
 const CACHE_MS = 15 * 60_000;
 
 function rate(value: number, good: number, poor: number) {
@@ -48,7 +57,8 @@ function rate(value: number, good: number, poor: number) {
 
 async function runPageSpeed(path: string, strategy: Strategy, key: string) {
   const url = `${SITE_URL}${path}`;
-  const params = new URLSearchParams({ url, strategy, category: "performance", key });
+  const params = new URLSearchParams({ url, strategy, key });
+  for (const c of CATEGORIES) params.append("category", c.id);
   const res = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params}`);
   const body = (await res.json()) as PsiResponse;
   if (!res.ok || !body.lighthouseResult) {
@@ -82,15 +92,30 @@ async function runPageSpeed(path: string, strategy: Strategy, key: string) {
     .slice(0, 6)
     .map((a) => ({ title: a.title ?? "", savings: a.displayValue ?? "" }));
 
+  const lhCategories = body.lighthouseResult.categories ?? {};
+  const categories = CATEGORIES.map((c) => {
+    const cat = lhCategories[c.id];
+    const issues =
+      c.id === "performance"
+        ? opportunities
+        : (cat?.auditRefs ?? [])
+            .filter((ref) => (ref.weight ?? 0) > 0)
+            .map((ref) => ({ ref, a: audits[ref.id] }))
+            .filter(({ a }) => a && a.score != null && a.score < 0.9 && a.scoreDisplayMode !== "informative" && a.scoreDisplayMode !== "notApplicable")
+            .sort((x, y) => (y.ref.weight ?? 0) - (x.ref.weight ?? 0))
+            .slice(0, 8)
+            .map(({ a }) => ({ title: a.title ?? "", savings: (a.displayValue || a.explanation || "").slice(0, 90) }));
+    return { id: c.id, label: c.label, score: Math.round((cat?.score ?? 0) * 100), issues };
+  });
+
   const result = {
     configured: true as const,
     url,
     strategy,
     testedAt: new Date().toISOString(),
-    score: Math.round((body.lighthouseResult.categories?.performance?.score ?? 0) * 100),
+    categories,
     lab,
     field,
-    opportunities,
   };
   return result;
 }

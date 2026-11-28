@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Activity,
@@ -11,7 +11,6 @@ import {
   MapPin,
   Percent,
   RefreshCw,
-  ShoppingBag,
   Users,
 } from "lucide-react";
 import { adminGetGoogleAnalytics } from "../lib/google-analytics";
@@ -92,50 +91,23 @@ const EVENT_LABELS: Record<string, string> = {
   form_submit: "Form submitted",
   user_engagement: "Engaged visits",
 };
-const HIDDEN_EVENTS = new Set(["session_start", "first_visit"]);
-
-const rs = (n: number) => `Rs ${n.toLocaleString("en-PK")}`;
-
-function Stat({ label, value, sub, icon: Icon }: { label: string; value: string; sub?: string; icon: typeof Users }) {
-  return (
-    <div className="rounded-xl bg-white p-4 shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06]">
-      <div className="flex items-center justify-between text-[#616161]">
-        <p className="text-[13px] font-medium">{label}</p>
-        <Icon className="h-4 w-4" />
-      </div>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-[#1A1A1A]">{value}</p>
-      {sub && <p className="mt-0.5 text-[11px] text-[#616161]">{sub}</p>}
-    </div>
-  );
-}
-
-function Funnel({ steps }: { steps: { step: string; users: number }[] }) {
-  const top = Math.max(steps[0]?.users ?? 0, 1);
-  return (
-    <ol className="space-y-3">
-      {steps.map((s, i) => {
-        const prev = i > 0 ? steps[i - 1].users : 0;
-        const kept = i > 0 && prev > 0 ? pct(s.users, prev) : null;
-        return (
-          <li key={s.step}>
-            <div className="flex items-baseline justify-between gap-3 text-xs">
-              <span className="font-medium text-[#303030]">
-                {i + 1}. {s.step}
-              </span>
-              <span className="shrink-0 tabular-nums">
-                <strong className="text-[#1A1A1A]">{s.users.toLocaleString()}</strong>
-                {kept !== null && <span className="ml-1.5 text-[#8A8A8A]">({kept}% of previous)</span>}
-              </span>
-            </div>
-            <div className="mt-1 h-2.5 rounded-full bg-[#F1F1F1]">
-              <div className="h-full rounded-full bg-[#C9A24A]" style={{ width: `${Math.max(pct(s.users, top), s.users > 0 ? 2 : 0)}%` }} />
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
+// Shopping steps live on Visitors & Funnel (PostHog) and real orders on Analytics, so they are not repeated here.
+const HIDDEN_EVENTS = new Set([
+  "session_start",
+  "first_visit",
+  "view_item",
+  "add_to_cart",
+  "begin_checkout",
+  "checkout_submitted",
+  "purchase",
+  "order_placed",
+  "order_failed",
+  "checkout_abandoned",
+  "cart_viewed",
+  "product_viewed",
+  "added_to_cart",
+  "checkout_started",
+]);
 
 const RATING_STYLE: Record<string, string> = {
   good: "bg-[#DCFCE7] text-[#166534]",
@@ -156,6 +128,7 @@ function SiteSpeed({ productPath }: { productPath: string | null }) {
   const [path, setPath] = useState("/");
   const [strategy, setStrategy] = useState<"mobile" | "desktop">("mobile");
   const [nonce, setNonce] = useState(0);
+  const [tab, setTab] = useState("performance");
   const { data, isFetching, error } = useAdminQuery(["pagespeed", path, strategy, nonce], () =>
     adminGetPageSpeed({ data: { path, strategy, refresh: nonce > 0 } }),
   );
@@ -165,7 +138,7 @@ function SiteSpeed({ productPath }: { productPath: string | null }) {
 
   return (
     <Card
-      title="Site speed (Google PageSpeed)"
+      title="Site health (Google Lighthouse)"
       className="mt-6"
       action={
         data?.configured && (
@@ -210,24 +183,59 @@ function SiteSpeed({ productPath }: { productPath: string | null }) {
         </p>
       ) : (
         <div className={`mt-4 ${isFetching ? "opacity-60" : ""}`}>
-          <div className="flex flex-wrap items-center gap-5">
-            <div
-              className="grid h-20 w-20 shrink-0 place-items-center rounded-full"
-              style={{ background: `conic-gradient(${scoreColor(data.score)} ${data.score * 3.6}deg, #F1F1F1 0deg)` }}
-            >
-              <div className="grid h-16 w-16 place-items-center rounded-full bg-white">
-                <span className="text-xl font-bold tabular-nums" style={{ color: scoreColor(data.score) }}>
-                  {data.score}
-                </span>
-              </div>
-            </div>
-            <div className="text-xs text-[#616161]">
-              <p className="font-semibold text-[#303030]">Performance score ({data.strategy})</p>
-              <p className="mt-0.5">90+ is good, 50–89 needs work, under 50 is slow.</p>
-              <p className="mt-0.5 text-[11px] text-[#8A8A8A]">Tested {new Date(data.testedAt).toLocaleString("en-PK")}</p>
-            </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {data.categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setTab(c.id)}
+                className={`flex flex-col items-center gap-2 rounded-xl p-3 transition-colors ${
+                  tab === c.id ? "bg-[#F7F7F7] ring-1 ring-black/10" : "hover:bg-[#FAFAFA]"
+                }`}
+              >
+                <div
+                  className="grid h-16 w-16 place-items-center rounded-full"
+                  style={{ background: `conic-gradient(${scoreColor(c.score)} ${c.score * 3.6}deg, #EBEBEB 0deg)` }}
+                >
+                  <div className="grid h-[52px] w-[52px] place-items-center rounded-full bg-white">
+                    <span className="text-lg font-bold tabular-nums" style={{ color: scoreColor(c.score) }}>
+                      {c.score}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xs font-semibold text-[#303030]">{c.label}</span>
+              </button>
+            ))}
           </div>
+          <p className="mt-2 text-[11px] text-[#8A8A8A]">
+            Google Lighthouse, {data.strategy}. 90+ good, 50–89 needs work, under 50 poor. Tested {new Date(data.testedAt).toLocaleString("en-PK")}.
+          </p>
 
+          {(() => {
+            const active = data.categories.find((c) => c.id === tab) ?? data.categories[0];
+            return (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-[#303030]">
+                  {active.id === "performance" ? "Biggest speed fixes" : `${active.label}: what to fix`}
+                </p>
+                {active.issues.length === 0 ? (
+                  <p className="mt-1 text-[11px] text-[#166534]">Nothing to fix here, all checks passed.</p>
+                ) : (
+                  <ul className="mt-2 divide-y divide-[#EBEBEB] text-xs">
+                    {active.issues.map((o) => (
+                      <li key={o.title} className="flex justify-between gap-3 py-2">
+                        <span className="text-[#303030]">{o.title}</span>
+                        <span className="shrink-0 text-[#8A8A8A]">{o.savings}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })()}
+
+          {tab === "performance" && (
+          <>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
             {data.lab.map((m) => (
               <div key={m.short} className="rounded-lg bg-[#F7F7F7] p-3" title={m.label}>
@@ -254,19 +262,7 @@ function SiteSpeed({ productPath }: { productPath: string | null }) {
               </div>
             )}
           </div>
-
-          {data.opportunities.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-semibold text-[#303030]">Biggest speed fixes</p>
-              <ul className="mt-2 divide-y divide-[#EBEBEB] text-xs">
-                {data.opportunities.map((o) => (
-                  <li key={o.title} className="flex justify-between gap-3 py-2">
-                    <span className="text-[#303030]">{o.title}</span>
-                    <span className="shrink-0 text-[#8A8A8A]">{o.savings}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          </>
           )}
         </div>
       )}
@@ -397,7 +393,7 @@ function GoogleAnalyticsPage() {
     );
   }
 
-  const { totals, daily, pages, sources, cities, devices, realtimeActiveUsers, hasMeasurementId, sales, funnel, events, products, landingPages, audience } =
+  const { totals, daily, pages, sources, cities, devices, realtimeActiveUsers, hasMeasurementId, events, products, landingPages, audience } =
     data;
   const topProductPath = pages.find((p) => p.path.startsWith("/product/"))?.path ?? null;
   const keyEvents = events.filter((e) => !HIDDEN_EVENTS.has(e.name));
@@ -502,63 +498,48 @@ function GoogleAnalyticsPage() {
         )}
       </Card>
 
-      <h2 className="mt-8 text-base font-semibold text-[#1A1A1A]">Sales performance</h2>
-      <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Revenue" value={rs(sales.revenue)} sub="from tracked orders" icon={ShoppingBag} />
-        <Stat
-          label="Orders"
-          value={sales.purchases.toLocaleString()}
-          sub={`${totals.sessions > 0 ? ((sales.purchases / totals.sessions) * 100).toFixed(1) : "0.0"}% of sessions`}
-          icon={ShoppingBag}
-        />
-        <Stat label="Added to cart" value={sales.addToCarts.toLocaleString()} sub={`${sales.itemsViewed.toLocaleString()} product views`} icon={ShoppingBag} />
-        <Stat
-          label="Checkouts"
-          value={sales.checkouts.toLocaleString()}
-          sub={sales.purchases > 0 ? `${rs(Math.round(sales.revenue / sales.purchases))} avg order` : "no orders yet"}
-          icon={ShoppingBag}
-        />
-      </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card title="Shopping funnel (visitors)">
-          <Funnel steps={funnel} />
-          <p className="mt-3 text-[11px] text-[#8A8A8A]">The biggest drop between two steps is where customers give up.</p>
-        </Card>
-
-        <Card title="Product performance">
-          {products.length === 0 ? (
-            <p className="py-6 text-center text-xs text-[#8A8A8A]">No product views recorded yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-[#EBEBEB] font-semibold text-[#616161]">
-                  <tr>
-                    <th className="py-2">Product</th>
-                    <th className="py-2 text-right">Views</th>
-                    <th className="py-2 text-right">Carted</th>
-                    <th className="py-2 text-right">Sold</th>
-                    <th className="py-2 text-right">Revenue</th>
+      <h2 className="mt-8 text-base font-semibold text-[#1A1A1A]">Product interest</h2>
+      <p className="mt-1 text-xs text-[#616161]">
+        For real revenue and orders see{" "}
+        <Link to={"/admin/analytics" as any} className="font-semibold text-[#0B4A36] underline-offset-2 hover:underline">
+          Analytics
+        </Link>
+        ; for the step-by-step shopping funnel see{" "}
+        <Link to={"/admin/visitors" as any} className="font-semibold text-[#0B4A36] underline-offset-2 hover:underline">
+          Visitors &amp; Funnel
+        </Link>
+        .
+      </p>
+      <Card title="Most viewed products (Google Analytics)" className="mt-3">
+        {products.length === 0 ? (
+          <p className="py-6 text-center text-xs text-[#8A8A8A]">No product views recorded yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-[#EBEBEB] font-semibold text-[#616161]">
+                <tr>
+                  <th className="py-2">Product</th>
+                  <th className="py-2 text-right">Views</th>
+                  <th className="py-2 text-right">Added to cart</th>
+                  <th className="py-2 text-right">Cart rate</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#EBEBEB]">
+                {products.map((p) => (
+                  <tr key={p.name}>
+                    <td className="max-w-[16rem] truncate py-2 font-medium text-[#303030]" title={p.name}>
+                      {p.name}
+                    </td>
+                    <td className="py-2 text-right tabular-nums">{p.views}</td>
+                    <td className="py-2 text-right tabular-nums">{p.addedToCart}</td>
+                    <td className="py-2 text-right tabular-nums text-[#616161]">{p.views > 0 ? `${pct(p.addedToCart, p.views)}%` : "�"}</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-[#EBEBEB]">
-                  {products.map((p) => (
-                    <tr key={p.name}>
-                      <td className="max-w-[12rem] truncate py-2 font-medium text-[#303030]" title={p.name}>
-                        {p.name}
-                      </td>
-                      <td className="py-2 text-right tabular-nums">{p.views}</td>
-                      <td className="py-2 text-right tabular-nums">{p.addedToCart}</td>
-                      <td className="py-2 text-right tabular-nums">{p.purchased}</td>
-                      <td className="py-2 text-right tabular-nums">{p.revenue ? rs(p.revenue) : "–"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       <h2 className="mt-8 text-base font-semibold text-[#1A1A1A]">Traffic</h2>
       <div className="mt-3 grid gap-6 lg:grid-cols-2">
@@ -647,7 +628,6 @@ function GoogleAnalyticsPage() {
                     <th className="py-2 text-right">Visits</th>
                     <th className="py-2 text-right">Bounce</th>
                     <th className="py-2 text-right">Avg time</th>
-                    <th className="py-2 text-right">Orders</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#EBEBEB]">
@@ -659,7 +639,6 @@ function GoogleAnalyticsPage() {
                       <td className="py-2 text-right tabular-nums">{p.sessions}</td>
                       <td className={`py-2 text-right tabular-nums ${p.bounceRate >= 70 ? "text-[#B42318]" : ""}`}>{p.bounceRate}%</td>
                       <td className="py-2 text-right tabular-nums text-[#616161]">{formatDuration(p.avgDuration)}</td>
-                      <td className="py-2 text-right tabular-nums">{p.purchases}</td>
                     </tr>
                   ))}
                 </tbody>
