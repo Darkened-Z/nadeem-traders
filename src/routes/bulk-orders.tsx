@@ -2,18 +2,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { FileSpreadsheet, Send, Building2, Truck, ShieldCheck, Check } from "lucide-react";
 import { toast } from "sonner";
+import { submitInquiry } from "../lib/actions";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/bulk-orders")({
   head: () => ({
-    meta: [
-      { title: "Bulk & Institutional Orders — Nadeem Traders | Apka Trusted Stop" },
-      {
-        name: "description",
-        content:
-          "Request commercial bulk quotes for bulk dry fruits, whole spices, ground masalay, edible seeds, and special items. Apka Trusted Stop.",
-      },
-    ],
+    meta: pageMeta(
+      "Bulk & Institutional Orders — Nadeem Traders | Apka Trusted Stop",
+      "Request commercial bulk quotes for bulk dry fruits, whole spices, ground masalay, edible seeds, and special items. Apka Trusted Stop.",
+    ),
   }),
   component: BulkOrdersPage,
 });
@@ -30,15 +28,19 @@ function BulkOrdersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      await submitInquiry({ data: { kind: "bulk", ...form } });
       toast.success("Bulk inquiry registered! Our wholesale desk will contact you within 24 hours.");
       setForm({ companyName: "", contactPerson: "", phone: "", city: "", itemsQuery: "" });
-      setSubmitting(false);
       setSubmitted(true);
-    }, 600);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not submit bulk inquiry. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

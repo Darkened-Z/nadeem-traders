@@ -2,6 +2,15 @@ import type { ProductSeoData } from "./actions";
 
 export const SITE_URL = "https://nadeemtraders.com";
 
+export function pageMeta(title: string, description: string) {
+  return [
+    { title },
+    { name: "description", content: description },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+  ];
+}
+
 export function toAbsoluteUrl(pathOrUrl?: string | null): string | undefined {
   if (!pathOrUrl) return undefined;
   const trimmed = pathOrUrl.trim();

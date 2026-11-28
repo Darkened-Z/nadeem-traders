@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "./db";
 import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, cleanProductTitle, type ProductOption } from "./catalog";
-import { assertAdmin } from "./admin";
+import { assertAdmin, readStoreSettings } from "./admin";
+import { calculateDeliveryFee } from "./store-settings";
 import { assertOrderStatus } from "./order-status";
 import { Resend } from "resend";
 import { OAuth2Client } from "google-auth-library";
@@ -14,6 +15,24 @@ const oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 
 
+function getMailFrom(): string {
+  return process.env.MAIL_FROM || "Nadeem Traders <onboarding@resend.dev>";
+}
+
+async function getAdminNotificationEmail(): Promise<string> {
+  if (process.env.ADMIN_EMAIL) return process.env.ADMIN_EMAIL;
+  return (await readStoreSettings()).store_email;
+}
+
+function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // Helper to send order status emails
 async function sendOrderStatusEmail(
   orderId: number,
@@ -21,48 +40,63 @@ async function sendOrderStatusEmail(
   customerEmail: string,
   status: string,
   totalAmount: number,
-  items: Array<{ name: string; quantity: number; price: number }>
+  items: Array<{ name: string; quantity: number; price: number }>,
+  deliveryFee?: number,
 ) {
+  const settings = await readStoreSettings();
+  const safeName = escapeHtml(customerName);
+  const safeEmail = escapeHtml(customerEmail);
+  const safeStatus = escapeHtml(status);
+  const safeAddress = escapeHtml(settings.store_address);
   const itemsHtml = items
     .map(
       (item) =>
-        `<li>${item.name} x ${item.quantity} - Rs. ${(
+        `<li>${escapeHtml(item.name)} x ${item.quantity} - Rs. ${(
           item.price * item.quantity
         ).toLocaleString()}</li>`
     )
     .join("");
+  const deliveryRowHtml =
+    deliveryFee !== undefined
+      ? `<p style="font-size: 14px; color: #333333; margin-top: 12px;">Delivery (PostEx): <strong>${
+          deliveryFee === 0 ? "FREE" : `Rs. ${deliveryFee.toLocaleString()}`
+        }</strong></p>`
+      : "";
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #fdfdfd;">
-      <div style="background-color: #047857; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+      <div style="background-color: #0B4A36; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
         <h1 style="margin: 0; font-size: 24px;">Nadeem Traders</h1>
         <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Order Update</p>
       </div>
       <div style="padding: 20px; color: #333333; line-height: 1.6;">
-        <p>Dear <strong>${customerName}</strong>,</p>
-        <p>Your order <strong>#${orderId}</strong> status has been updated to: <span style="background-color: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 14px;">${status}</span></p>
+        <p>Dear <strong>${safeName}</strong>,</p>
+        <p>Your order <strong>#${orderId}</strong> status has been updated to: <span style="background-color: #e6f2ed; color: #0B4A36; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 14px;">${safeStatus}</span></p>
         
         <h3 style="border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; margin-top: 24px;">Order Summary</h3>
         <ul style="padding-left: 20px; margin-top: 10px;">
           ${itemsHtml}
         </ul>
-        <p style="font-size: 16px; font-weight: bold; margin-top: 20px;">Total Amount: <span style="color: #047857;">Rs. ${totalAmount.toLocaleString()}</span></p>
+        ${deliveryRowHtml}
+        <p style="font-size: 16px; font-weight: bold; margin-top: 12px;">Total Amount: <span style="color: #0B4A36;">Rs. ${totalAmount.toLocaleString()}</span></p>
         
-        <div style="margin-top: 30px; padding: 15px; background-color: #f9fafb; border-radius: 8px; font-size: 12px; color: #6b7280; border-left: 4px solid #047857;">
+        <div style="margin-top: 30px; padding: 15px; background-color: #f9fafb; border-radius: 8px; font-size: 12px; color: #6b7280; border-left: 4px solid #0B4A36;">
           <strong>Order Tracking:</strong> You can track this order live on our website using Order ID: <strong>${orderId}</strong>.
           <br/><br/>
-          <em style="font-size: 11px;">* Note: This email was sent to your registered address: ${customerEmail}</em>
+          <em style="font-size: 11px;">* Note: This email was sent to your registered address: ${safeEmail}</em>
         </div>
       </div>
       <div style="text-align: center; padding: 15px; font-size: 12px; color: #9ca3af; border-top: 1px solid #f3f4f6; margin-top: 30px;">
-        &copy; ${new Date().getFullYear()} Nadeem Traders. Commercial Hub, Punjab, Pakistan.
+        &copy; ${new Date().getFullYear()} Nadeem Traders. ${safeAddress}.
       </div>
     </div>
   `;
 
+  const from = getMailFrom();
+
   try {
     await resend?.emails.send({
-      from: "Nadeem Traders <onboarding@resend.dev>",
+      from,
       to: customerEmail,
       subject: `[Order #${orderId}] Status Update: ${status}`,
       html: emailHtml,
@@ -74,9 +108,9 @@ async function sendOrderStatusEmail(
 
   // Admin / Store Owner Notification
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || "technicalsubhan7801@gmail.com";
+    const adminEmail = await getAdminNotificationEmail();
     await resend?.emails.send({
-      from: "Nadeem Traders <onboarding@resend.dev>",
+      from,
       to: adminEmail,
       subject: `[Admin Alert - Order #${orderId}] Status: ${status}`,
       html: `<div style="background: #fff3cd; color: #856404; padding: 12px; border: 1px solid #ffeeba; border-radius: 6px; margin-bottom: 20px;">
@@ -1143,7 +1177,8 @@ export const createOrder = createServerFn({ method: "POST" })
       couponCode = coupon.code;
       discount = coupon.discount;
     }
-    const total = Math.max(0, subtotal - discount);
+    const deliveryFee = calculateDeliveryFee(subtotal, await readStoreSettings());
+    const total = Math.max(0, subtotal - discount) + deliveryFee;
 
     const { serverCache } = await import("./server-cache");
     serverCache.delete("orders_list");
@@ -1177,7 +1212,8 @@ export const createOrder = createServerFn({ method: "POST" })
       customerEmail,
       "Pending (COD Received)",
       total,
-      lines.map((l) => ({ name: l.product_name, quantity: l.quantity, price: l.price }))
+      lines.map((l) => ({ name: l.product_name, quantity: l.quantity, price: l.price })),
+      deliveryFee,
     ).catch(console.error);
 
     return result;
@@ -1279,14 +1315,14 @@ export const sendVerificationEmail = createServerFn({ method: "POST" })
     // Resend v6 reports failures in the return value instead of throwing.
     const sent = resend
       ? await resend.emails.send({
-        from: "Nadeem Traders <onboarding@resend.dev>",
+        from: getMailFrom(),
         to: data.email,
         subject: "Verify Your Email Address — Nadeem Traders",
         html: `
           <div style="font-family: sans-serif; padding: 20px; max-width: 500px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff;">
-            <h2 style="color: #2E7D32; margin-top: 0;">Nadeem Traders</h2>
+            <h2 style="color: #0B4A36; margin-top: 0;">Nadeem Traders</h2>
             <p style="font-size: 14px; color: #334155;">Thank you for registering at Nadeem Traders. Please use the verification code below to verify your email address:</p>
-            <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 16px; background: #e8f5e9; text-align: center; color: #1b5e20; border-radius: 8px; margin: 20px 0; border: 1px solid #c8e6c9;">
+            <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 16px; background: #e6f2ed; text-align: center; color: #0B4A36; border-radius: 8px; margin: 20px 0; border: 1px solid #b7dfd0;">
               ${code}
             </div>
             <p style="font-size: 12px; color: #64748b; line-height: 1.5;">This code will expire in 15 minutes. If you did not make this request, please disregard this email.</p>
@@ -1422,4 +1458,104 @@ export const verifyEmailCodeAndLogin = createServerFn({ method: "POST" })
     }
 
     return { success: true, user };
+  });
+
+export const getStoreSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const { serverCache } = await import("./server-cache");
+  const cached = serverCache.get("store_settings");
+  if (cached) return cached;
+  const { readStoreSettings } = await import("./admin");
+  const settings = await readStoreSettings();
+  serverCache.set("store_settings", settings, 30_000);
+  return settings;
+});
+
+type InquiryInput =
+  | { kind: "contact"; name: string; email: string; subject: string; message: string }
+  | { kind: "bulk"; companyName: string; contactPerson: string; phone: string; city: string; itemsQuery: string }
+  | { kind: "supplier"; supplierName: string; city: string; phone: string; catalogType: string };
+
+function cleanInquiryField(raw: unknown, label: string, maxLen = 2000): string {
+  const val = String(raw ?? "").trim();
+  if (!val) throw new Error(`${label} is required.`);
+  return val.slice(0, maxLen);
+}
+
+function buildInquiryEmail(data: InquiryInput): { subject: string; rows: Array<[string, string]>; replyTo?: string } {
+  if (data.kind === "contact") {
+    const email = cleanInquiryField(data.email, "Email", 200);
+    return {
+      subject: `[Contact] ${cleanInquiryField(data.subject, "Subject", 200)}`,
+      replyTo: email,
+      rows: [
+        ["Name", cleanInquiryField(data.name, "Name", 150)],
+        ["Email", email],
+        ["Subject", cleanInquiryField(data.subject, "Subject", 200)],
+        ["Message", cleanInquiryField(data.message, "Message", 4000)],
+      ],
+    };
+  }
+  if (data.kind === "bulk") {
+    return {
+      subject: `[Bulk Order Inquiry] ${cleanInquiryField(data.companyName, "Business name", 200)} (${cleanInquiryField(data.city, "City", 120)})`,
+      rows: [
+        ["Business / Organization", cleanInquiryField(data.companyName, "Business name", 200)],
+        ["Contact Person", cleanInquiryField(data.contactPerson, "Contact person", 150)],
+        ["Phone / WhatsApp", cleanInquiryField(data.phone, "Phone", 60)],
+        ["City", cleanInquiryField(data.city, "City", 120)],
+        ["Requirements", cleanInquiryField(data.itemsQuery, "Required commodities", 4000)],
+      ],
+    };
+  }
+  return {
+    subject: `[Supplier Application] ${cleanInquiryField(data.supplierName, "Supplier name", 200)} (${cleanInquiryField(data.city, "City", 120)})`,
+    rows: [
+      ["Mill / Grower / Company", cleanInquiryField(data.supplierName, "Supplier name", 200)],
+      ["Origin City", cleanInquiryField(data.city, "Origin city", 120)],
+      ["Contact Phone", cleanInquiryField(data.phone, "Contact phone", 60)],
+      ["Commodities & Capacity", cleanInquiryField(data.catalogType, "Commodities", 4000)],
+    ],
+  };
+}
+
+export const submitInquiry = createServerFn({ method: "POST" })
+  .validator((data: InquiryInput) => data)
+  .handler(async ({ data }) => {
+    const { getClientIp } = await import("./server-cookies");
+    const ip = getClientIp() || "unknown";
+    if (Boolean(sql)) {
+      const { assertUnderLimit, recordAttempt } = await import("./rate-limit");
+      const key = `inquiry:${ip}`;
+      await assertUnderLimit(key, 10, 15);
+      await recordAttempt(key);
+    }
+
+    const { subject, rows, replyTo } = buildInquiryEmail(data);
+    const adminEmail = await getAdminNotificationEmail();
+    const rowsHtml = rows
+      .map(
+        ([k, v]) =>
+          `<tr><td style="padding:8px 12px;font-weight:bold;border-bottom:1px solid #eee;vertical-align:top;width:180px;">${escapeHtml(k)}</td><td style="padding:8px 12px;border-bottom:1px solid #eee;white-space:pre-line;">${escapeHtml(v)}</td></tr>`,
+      )
+      .join("");
+
+    const sent = resend
+      ? await resend.emails.send({
+          from: getMailFrom(),
+          to: adminEmail,
+          ...(replyTo ? { replyTo } : {}),
+          subject,
+          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e5e5e5;border-radius:10px;"><h2 style="margin-top:0;color:#0B4A36;">${escapeHtml(subject)}</h2><table style="width:100%;border-collapse:collapse;font-size:14px;color:#333;">${rowsHtml}</table></div>`,
+        })
+      : { error: new Error("RESEND_API_KEY is not configured") };
+
+    if (sent.error) {
+      console.error("Failed to send inquiry email:", sent.error);
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("Could not submit your request right now. Please contact us via WhatsApp or phone.");
+      }
+      return { success: true, devSimulated: true };
+    }
+
+    return { success: true };
   });

@@ -2,14 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Store, Send, Check } from "lucide-react";
 import { toast } from "sonner";
+import { submitInquiry } from "../lib/actions";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/sell-with-us")({
   head: () => ({
-    meta: [
-      { title: "Supplier Onboarding — Nadeem Traders" },
-      { name: "description", content: "Partner with Nadeem Traders as an agricultural grower or mill." },
-    ],
+    meta: pageMeta(
+      "Supplier Onboarding — Nadeem Traders",
+      "Partner with Nadeem Traders as an agricultural grower or mill.",
+    ),
   }),
   component: SellWithUsPage,
 });
@@ -19,14 +21,18 @@ function SellWithUsPage() {
   const [form, setForm] = useState({ supplierName: "", city: "", phone: "", catalogType: "" });
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      await submitInquiry({ data: { kind: "supplier", ...form } });
       toast.success("Partner application submitted! Our procurement team will review and reach out.");
       setForm({ supplierName: "", city: "", phone: "", catalogType: "" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not submit application. Please try again.");
+    } finally {
       setSubmitting(false);
-    }, 600);
+    }
   };
 
   return (

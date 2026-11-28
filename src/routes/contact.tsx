@@ -2,31 +2,34 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { submitInquiry } from "../lib/actions";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
-    meta: [
-      { title: "Contact Us — Nadeem Traders" },
-      { name: "description", content: "Reach out to Nadeem Traders for orders and inquiries." },
-    ],
+    meta: pageMeta("Contact Us — Nadeem Traders", "Reach out to Nadeem Traders for orders and inquiries."),
   }),
   component: ContactPage,
 });
 
 function ContactPage() {
-  const { categories, products, currentUser } = useStoreData();
+  const { categories, products, currentUser, storeSettings } = useStoreData();
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      await submitInquiry({ data: { kind: "contact", ...form } });
       toast.success("Message received. Our customer desk will get back to you shortly.");
       setForm({ name: "", email: "", subject: "", message: "" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not send message. Please try again.");
+    } finally {
       setSubmitting(false);
-    }, 600);
+    }
   };
 
   return (
@@ -47,18 +50,18 @@ function ContactPage() {
             {[
               {
                 icon: MapPin,
-                title: "Central Grain & Spice Hub",
-                desc: "Commercial Mandi Road, Punjab, Pakistan",
+                title: "Central Spice & Dry Fruit Hub",
+                desc: storeSettings.store_address,
               },
               {
                 icon: Phone,
                 title: "Direct Sales & Dispatch Desk",
-                desc: "+92 300 1234567 (Mon–Sat, 9:00 AM – 8:00 PM)",
+                desc: `${storeSettings.store_phone} (Mon–Sat, 9:00 AM – 8:00 PM)`,
               },
               {
                 icon: Mail,
                 title: "Email Inquiries",
-                desc: "support@nadeemtraders.pk",
+                desc: storeSettings.store_email,
               },
               {
                 icon: Clock,

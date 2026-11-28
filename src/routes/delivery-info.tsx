@@ -1,19 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Truck, ShieldCheck, MapPin, Clock } from "lucide-react";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/delivery-info")({
   head: () => ({
-    meta: [
-      { title: "Delivery Information — Nadeem Traders" },
-      { name: "description", content: "Details about shipping rates, timelines, and delivery areas in Pakistan." },
-    ],
+    meta: pageMeta(
+      "Delivery Information — Nadeem Traders",
+      "Details about shipping rates, timelines, and delivery areas in Pakistan.",
+    ),
   }),
   component: DeliveryInfoPage,
 });
 
 function DeliveryInfoPage() {
-  const { categories, products, currentUser } = useStoreData();
+  const { categories, products, currentUser, storeSettings } = useStoreData();
+  const fee = Math.max(0, Number(storeSettings.delivery_fee) || 0);
+  const threshold = Math.max(0, Number(storeSettings.free_delivery_threshold) || 0);
 
   return (
     <StoreLayout categories={categories} products={products} currentUser={currentUser}>
@@ -78,15 +81,19 @@ function DeliveryInfoPage() {
               <span>Delivery Window</span>
               <span>Shipping Fee</span>
             </div>
+            {threshold > 0 && (
+              <div className="grid grid-cols-3 px-6 py-3.5">
+                <span className="font-semibold text-foreground">Orders Above Rs. {threshold.toLocaleString()}</span>
+                <span>1–3 Business Days</span>
+                <span className="font-mono font-bold text-primary">FREE</span>
+              </div>
+            )}
             <div className="grid grid-cols-3 px-6 py-3.5">
-              <span className="font-semibold text-foreground">Orders Above Rs. 2,000</span>
+              <span className="font-semibold text-foreground">
+                {threshold > 0 ? `Standard Retail (Under Rs. ${threshold.toLocaleString()})` : "Standard Retail Orders"}
+              </span>
               <span>1–3 Business Days</span>
-              <span className="font-mono font-bold text-primary">FREE</span>
-            </div>
-            <div className="grid grid-cols-3 px-6 py-3.5">
-              <span className="font-semibold text-foreground">Standard Retail (Under Rs. 2,000)</span>
-              <span>1–3 Business Days</span>
-              <span className="font-mono font-semibold">Rs. 180</span>
+              <span className="font-mono font-semibold">{fee === 0 ? "FREE" : `Rs. ${fee.toLocaleString()}`}</span>
             </div>
             <div className="grid grid-cols-3 px-6 py-3.5">
               <span className="font-semibold text-foreground">Bulk Sacks (25kg–50kg+)</span>

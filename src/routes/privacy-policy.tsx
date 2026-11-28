@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Shield } from "lucide-react";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/privacy-policy")({
   head: () => ({
-    meta: [
-      { title: "Privacy Policy — Nadeem Traders" },
-      { name: "description", content: "Understand how your personal credentials and session data are managed securely." },
-    ],
+    meta: pageMeta(
+      "Privacy Policy — Nadeem Traders",
+      "Understand how your personal credentials and session data are managed securely.",
+    ),
   }),
   component: PrivacyPolicyPage,
 });

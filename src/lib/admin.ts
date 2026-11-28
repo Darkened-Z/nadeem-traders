@@ -3,6 +3,9 @@ import { getCookie, setCookie, deleteCookie } from "@tanstack/react-start/server
 import crypto from "crypto";
 import { sql } from "./db";
 import { assertOrderStatus } from "./order-status";
+import { DEFAULT_STORE_SETTINGS, type StoreSettings } from "./store-settings";
+
+export { DEFAULT_STORE_SETTINGS, type StoreSettings };
 
 const COOKIE = "nt_admin";
 const SESSION_DAYS = 7;
@@ -67,6 +70,7 @@ async function bustStoreCache() {
   const { serverCache } = await import("./server-cache");
   serverCache.delete("products");
   serverCache.delete("categories");
+  serverCache.delete("store_settings");
 }
 
 export const adminSession = createServerFn({ method: "GET" }).handler(async () => ({
@@ -388,35 +392,25 @@ export const adminListCustomers = createServerFn({ method: "GET" })
     return { customers: rows.slice(0, PAGE_SIZE), hasMore: rows.length > PAGE_SIZE, totals };
   });
 
-export const DEFAULT_STORE_SETTINGS: Record<string, string> = {
-  whatsapp_number: "923000000000",
-  announcement_text: "100% Purity Guaranteed · Apka Trusted Stop · Fast Doorstep Delivery via PostEx Courier",
-  delivery_fee: "250",
-  free_delivery_threshold: "3000",
-  store_phone: "+92 300 0000000",
-  store_email: "info@nadeemtraders.pk",
-  store_address: "Gala Mandi, Pakistan",
-};
+export const readStoreSettings = createServerOnlyFn(async (): Promise<StoreSettings> => {
+  if (!sql) return { ...DEFAULT_STORE_SETTINGS };
+  try {
+    const rows = await sql`SELECT key, value FROM store_settings`;
+    const map: StoreSettings = { ...DEFAULT_STORE_SETTINGS };
+    for (const r of rows) {
+      const k = String(r.key);
+      if (k in map) (map as Record<string, string>)[k] = String(r.value);
+    }
+    return map;
+  } catch (err) {
+    console.error("readStoreSettings failed, falling back to defaults:", err);
+    return { ...DEFAULT_STORE_SETTINGS };
+  }
+});
 
 export const adminGetSettings = createServerFn({ method: "GET" }).handler(async () => {
   await assertAdmin();
-  if (!sql) return DEFAULT_STORE_SETTINGS;
-  try {
-    await sql`
-      CREATE TABLE IF NOT EXISTS store_settings (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-      )
-    `;
-    const rows = await sql`SELECT key, value FROM store_settings`;
-    const map = { ...DEFAULT_STORE_SETTINGS };
-    for (const r of rows) map[r.key] = r.value;
-    return map;
-  } catch (err) {
-    console.error("adminGetSettings failed, falling back to defaults:", err);
-    return DEFAULT_STORE_SETTINGS;
-  }
+  return readStoreSettings();
 });
 
 export const adminSaveSettings = createServerFn({ method: "POST" })

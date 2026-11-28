@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Save, Settings, Phone, Truck, ShieldCheck, Mail, MapPin } from "lucide-react";
 import { toast } from "sonner";
-import { adminGetSettings, adminSaveSettings, DEFAULT_STORE_SETTINGS } from "../lib/admin";
+import { adminGetSettings, adminSaveSettings } from "../lib/admin";
+import { DEFAULT_STORE_SETTINGS } from "../lib/store-settings";
 import { useAdminQuery } from "../components/admin-shell";
 import { Button, Card, Field, PageHeader, errorMessage, inputClass } from "../components/admin-ui";
 

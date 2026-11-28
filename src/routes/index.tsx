@@ -9,9 +9,10 @@ import {
   CategorySection,
   SectionHeader,
   useStoreData,
-  WHATSAPP_NUMBER,
+  useStoreSettings,
   stagger,
 } from "../components/store-layout";
+import { sanitizeWhatsappNumber } from "../lib/store-settings";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -401,7 +402,9 @@ function Hero() {
 }
 
 function WhatsAppBand() {
-  const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  const settings = useStoreSettings();
+  const whatsapp = sanitizeWhatsappNumber(settings.whatsapp_number);
+  const href = `https://wa.me/${whatsapp}?text=${encodeURIComponent(
     "Assalam o Alaikum! Mujhe larger quantity / custom quotation chahiye. Meri requirement:",
   )}`;
   return (

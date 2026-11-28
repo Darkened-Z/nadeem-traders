@@ -1,17 +1,24 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react";
 import { ShoppingBag, Search, Plus, Minus, X, Check, Menu, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   getCategories,
   getProducts,
   getBrands,
+  getStoreSettings,
   createOrder,
   validateCoupon,
   restoreSession,
   clearCartDb,
   getUserAddresses,
 } from "../lib/actions";
+import {
+  DEFAULT_STORE_SETTINGS,
+  sanitizeWhatsappNumber,
+  calculateDeliveryFee,
+  type StoreSettings,
+} from "../lib/store-settings";
 import {
   useCart,
   cartStore,
@@ -23,7 +30,38 @@ import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, productOptions, optionView, clean
 import { track, identifyCustomer } from "../lib/analytics";
 export { cleanProductTitle };
 
-export const WHATSAPP_NUMBER = "923000000000";
+export const WHATSAPP_NUMBER = DEFAULT_STORE_SETTINGS.whatsapp_number;
+
+let cachedStoreSettings: StoreSettings = DEFAULT_STORE_SETTINGS;
+const storeSettingsListeners = new Set<(s: StoreSettings) => void>();
+let storeSettingsFetch: Promise<StoreSettings> | null = null;
+
+function publishStoreSettings(next: StoreSettings) {
+  cachedStoreSettings = next;
+  storeSettingsListeners.forEach((cb) => cb(next));
+}
+
+function loadStoreSettingsOnce(): Promise<StoreSettings> {
+  if (!storeSettingsFetch) {
+    storeSettingsFetch = getStoreSettings()
+      .then((res) => {
+        const merged: StoreSettings = { ...DEFAULT_STORE_SETTINGS, ...res };
+        publishStoreSettings(merged);
+        return merged;
+      })
+      .catch(() => cachedStoreSettings)
+      .finally(() => {
+        storeSettingsFetch = null;
+      });
+  }
+  return storeSettingsFetch;
+}
+
+const StoreSettingsContext = createContext<StoreSettings>(DEFAULT_STORE_SETTINGS);
+
+export function useStoreSettings(): StoreSettings {
+  return useContext(StoreSettingsContext);
+}
 
 export interface CategoryMeta {
   slug: string;
@@ -88,18 +126,33 @@ export function useStoreData() {
   const [products, setProducts] = useState<any[]>(DEFAULT_PRODUCTS);
   const [brands, setBrands] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [storeSettings, setStoreSettings] = useState<StoreSettings>(cachedStoreSettings);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const onSettings = (next: StoreSettings) => setStoreSettings(next);
+    storeSettingsListeners.add(onSettings);
+    return () => {
+      storeSettingsListeners.delete(onSettings);
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
     const init = async () => {
       setIsLoading(true);
       try {
-        const [cats, prods, brs] = await Promise.all([getCategories(), getProducts(), getBrands()]);
+        const [cats, prods, brs, settings] = await Promise.all([
+          getCategories(),
+          getProducts(),
+          getBrands(),
+          loadStoreSettingsOnce(),
+        ]);
         if (!mounted) return;
         if (cats && cats.length > 0) setCategories(cats);
         if (prods && prods.length > 0) setProducts(prods);
         if (brs && brs.length > 0) setBrands(brs);
+        if (settings) setStoreSettings(settings);
       } catch (e) {
         console.error("Using default catalog:", e);
       } finally {
@@ -122,10 +175,11 @@ export function useStoreData() {
     };
   }, []);
 
-  return { categories, products, brands, currentUser, isLoading };
+  return { categories, products, brands, currentUser, isLoading, storeSettings };
 }
 
 export function ModernProductCard({ product }: { product: any }) {
+  const settings = useStoreSettings();
   const classifications = productOptions(product);
   const [selectedVariant, setSelectedVariant] = useState(classifications[0]?.name || "");
   const [justAdded, setJustAdded] = useState(false);
@@ -244,33 +298,45 @@ export function ModernProductCard({ product }: { product: any }) {
         )}
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
-          {(() => {
-            return (
-              <>
-                <span className="text-sm font-semibold text-foreground">
-                  {view.price != null ? `Rs. ${Number(view.price).toLocaleString()}` : "Rate Poochein"}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAdd}
-                  disabled={!product.stock || view.price == null}
-                  aria-label={`Add ${product.name} to bag`}
-                  className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 btn-gold-outline px-3 text-xs font-semibold text-foreground disabled:opacity-40"
-                >
-                  {justAdded ? <Check className="h-4 w-4 animate-pop" /> : "Add"}
-                </button>
-              </>
-            );
-          })()}
+          {view.price != null ? (
+            <>
+              <span className="text-sm font-semibold text-foreground">
+                Rs. {Number(view.price).toLocaleString()}
+              </span>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!product.stock}
+                aria-label={`Add ${product.name} to bag`}
+                className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 btn-gold-outline px-3 text-xs font-semibold text-foreground disabled:opacity-40"
+              >
+                {justAdded ? <Check className="h-4 w-4 animate-pop" /> : "Add"}
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-sm font-semibold text-foreground">Rate Poochein</span>
+              <a
+                href={rateLink(product, selectedVariant || undefined, settings.whatsapp_number)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Ask rate for ${product.name} on WhatsApp`}
+                className="inline-flex h-9 items-center justify-center bg-[#25D366] px-3 text-xs font-semibold text-[#0B3D1F] transition-opacity hover:opacity-90"
+              >
+                WhatsApp
+              </a>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-export function rateLink(product: any, variant?: string) {
+export function rateLink(product: any, variant?: string, whatsappNumber?: string) {
   const label = variant ? `${product.name} (${variant})` : product.name;
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  const phone = sanitizeWhatsappNumber(whatsappNumber ?? cachedStoreSettings.whatsapp_number);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(
     `Assalam o Alaikum! Mujhe ${label} ka rate bata dein.`,
   )}`;
 }
@@ -493,13 +559,30 @@ export function StoreLayout({
   categories = DEFAULT_CATEGORIES,
   products = DEFAULT_PRODUCTS,
   currentUser = null,
+  storeSettings: propSettings,
 }: {
   children: ReactNode;
   categories?: any[];
   products?: any[];
   currentUser?: any;
+  storeSettings?: StoreSettings;
 }) {
   const cart = useCart();
+  const [settings, setSettings] = useState<StoreSettings>(propSettings ?? cachedStoreSettings);
+  const whatsappNumber = sanitizeWhatsappNumber(settings.whatsapp_number);
+
+  useEffect(() => {
+    if (propSettings) {
+      setSettings(propSettings);
+      return;
+    }
+    const onSettings = (next: StoreSettings) => setSettings(next);
+    storeSettingsListeners.add(onSettings);
+    loadStoreSettingsOnce();
+    return () => {
+      storeSettingsListeners.delete(onSettings);
+    };
+  }, [propSettings]);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -615,7 +698,8 @@ export function StoreLayout({
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discountAmount = appliedCoupon ? appliedCoupon.discount_amount : 0;
-  const finalTotal = Math.max(0, subtotal - discountAmount);
+  const deliveryFee = calculateDeliveryFee(subtotal, settings);
+  const finalTotal = Math.max(0, subtotal - discountAmount) + deliveryFee;
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
@@ -674,7 +758,7 @@ export function StoreLayout({
         },
       });
       setCreatedOrderId(result.id);
-      track("order_placed", { order_id: result.id, items: cart.length, total: result.total });
+      track("order_placed", { order_id: result.id, items: cart.length, total: result.total_amount ?? finalTotal });
       clearCartDb().catch(() => {});
       cartStore.clearCartLocal();
       setAppliedCoupon(null);
@@ -725,8 +809,14 @@ export function StoreLayout({
     "mt-1.5 w-full border border-border bg-card px-3 py-3 text-base sm:text-sm focus:border-foreground focus:outline-none";
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <header
+    <StoreSettingsContext.Provider value={settings}>
+      <div className="min-h-screen flex flex-col bg-background text-foreground">
+        {settings.announcement_text?.trim() && (
+          <div className="bg-emerald-deep px-3 py-1.5 text-center text-[11px] font-medium tracking-wide text-gold-light">
+            {settings.announcement_text}
+          </div>
+        )}
+        <header
         className={`sticky top-0 z-40 border-b border-gold/25 bg-primary text-primary-foreground transition-shadow duration-300 ${
           scrolled ? "shadow-[0_10px_28px_-14px_rgba(7,46,34,0.6)]" : ""
         }`}
@@ -1047,7 +1137,7 @@ export function StoreLayout({
             {cart.length > 0 && (
               <div className="space-y-3 border-t border-border p-4 sm:p-6">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm text-muted-foreground">Total</span>
+                  <span className="text-sm text-muted-foreground">Subtotal</span>
                   <span className="text-xl font-semibold">Rs. {subtotal.toLocaleString()}</span>
                 </div>
                 <button
@@ -1222,6 +1312,10 @@ export function StoreLayout({
                         <span>- Rs. {discountAmount.toLocaleString()}</span>
                       </div>
                     )}
+                    <div className="flex items-baseline justify-between text-sm text-muted-foreground">
+                      <span>Delivery</span>
+                      <span>{deliveryFee === 0 ? "FREE" : `Rs. ${deliveryFee.toLocaleString()}`}</span>
+                    </div>
                     <div className="flex items-baseline justify-between pt-1">
                       <span className="text-sm font-semibold">Total (Cash on Delivery)</span>
                       <span className="text-xl font-bold">Rs. {finalTotal.toLocaleString()}</span>
@@ -1243,7 +1337,7 @@ export function StoreLayout({
       )}
 
       <a
-        href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Assalam o Alaikum Nadeem Traders, I need help with an order.")}`}
+        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Assalam o Alaikum Nadeem Traders, I need help with an order.")}`}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
@@ -1254,6 +1348,7 @@ export function StoreLayout({
         </svg>
         <span className="hidden text-sm font-semibold sm:inline">WhatsApp us</span>
       </a>
-    </div>
+      </div>
+    </StoreSettingsContext.Provider>
   );
 }
