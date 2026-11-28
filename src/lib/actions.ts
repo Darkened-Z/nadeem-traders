@@ -1256,7 +1256,7 @@ export const getMyOrders = createServerFn({ method: "GET" }).handler(async () =>
 export const updateOrderStatus = createServerFn({ method: "POST" })
   .validator((data: { id: number; status: string }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    await assertAdmin("orders");
     assertOrderStatus(data.status);
     const { serverCache } = await import("./server-cache");
     serverCache.delete("orders_list");

@@ -4,62 +4,240 @@ import crypto from "crypto";
 import { sql } from "./db";
 import { assertOrderStatus } from "./order-status";
 import { DEFAULT_STORE_SETTINGS, type StoreSettings } from "./store-settings";
+import {
+  ADMIN_ROLES,
+  hasAdminPermission,
+  isAdminRole,
+  type AdminPermission,
+  type AdminRole,
+  type AdminUserView,
+} from "./admin-roles";
 
 export { DEFAULT_STORE_SETTINGS, type StoreSettings };
 
 const COOKIE = "nt_admin";
 const SESSION_DAYS = 7;
+const HASH_PREFIX = "scrypt$";
+const DUMMY_HASH =
+  "scrypt$00000000000000000000000000000000$" + "00".repeat(64);
 
-function secret() {
+function getSecretOrNull(): string | null {
   const s = process.env.ADMIN_SESSION_SECRET;
-  if (!s || s.length < 32) throw new Error("ADMIN_SESSION_SECRET is not configured");
+  return s && s.length >= 32 ? s : null;
+}
+
+function secret(): string {
+  const s = getSecretOrNull();
+  if (!s) throw new Error("ADMIN_SESSION_SECRET is not configured");
   return s;
 }
 
-function sign(payload: string) {
-  return crypto.createHmac("sha256", secret()).update(payload).digest("hex");
+function signWithKey(payload: string, secretKey: string): string {
+  return crypto.createHmac("sha256", secretKey).update(payload).digest("hex");
 }
 
-function safeEqual(a: string, b: string) {
+function sign(payload: string): string {
+  return signWithKey(payload, secret());
+}
+
+function safeEqual(a: string, b: string): boolean {
   const ab = Buffer.from(a);
   const bb = Buffer.from(b);
   return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
 }
 
-function parseSession(token: string | undefined) {
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `${HASH_PREFIX}${salt}$${hash}`;
+}
+
+function verifyPasswordHash(password: string, stored: string): boolean {
+  if (!stored.startsWith(HASH_PREFIX)) return false;
+  const parts = stored.slice(HASH_PREFIX.length).split("$");
+  if (parts.length !== 2) return false;
+  const [salt, expectedHex] = parts;
+  if (!salt || !expectedHex) return false;
+  try {
+    const derived = crypto.scryptSync(password, salt, 64);
+    const expected = Buffer.from(expectedHex, "hex");
+    return derived.length === expected.length && crypto.timingSafeEqual(derived, expected);
+  } catch {
+    return false;
+  }
+}
+
+type ParsedAdminToken = { sub: number; ver: number; iat: number };
+
+function parseSession(token: string | undefined): ParsedAdminToken | null {
   if (!token) return null;
+  const secretKey = getSecretOrNull();
+  if (!secretKey) return null;
+
+  if (token.startsWith("v2.")) {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const [, b64, mac] = parts;
+    if (!b64 || !mac || !safeEqual(mac, signWithKey(`v2.${b64}`, secretKey))) return null;
+    try {
+      const data = JSON.parse(Buffer.from(b64, "base64url").toString("utf8")) as {
+        s?: unknown;
+        v?: unknown;
+        i?: unknown;
+        e?: unknown;
+      };
+      if (
+        typeof data.s !== "number" ||
+        typeof data.v !== "number" ||
+        typeof data.i !== "number" ||
+        typeof data.e !== "number" ||
+        data.e < Date.now()
+      ) {
+        return null;
+      }
+      return { sub: data.s, ver: data.v, iat: data.i };
+    } catch {
+      return null;
+    }
+  }
+
+  // Backward compatibility with legacy owner iat.exp.mac cookies
   const [iat, exp, mac] = token.split(".");
   if (!iat || !exp || !mac || Number(exp) < Date.now()) return null;
-  return safeEqual(mac, sign(`${iat}.${exp}`)) ? { iat: Number(iat) } : null;
+  return safeEqual(mac, signWithKey(`${iat}.${exp}`, secretKey))
+    ? { sub: 0, ver: 0, iat: Number(iat) }
+    : null;
 }
 
-let adminAuthReady: Promise<unknown> | null = null;
-function ensureAdminAuthTable() {
-  adminAuthReady ??= sql!`
-    CREATE TABLE IF NOT EXISTS admin_auth (
-      id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-      sessions_valid_after BIGINT NOT NULL DEFAULT 0
-    )
-  `;
-  return adminAuthReady;
+function buildCookieToken(sub: number, ver: number): string {
+  const now = Date.now();
+  const exp = now + SESSION_DAYS * 86_400_000;
+  const body = `v2.${Buffer.from(JSON.stringify({ s: sub, v: ver, i: now, e: exp })).toString("base64url")}`;
+  return `${body}.${sign(body)}`;
 }
 
-// Logging out bumps sessions_valid_after, which invalidates every admin cookie issued before it.
-async function sessionsValidAfter() {
+let adminTablesReady: Promise<unknown> | null = null;
+function ensureAdminTables() {
+  if (!sql) return Promise.resolve();
+  adminTablesReady ??= (async () => {
+    await sql!`
+      CREATE TABLE IF NOT EXISTS admin_auth (
+        id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+        sessions_valid_after BIGINT NOT NULL DEFAULT 0
+      )
+    `;
+    await sql!`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        active BOOLEAN NOT NULL DEFAULT TRUE,
+        token_version INTEGER NOT NULL DEFAULT 1,
+        last_login_at TIMESTAMP WITH TIME ZONE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+    await sql!`
+      CREATE TABLE IF NOT EXISTS admin_audit_logs (
+        id SERIAL PRIMARY KEY,
+        actor_id INTEGER,
+        actor_email TEXT NOT NULL,
+        actor_role TEXT NOT NULL,
+        action TEXT NOT NULL,
+        target TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      )
+    `;
+  })().catch((err) => {
+    adminTablesReady = null;
+    throw err;
+  });
+  return adminTablesReady;
+}
+
+// Logging out of master session or revoking all bumps sessions_valid_after.
+async function sessionsValidAfter(): Promise<number> {
   if (!sql) return 0;
-  await ensureAdminAuthTable();
+  await ensureAdminTables();
   const rows = await sql`SELECT sessions_valid_after FROM admin_auth WHERE id = 1`;
   return rows.length ? Number(rows[0].sessions_valid_after) : 0;
 }
 
-const hasAdminCookie = createServerOnlyFn(async () => {
+const getAdminActor = createServerOnlyFn(async (): Promise<(AdminUserView & { sub: number }) | null> => {
   const session = parseSession(getCookie(COOKIE));
-  return !!session && session.iat >= (await sessionsValidAfter());
+  if (!session) return null;
+
+  if (sql) {
+    if (session.iat < (await sessionsValidAfter())) return null;
+    if (session.sub > 0) {
+      await ensureAdminTables();
+      const rows = await sql`
+        SELECT id, email, name, role, active, token_version
+        FROM admin_users
+        WHERE id = ${session.sub}
+        LIMIT 1
+      `;
+      const row = rows[0];
+      if (
+        !row ||
+        row.active !== true ||
+        Number(row.token_version) !== session.ver ||
+        !isAdminRole(row.role)
+      ) {
+        return null;
+      }
+      return {
+        id: Number(row.id),
+        name: String(row.name),
+        email: String(row.email),
+        role: row.role,
+        sub: Number(row.id),
+      };
+    }
+  } else if (session.sub !== 0) {
+    return null;
+  }
+
+  return {
+    id: null,
+    name: "Store Owner",
+    email: process.env.ADMIN_EMAIL || "owner",
+    role: "owner",
+    sub: 0,
+  };
 });
 
-export const assertAdmin = createServerOnlyFn(async () => {
-  if (!(await hasAdminCookie())) throw new Error("Unauthorized");
-});
+export const assertAdmin = createServerOnlyFn(
+  async (required?: AdminPermission | AdminPermission[]): Promise<AdminUserView> => {
+    const actor = await getAdminActor();
+    if (!actor) throw new Error("Unauthorized");
+    if (required) {
+      const needed = Array.isArray(required) ? required : [required];
+      if (!needed.some((p) => hasAdminPermission(actor.role, p))) {
+        throw new Error("Forbidden");
+      }
+    }
+    return { id: actor.id, name: actor.name, email: actor.email, role: actor.role };
+  },
+);
+
+const logAdminAction = createServerOnlyFn(
+  async (actor: AdminUserView, action: string, target?: string | null) => {
+    if (!sql) return;
+    try {
+      await ensureAdminTables();
+      await sql`
+        INSERT INTO admin_audit_logs (actor_id, actor_email, actor_role, action, target)
+        VALUES (${actor.id}, ${actor.email}, ${actor.role}, ${action}, ${target ?? null})
+      `;
+    } catch (err) {
+      console.error("Failed to record admin audit log:", err);
+    }
+  },
+);
 
 function db() {
   if (!sql) throw new Error("Database not connected");
@@ -73,53 +251,124 @@ async function bustStoreCache() {
   serverCache.delete("store_settings");
 }
 
-export const adminSession = createServerFn({ method: "GET" }).handler(async () => ({
-  authed: await hasAdminCookie(),
-  dbConnected: !!sql,
-}));
+export const adminSession = createServerFn({ method: "GET" }).handler(async () => {
+  const actor = await getAdminActor().catch(() => null);
+  return {
+    authed: !!actor,
+    user: actor ? { id: actor.id, name: actor.name, email: actor.email, role: actor.role } : null,
+    dbConnected: !!sql,
+    secretConfigured: !!getSecretOrNull(),
+    masterPasswordConfigured: !!process.env.ADMIN_PASSWORD,
+  };
+});
 
 export const adminLogin = createServerFn({ method: "POST" })
-  .validator((data: { password: string }) => data)
+  .validator((data: { email?: string; password: string }) => data)
   .handler(async ({ data }) => {
-    const expected = process.env.ADMIN_PASSWORD;
-    if (!expected) throw new Error("ADMIN_PASSWORD is not configured");
-    const { getClientIp } = await import("./server-cookies");
-    const { assertUnderLimit, recordAttempt } = await import("./rate-limit");
-    const ipKey = `admin-login:${getClientIp() ?? "unknown"}`;
-    await assertUnderLimit(ipKey, 10, 15);
-    await assertUnderLimit("admin-login:all", 50, 15);
-    await new Promise((r) => setTimeout(r, 400));
-    if (!safeEqual(sign(String(data.password)), sign(expected))) {
+    secret();
+    const email = (data.email ?? "").trim().toLowerCase();
+    const password = String(data.password ?? "");
+
+    if (Boolean(sql)) {
+      const { getClientIp } = await import("./server-cookies");
+      const { assertUnderLimit } = await import("./rate-limit");
+      const ipKey = `admin-login:${getClientIp() ?? "unknown"}`;
+      await assertUnderLimit(ipKey, 10, 15);
+      await assertUnderLimit("admin-login:all", 50, 15);
+      if (email) await assertUnderLimit(`admin-login:email:${email}`, 10, 15);
+    }
+
+    const recordFail = async () => {
+      if (!sql) return;
+      const { getClientIp } = await import("./server-cookies");
+      const { recordAttempt } = await import("./rate-limit");
+      const ipKey = `admin-login:${getClientIp() ?? "unknown"}`;
       await recordAttempt(ipKey);
       await recordAttempt("admin-login:all");
-      return { ok: false };
+      if (email) await recordAttempt(`admin-login:email:${email}`);
+    };
+
+    const setSessionCookie = (token: string) => {
+      setCookie(COOKIE, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: SESSION_DAYS * 86_400,
+      });
+    };
+
+    await new Promise((r) => setTimeout(r, 400));
+
+    if (email) {
+      const q = db();
+      await ensureAdminTables();
+      const rows = await q`
+        SELECT id, email, name, role, password_hash, active, token_version
+        FROM admin_users
+        WHERE email = ${email}
+        LIMIT 1
+      `;
+      const row = rows[0];
+      const hashToCheck = row ? String(row.password_hash) : DUMMY_HASH;
+      const matches = verifyPasswordHash(password, hashToCheck);
+      if (!row || !matches || row.active !== true || !isAdminRole(row.role)) {
+        await recordFail();
+        return { ok: false as const };
+      }
+
+      await q`UPDATE admin_users SET last_login_at = NOW() WHERE id = ${row.id}`;
+      const user: AdminUserView = {
+        id: Number(row.id),
+        name: String(row.name),
+        email: String(row.email),
+        role: row.role,
+      };
+      setSessionCookie(buildCookieToken(Number(row.id), Number(row.token_version)));
+      await logAdminAction(user, "login", "member");
+      return { ok: true as const, user };
     }
-    const iat = String(Date.now());
-    const exp = String(Date.now() + SESSION_DAYS * 86_400_000);
-    setCookie(COOKIE, `${iat}.${exp}.${sign(`${iat}.${exp}`)}`, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: SESSION_DAYS * 86_400,
-    });
-    return { ok: true };
+
+    const expected = process.env.ADMIN_PASSWORD;
+    if (!expected) {
+      throw new Error("Enter your team email and password (ADMIN_PASSWORD is not configured).");
+    }
+    if (!safeEqual(sign(password), sign(expected))) {
+      await recordFail();
+      return { ok: false as const };
+    }
+
+    const ownerUser: AdminUserView = {
+      id: null,
+      name: "Store Owner",
+      email: process.env.ADMIN_EMAIL || "owner",
+      role: "owner",
+    };
+    setSessionCookie(buildCookieToken(0, 0));
+    await logAdminAction(ownerUser, "login", "master-password");
+    return { ok: true as const, user: ownerUser };
   });
 
 export const adminLogout = createServerFn({ method: "POST" }).handler(async () => {
-  if (await hasAdminCookie()) {
-    await ensureAdminAuthTable();
-    await sql!`
-      INSERT INTO admin_auth (id, sessions_valid_after) VALUES (1, ${Date.now()})
-      ON CONFLICT (id) DO UPDATE SET sessions_valid_after = EXCLUDED.sessions_valid_after
-    `;
+  const actor = await getAdminActor().catch(() => null);
+  if (actor && sql) {
+    await ensureAdminTables();
+    if (actor.sub === 0) {
+      await sql`
+        INSERT INTO admin_auth (id, sessions_valid_after) VALUES (1, ${Date.now()})
+        ON CONFLICT (id) DO UPDATE SET sessions_valid_after = EXCLUDED.sessions_valid_after
+      `;
+    } else {
+      await sql`UPDATE admin_users SET token_version = token_version + 1, updated_at = NOW() WHERE id = ${actor.sub}`;
+    }
+    await logAdminAction(actor, "logout", actor.sub === 0 ? "master-password" : "member");
   }
   deleteCookie(COOKIE, { path: "/" });
   return { ok: true };
 });
 
 export const adminOverview = createServerFn({ method: "GET" }).handler(async () => {
-  await assertAdmin();
+  await assertAdmin("overview");
   const q = db();
   const [counts] = await q`
     SELECT
@@ -138,7 +387,7 @@ export const adminOverview = createServerFn({ method: "GET" }).handler(async () 
 });
 
 export const adminListProducts = createServerFn({ method: "GET" }).handler(async () => {
-  await assertAdmin();
+  await assertAdmin(["rates", "catalog"]);
   return db()`
     SELECT p.*, c.name AS category_name,
       COALESCE(
@@ -155,7 +404,7 @@ export const adminListProducts = createServerFn({ method: "GET" }).handler(async
 export const adminGetProduct = createServerFn({ method: "POST" })
   .validator((data: { id: number }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    await assertAdmin("catalog");
     const rows = await db()`SELECT * FROM products WHERE id = ${data.id}`;
     return rows[0] ?? null;
   });
@@ -183,7 +432,7 @@ export const adminSaveProduct = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("catalog");
     const q = db();
     const v = {
       name: data.name.trim(),
@@ -213,30 +462,33 @@ export const adminSaveProduct = createServerFn({ method: "POST" })
       `;
     }
     await bustStoreCache();
+    await logAdminAction(actor, data.id ? "product.updated" : "product.created", v.name);
     return row;
   });
 
 export const adminSetProductStatus = createServerFn({ method: "POST" })
   .validator((data: { ids: number[]; status: "active" | "draft" }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("catalog");
     if (data.status !== "active" && data.status !== "draft") throw new Error("Invalid status");
     await db()`UPDATE products SET status = ${data.status} WHERE id = ANY(${data.ids})`;
     await bustStoreCache();
+    await logAdminAction(actor, "product.status", `${data.ids.length} -> ${data.status}`);
     return { ok: true };
   });
 
 export const adminDeleteProducts = createServerFn({ method: "POST" })
   .validator((data: { ids: number[] }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("catalog");
     await db()`DELETE FROM products WHERE id = ANY(${data.ids})`;
     await bustStoreCache();
+    await logAdminAction(actor, "product.deleted", `${data.ids.length} products`);
     return { ok: true };
   });
 
 export const adminListCategories = createServerFn({ method: "GET" }).handler(async () => {
-  await assertAdmin();
+  await assertAdmin("catalog");
   return db()`
     SELECT c.*, (SELECT count(*) FROM products p WHERE p.category_id = c.id)::int AS product_count
     FROM categories c ORDER BY c.position, c.id
@@ -249,7 +501,7 @@ export const adminSaveCategory = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("catalog");
     const q = db();
     const name = data.name.trim();
     const nameUr = data.name_ur?.trim() || null;
@@ -262,13 +514,14 @@ export const adminSaveCategory = createServerFn({ method: "POST" })
           RETURNING *
         `;
     await bustStoreCache();
+    await logAdminAction(actor, data.id ? "category.updated" : "category.created", name);
     return row;
   });
 
 export const adminMoveCategory = createServerFn({ method: "POST" })
   .validator((data: { id: number; direction: -1 | 1 }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    await assertAdmin("catalog");
     const q = db();
     const cats = await q`SELECT id FROM categories ORDER BY position, id`;
     const ids = cats.map((c) => c.id as number);
@@ -288,12 +541,13 @@ export const adminMoveCategory = createServerFn({ method: "POST" })
 export const adminDeleteCategory = createServerFn({ method: "POST" })
   .validator((data: { id: number }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("catalog");
     const q = db();
     const [{ n }] = await q`SELECT count(*)::int AS n FROM products WHERE category_id = ${data.id}`;
     if (n > 0) throw new Error("Move or delete this category's products first");
     await q`DELETE FROM categories WHERE id = ${data.id}`;
     await bustStoreCache();
+    await logAdminAction(actor, "category.deleted", `#${data.id}`);
     return { ok: true };
   });
 
@@ -302,7 +556,7 @@ const PAGE_SIZE = 100;
 export const adminListOrders = createServerFn({ method: "GET" })
   .validator((data: { beforeId?: number } | undefined) => data ?? {})
   .handler(async ({ data }) => {
-    await assertAdmin();
+    await assertAdmin("orders");
     const q = db();
     const orders = data.beforeId
       ? await q`SELECT * FROM orders WHERE id < ${data.beforeId} ORDER BY id DESC LIMIT ${PAGE_SIZE + 1}`
@@ -320,7 +574,7 @@ export const adminListOrders = createServerFn({ method: "GET" })
 export const adminBatchUpdateRates = createServerFn({ method: "POST" })
   .validator((data: { rates: { id: number; price: number | null }[]; optionRates?: { id: number; price: number | null }[] }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("rates");
     const q = db();
     const optionRates = data.optionRates ?? [];
     await q.begin(async (tx) => {
@@ -334,13 +588,15 @@ export const adminBatchUpdateRates = createServerFn({ method: "POST" })
       }
     });
     await bustStoreCache();
-    return { ok: true, count: data.rates.length + optionRates.length };
+    const count = data.rates.length + optionRates.length;
+    await logAdminAction(actor, "rates.updated", `${count} price rows`);
+    return { ok: true, count };
   });
 
 export const adminUpdateOrderTracking = createServerFn({ method: "POST" })
   .validator((data: { id: number; tracking_number: string; courier?: string; status?: string; admin_notes?: string }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("orders");
     const q = db();
     const tracking = data.tracking_number?.trim() || null;
     const courier = data.courier?.trim() || "PostEx";
@@ -353,13 +609,14 @@ export const adminUpdateOrderTracking = createServerFn({ method: "POST" })
     } else {
       await q`UPDATE orders SET tracking_number = ${tracking}, courier = ${courier}, admin_notes = ${notes} WHERE id = ${data.id}`;
     }
+    await logAdminAction(actor, "order.updated", `#${data.id}${status ? ` -> ${status}` : ""}`);
     return { ok: true };
   });
 
 export const adminListCustomers = createServerFn({ method: "GET" })
   .validator((data: { offset?: number; search?: string } | undefined) => data ?? {})
   .handler(async ({ data }) => {
-    await assertAdmin();
+    await assertAdmin("customers");
     const q = db();
     const offset = Math.max(0, Math.floor(data.offset || 0));
     const like = `%${(data.search || "").trim()}%`;
@@ -409,14 +666,14 @@ export const readStoreSettings = createServerOnlyFn(async (): Promise<StoreSetti
 });
 
 export const adminGetSettings = createServerFn({ method: "GET" }).handler(async () => {
-  await assertAdmin();
+  await assertAdmin(["orders", "settings"]);
   return readStoreSettings();
 });
 
 export const adminSaveSettings = createServerFn({ method: "POST" })
   .validator((data: Record<string, string>) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("settings");
     const q = db();
     try {
       await q`
@@ -436,6 +693,7 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
         }
       });
       await bustStoreCache();
+      await logAdminAction(actor, "settings.updated", Object.keys(data).join(", "));
       return { ok: true };
     } catch (err) {
       console.error("adminSaveSettings failed:", err);
@@ -444,7 +702,7 @@ export const adminSaveSettings = createServerFn({ method: "POST" })
   });
 
 export const adminListCoupons = createServerFn({ method: "GET" }).handler(async () => {
-  await assertAdmin();
+  await assertAdmin("coupons");
   const q = db();
   try {
     await q`
@@ -468,7 +726,7 @@ export const adminListCoupons = createServerFn({ method: "GET" }).handler(async 
 export const adminSaveCoupon = createServerFn({ method: "POST" })
   .validator((data: { id?: number; code: string; discount_percent: number; min_order_amount?: number; active?: boolean }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("coupons");
     const q = db();
     const code = data.code.trim().toUpperCase();
     if (!code) throw new Error("Coupon code is required");
@@ -481,6 +739,7 @@ export const adminSaveCoupon = createServerFn({ method: "POST" })
         UPDATE coupons SET code = ${code}, discount_percent = ${percent}, min_order_amount = ${minOrder}, active = ${active}
         WHERE id = ${data.id} RETURNING *
       `;
+      await logAdminAction(actor, "coupon.updated", code);
       return row;
     } else {
       const [row] = await q`
@@ -488,6 +747,7 @@ export const adminSaveCoupon = createServerFn({ method: "POST" })
         VALUES (${code}, ${percent}, ${minOrder}, ${active})
         RETURNING *
       `;
+      await logAdminAction(actor, "coupon.created", code);
       return row;
     }
   });
@@ -495,23 +755,25 @@ export const adminSaveCoupon = createServerFn({ method: "POST" })
 export const adminDeleteCoupon = createServerFn({ method: "POST" })
   .validator((data: { id: number }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("coupons");
     const q = db();
     await q`DELETE FROM coupons WHERE id = ${data.id}`;
+    await logAdminAction(actor, "coupon.deleted", `#${data.id}`);
     return { ok: true };
   });
 
 export const adminToggleCoupon = createServerFn({ method: "POST" })
   .validator((data: { id: number; active: boolean }) => data)
   .handler(async ({ data }) => {
-    await assertAdmin();
+    const actor = await assertAdmin("coupons");
     const q = db();
     await q`UPDATE coupons SET active = ${data.active} WHERE id = ${data.id}`;
+    await logAdminAction(actor, "coupon.toggled", `#${data.id} -> ${data.active ? "active" : "inactive"}`);
     return { ok: true };
   });
 
 export const adminGetAnalytics = createServerFn({ method: "GET" }).handler(async () => {
-  await assertAdmin();
+  await assertAdmin("analytics");
   const q = db();
   try {
     const [rev] = await q`
@@ -564,4 +826,177 @@ export const adminGetAnalytics = createServerFn({ method: "GET" }).handler(async
       recentDaily: [],
     };
   }
+});
+
+async function assertAnotherOwnerRemains(targetId: number) {
+  if (process.env.ADMIN_PASSWORD) return;
+  const q = db();
+  const [{ n }] = await q`
+    SELECT count(*)::int AS n FROM admin_users
+    WHERE role = 'owner' AND active = TRUE AND id <> ${targetId}
+  `;
+  if (n < 1) {
+    throw new Error("At least one active Owner account (or ADMIN_PASSWORD) must remain enabled.");
+  }
+}
+
+export const adminListTeam = createServerFn({ method: "GET" }).handler(async () => {
+  const actor = await assertAdmin("team");
+  const q = db();
+  await ensureAdminTables();
+  const [members, logs] = await Promise.all([
+    q`
+      SELECT id, email, name, role, active, last_login_at, created_at
+      FROM admin_users
+      ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'manager' THEN 1 ELSE 2 END, id ASC
+    `,
+    q`
+      SELECT id, actor_email, actor_role, action, target, created_at
+      FROM admin_audit_logs
+      ORDER BY id DESC
+      LIMIT 50
+    `,
+  ]);
+  return {
+    members,
+    logs,
+    currentActorId: actor.id,
+    masterPasswordEnabled: !!process.env.ADMIN_PASSWORD,
+    roles: ADMIN_ROLES,
+  };
+});
+
+export const adminCreateMember = createServerFn({ method: "POST" })
+  .validator((data: { name: string; email: string; role: AdminRole; password: string }) => {
+    const name = data.name?.trim();
+    const email = data.email?.trim().toLowerCase();
+    if (!name) throw new Error("Name is required");
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Valid email is required");
+    if (!isAdminRole(data.role)) throw new Error("Invalid role");
+    if (!data.password || data.password.length < 8) throw new Error("Password must be at least 8 characters");
+    return { name, email, role: data.role, password: data.password };
+  })
+  .handler(async ({ data }) => {
+    const actor = await assertAdmin("team");
+    const q = db();
+    await ensureAdminTables();
+    const existing = await q`SELECT id FROM admin_users WHERE email = ${data.email} LIMIT 1`;
+    if (existing.length > 0) throw new Error("A team member with this email already exists.");
+    const passwordHash = hashPassword(data.password);
+    const [row] = await q`
+      INSERT INTO admin_users (name, email, role, password_hash, active, token_version)
+      VALUES (${data.name}, ${data.email}, ${data.role}, ${passwordHash}, TRUE, 1)
+      RETURNING id, email, name, role, active, last_login_at, created_at
+    `;
+    await logAdminAction(actor, "member.created", `${data.email} (${data.role})`);
+    return row;
+  });
+
+export const adminUpdateMember = createServerFn({ method: "POST" })
+  .validator((data: { id: number; role: AdminRole; active: boolean; name: string }) => {
+    if (!Number.isInteger(data.id)) throw new Error("Invalid member id");
+    const name = data.name?.trim();
+    if (!name) throw new Error("Name is required");
+    if (!isAdminRole(data.role)) throw new Error("Invalid role");
+    return { id: data.id, role: data.role, active: !!data.active, name };
+  })
+  .handler(async ({ data }) => {
+    const actor = await assertAdmin("team");
+    const q = db();
+    await ensureAdminTables();
+    const rows = await q`SELECT id, email, role, active FROM admin_users WHERE id = ${data.id} LIMIT 1`;
+    const target = rows[0];
+    if (!target) throw new Error("Team member not found");
+    if (actor.id === data.id && (data.role !== target.role || !data.active)) {
+      throw new Error("You cannot change your own role or deactivate your own account.");
+    }
+    if (target.role === "owner" && target.active && (data.role !== "owner" || !data.active)) {
+      await assertAnotherOwnerRemains(data.id);
+    }
+    const revokeTokens = data.role !== target.role || !data.active;
+    const [updated] = await q`
+      UPDATE admin_users
+      SET
+        name = ${data.name},
+        role = ${data.role},
+        active = ${data.active},
+        token_version = token_version + ${revokeTokens ? 1 : 0},
+        updated_at = NOW()
+      WHERE id = ${data.id}
+      RETURNING id, email, name, role, active, last_login_at, created_at
+    `;
+    await logAdminAction(
+      actor,
+      "member.updated",
+      `${String(target.email)} -> ${data.role}${data.active ? "" : " (disabled)"}`,
+    );
+    return updated;
+  });
+
+export const adminResetMemberPassword = createServerFn({ method: "POST" })
+  .validator((data: { id: number; password: string }) => {
+    if (!Number.isInteger(data.id)) throw new Error("Invalid member id");
+    if (!data.password || data.password.length < 8) throw new Error("Password must be at least 8 characters");
+    return { id: data.id, password: data.password };
+  })
+  .handler(async ({ data }) => {
+    const actor = await assertAdmin("team");
+    const q = db();
+    await ensureAdminTables();
+    const [updated] = await q`
+      UPDATE admin_users
+      SET password_hash = ${hashPassword(data.password)}, token_version = token_version + 1, updated_at = NOW()
+      WHERE id = ${data.id}
+      RETURNING email
+    `;
+    if (!updated) throw new Error("Team member not found");
+    await logAdminAction(actor, "member.password_reset", String(updated.email));
+    return { ok: true };
+  });
+
+export const adminRevokeMemberSessions = createServerFn({ method: "POST" })
+  .validator((data: { id: number }) => data)
+  .handler(async ({ data }) => {
+    const actor = await assertAdmin("team");
+    const q = db();
+    await ensureAdminTables();
+    const [updated] = await q`
+      UPDATE admin_users SET token_version = token_version + 1, updated_at = NOW()
+      WHERE id = ${data.id}
+      RETURNING email
+    `;
+    if (!updated) throw new Error("Team member not found");
+    await logAdminAction(actor, "member.sessions_revoked", String(updated.email));
+    return { ok: true };
+  });
+
+export const adminDeleteMember = createServerFn({ method: "POST" })
+  .validator((data: { id: number }) => data)
+  .handler(async ({ data }) => {
+    const actor = await assertAdmin("team");
+    if (actor.id === data.id) throw new Error("You cannot delete your own account.");
+    const q = db();
+    await ensureAdminTables();
+    const [target] = await q`SELECT id, email, role, active FROM admin_users WHERE id = ${data.id} LIMIT 1`;
+    if (!target) throw new Error("Team member not found");
+    if (target.role === "owner" && target.active) {
+      await assertAnotherOwnerRemains(data.id);
+    }
+    await q`DELETE FROM admin_users WHERE id = ${data.id}`;
+    await logAdminAction(actor, "member.deleted", String(target.email));
+    return { ok: true };
+  });
+
+export const adminRevokeAllSessions = createServerFn({ method: "POST" }).handler(async () => {
+  const actor = await assertAdmin("team");
+  const q = db();
+  await ensureAdminTables();
+  await q`
+    INSERT INTO admin_auth (id, sessions_valid_after) VALUES (1, ${Date.now()})
+    ON CONFLICT (id) DO UPDATE SET sessions_valid_after = EXCLUDED.sessions_valid_after
+  `;
+  await q`UPDATE admin_users SET token_version = token_version + 1, updated_at = NOW()`;
+  await logAdminAction(actor, "sessions.revoked_all", "all admins");
+  deleteCookie(COOKIE, { path: "/" });
+  return { ok: true };
 });

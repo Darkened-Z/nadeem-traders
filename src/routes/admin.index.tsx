@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronRight, Loader2, Coins, Truck, Users, Settings } from "lucide-react";
+import { ChevronRight, Loader2, Coins, Truck, Users, ShieldCheck } from "lucide-react";
 import { adminOverview } from "../lib/admin";
-import { useAdminQuery } from "../components/admin-shell";
+import { useAdminQuery, useAdminSession } from "../components/admin-shell";
 import { Badge, Card, EmptyState, PageHeader } from "../components/admin-ui";
 
 export const Route = createFileRoute("/admin/")({
@@ -10,16 +10,18 @@ export const Route = createFileRoute("/admin/")({
 
 function AdminHome() {
   const { data, isLoading } = useAdminQuery(["overview"], () => adminOverview());
+  const { can } = useAdminSession();
 
   if (isLoading || !data) {
     return <Loader2 className="mx-auto mt-20 h-6 w-6 animate-spin text-[#616161]" />;
   }
 
   const { counts, recentOrders } = data;
+  const catalogTo = can("catalog") ? "/admin/products" : "/admin/rates";
   const stats = [
-    { label: "Products", value: counts.products, to: "/admin/products" },
-    { label: "Active", value: counts.active, to: "/admin/products" },
-    { label: "Drafts", value: counts.drafts, to: "/admin/products" },
+    { label: "Products", value: counts.products, to: catalogTo },
+    { label: "Active", value: counts.active, to: catalogTo },
+    { label: "Drafts", value: counts.drafts, to: catalogTo },
     { label: "Pending orders", value: counts.pending, to: "/admin/orders" },
   ];
 
@@ -41,48 +43,70 @@ function AdminHome() {
       </div>
 
       {/* Quick Action Shortcuts */}
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Link
-          to={"/admin/rates" as any}
-          className="flex items-center gap-3 rounded-xl bg-white p-3.5 shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06] hover:bg-[#FAFAFA] transition-colors"
-        >
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#D97706]/10 text-[#D97706]">
-            <Coins className="h-5 w-5" />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-semibold text-[#303030]">Daily Rates Sheet</p>
-            <p className="text-[11px] text-[#616161]">Quick update commodity prices</p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-[#8A8A8A]" />
-        </Link>
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {can("rates") && (
+          <Link
+            to={"/admin/rates" as any}
+            className="flex items-center gap-3 rounded-xl bg-white p-3.5 shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06] hover:bg-[#FAFAFA] transition-colors"
+          >
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#D97706]/10 text-[#D97706]">
+              <Coins className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-[#303030]">Daily Rates Sheet</p>
+              <p className="text-[11px] text-[#616161]">Quick update commodity prices</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-[#8A8A8A]" />
+          </Link>
+        )}
 
-        <Link
-          to={"/admin/orders" as any}
-          className="flex items-center gap-3 rounded-xl bg-white p-3.5 shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06] hover:bg-[#FAFAFA] transition-colors"
-        >
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#166534]/10 text-[#166534]">
-            <Truck className="h-5 w-5" />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-semibold text-[#303030]">PostEx Dispatch</p>
-            <p className="text-[11px] text-[#616161]">Tracking & WhatsApp messenger</p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-[#8A8A8A]" />
-        </Link>
+        {can("orders") && (
+          <Link
+            to={"/admin/orders" as any}
+            className="flex items-center gap-3 rounded-xl bg-white p-3.5 shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06] hover:bg-[#FAFAFA] transition-colors"
+          >
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#166534]/10 text-[#166534]">
+              <Truck className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-[#303030]">PostEx Dispatch</p>
+              <p className="text-[11px] text-[#616161]">Tracking & WhatsApp messenger</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-[#8A8A8A]" />
+          </Link>
+        )}
 
-        <Link
-          to={"/admin/customers" as any}
-          className="flex items-center gap-3 rounded-xl bg-white p-3.5 shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06] hover:bg-[#FAFAFA] transition-colors"
-        >
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#005BD3]/10 text-[#005BD3]">
-            <Users className="h-5 w-5" />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs font-semibold text-[#303030]">Customer Directory</p>
-            <p className="text-[11px] text-[#616161]">View buyer profiles & history</p>
-          </div>
-          <ChevronRight className="h-4 w-4 text-[#8A8A8A]" />
-        </Link>
+        {can("customers") && (
+          <Link
+            to={"/admin/customers" as any}
+            className="flex items-center gap-3 rounded-xl bg-white p-3.5 shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06] hover:bg-[#FAFAFA] transition-colors"
+          >
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#005BD3]/10 text-[#005BD3]">
+              <Users className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-[#303030]">Customer Directory</p>
+              <p className="text-[11px] text-[#616161]">View buyer profiles & history</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-[#8A8A8A]" />
+          </Link>
+        )}
+
+        {can("team") && (
+          <Link
+            to={"/admin/team" as any}
+            className="flex items-center gap-3 rounded-xl bg-white p-3.5 shadow-[0_1px_0_0_rgba(26,26,26,0.07)] ring-1 ring-black/[0.06] hover:bg-[#FAFAFA] transition-colors"
+          >
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#0B4A36]/10 text-[#0B4A36]">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-[#303030]">Team &amp; Access</p>
+              <p className="text-[11px] text-[#616161]">Manage roles &amp; activity log</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-[#8A8A8A]" />
+          </Link>
+        )}
       </div>
 
       {counts.unpriced > 0 && (
