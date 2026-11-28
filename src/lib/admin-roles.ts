@@ -20,17 +20,37 @@ export interface AdminUserView {
   role: AdminRole;
 }
 
+export interface TeamMember {
+  id: number;
+  email: string;
+  name: string;
+  role: AdminRole;
+  active: boolean;
+  last_login_at: string | Date | null;
+  created_at: string | Date;
+}
+
+export interface AuditLogEntry {
+  id: number;
+  actor_email: string;
+  actor_role: string;
+  action: string;
+  target: string | null;
+  created_at: string | Date;
+}
+
 export const ADMIN_ROLES: { role: AdminRole; label: string; summary: string }[] = [
   {
     role: "owner",
     label: "Owner",
     summary:
-      "Full store control: team access, store settings, revenue analytics, Search Console, catalog, orders, and daily rates.",
+      "Full store and team control, including managing and deleting Owner accounts and signing out all admin sessions.",
   },
   {
     role: "manager",
     label: "Manager",
-    summary: "Store operations: orders, daily rates, products, categories, coupons, and customer directory.",
+    summary:
+      "Full store management: analytics, Search Console, settings, catalog, orders, daily rates, and staff/manager team accounts (cannot modify or delete Owner accounts).",
   },
   {
     role: "staff",
@@ -40,8 +60,18 @@ export const ADMIN_ROLES: { role: AdminRole; label: string; summary: string }[] 
 ];
 
 const STAFF_PERMS: AdminPermission[] = ["overview", "orders", "rates"];
-const MANAGER_PERMS: AdminPermission[] = [...STAFF_PERMS, "catalog", "coupons", "customers"];
-const OWNER_PERMS: AdminPermission[] = [...MANAGER_PERMS, "analytics", "visitors", "search", "settings", "team"];
+const MANAGER_PERMS: AdminPermission[] = [
+  ...STAFF_PERMS,
+  "catalog",
+  "coupons",
+  "customers",
+  "analytics",
+  "visitors",
+  "search",
+  "settings",
+  "team",
+];
+const OWNER_PERMS: AdminPermission[] = [...MANAGER_PERMS];
 
 export const ROLE_PERMISSIONS: Record<AdminRole, ReadonlySet<AdminPermission>> = {
   staff: new Set(STAFF_PERMS),
@@ -60,6 +90,25 @@ export function roleLabel(role: AdminRole): string {
 export function hasAdminPermission(role: AdminRole | undefined | null, permission: AdminPermission): boolean {
   if (!role || !isAdminRole(role)) return false;
   return ROLE_PERMISSIONS[role].has(permission);
+}
+
+/** Whether `actorRole` may edit, suspend, reset, sign out, or delete a member with `targetRole`. */
+export function canManageTeamRole(actorRole: AdminRole | undefined | null, targetRole: AdminRole): boolean {
+  if (!actorRole || !isAdminRole(actorRole)) return false;
+  if (actorRole === "owner") return true;
+  return actorRole === "manager" && targetRole !== "owner";
+}
+
+/** Roles an actor with `actorRole` may assign when creating or updating team members. */
+export function assignableAdminRoles(actorRole: AdminRole | undefined | null): AdminRole[] {
+  if (actorRole === "owner") return ["owner", "manager", "staff"];
+  if (actorRole === "manager") return ["manager", "staff"];
+  return [];
+}
+
+/** Only Owners may revoke every admin session globally (including master and Owner sessions). */
+export function canRevokeAllAdminSessions(actorRole: AdminRole | undefined | null): boolean {
+  return actorRole === "owner";
 }
 
 export function requiredPermissionForAdminPath(pathname: string): AdminPermission {
