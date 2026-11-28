@@ -56,7 +56,7 @@ export const adminGetSearchConsole = createServerFn({ method: "GET" })
     days: (RANGES as readonly number[]).includes(data.days) ? data.days : 28,
   }))
   .handler(async ({ data }) => {
-    await assertAdmin();
+    await assertAdmin("search");
     if (!process.env.GSC_SERVICE_ACCOUNT) return { configured: false as const };
 
     const day = (offset: number) => new Date(Date.now() - offset * 86_400_000).toISOString().slice(0, 10);

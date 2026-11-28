@@ -22,7 +22,7 @@ export const adminGetVisitorAnalytics = createServerFn({ method: "GET" })
     days: (RANGES as readonly number[]).includes(data.days) ? data.days : 7,
   }))
   .handler(async ({ data }) => {
-    await assertAdmin();
+    await assertAdmin("visitors");
     if (!process.env.POSTHOG_PERSONAL_API_KEY || !process.env.POSTHOG_PROJECT_ID) return { configured: false as const };
 
     const since = `timestamp >= now() - INTERVAL ${data.days} DAY`;
