@@ -51,7 +51,7 @@ export const ADMIN_ROLES: { role: AdminRole; label: string; summary: string }[] 
     role: "manager",
     label: "Manager",
     summary:
-      "Full store management: analytics, Search Console, settings, catalog, orders, daily rates, and staff/manager team accounts (cannot modify or delete Owner accounts).",
+      "Store management: orders, daily rates, products, categories, coupons, customers, and store settings.",
   },
   {
     role: "staff",
@@ -61,19 +61,9 @@ export const ADMIN_ROLES: { role: AdminRole; label: string; summary: string }[] 
 ];
 
 const STAFF_PERMS: AdminPermission[] = ["overview", "orders", "rates"];
-const MANAGER_PERMS: AdminPermission[] = [
-  ...STAFF_PERMS,
-  "catalog",
-  "coupons",
-  "customers",
-  "analytics",
-  "google_analytics",
-  "visitors",
-  "search",
-  "settings",
-  "team",
-];
-const OWNER_PERMS: AdminPermission[] = [...MANAGER_PERMS];
+const MANAGER_PERMS: AdminPermission[] = [...STAFF_PERMS, "catalog", "coupons", "customers", "settings"];
+// Insights and team pages are labelled "Coming soon" for the client's team and stay Owner-only for now.
+const OWNER_PERMS: AdminPermission[] = [...MANAGER_PERMS, "analytics", "google_analytics", "visitors", "search", "team"];
 
 export const ROLE_PERMISSIONS: Record<AdminRole, ReadonlySet<AdminPermission>> = {
   staff: new Set(STAFF_PERMS),

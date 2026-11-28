@@ -78,21 +78,51 @@ export function useAdminInfiniteQuery<T, C>(
   return query;
 }
 
-const NAV: { to: string; label: string; icon: any; exact?: boolean; permission: AdminPermission }[] = [
-  { to: "/admin", label: "Home", icon: Home, exact: true, permission: "overview" },
-  { to: "/admin/orders", label: "Orders", icon: ShoppingCart, permission: "orders" },
-  { to: "/admin/rates", label: "Daily Rates", icon: Coins, permission: "rates" },
-  { to: "/admin/products", label: "Products", icon: Package, permission: "catalog" },
-  { to: "/admin/categories", label: "Categories", icon: Tags, permission: "catalog" },
-  { to: "/admin/coupons", label: "Coupons", icon: Ticket, permission: "coupons" },
-  { to: "/admin/customers", label: "Customers", icon: Users, permission: "customers" },
-  { to: "/admin/analytics", label: "Analytics", icon: BarChart3, permission: "analytics" },
-  { to: "/admin/google-analytics", label: "Google Analytics", icon: LineChart, permission: "google_analytics" },
-  { to: "/admin/visitors", label: "Visitors & Funnel", icon: Activity, permission: "visitors" },
-  { to: "/admin/search", label: "Google Search", icon: SearchCheck, permission: "search" },
-  { to: "/admin/settings", label: "Store Settings", icon: Settings, permission: "settings" },
-  { to: "/admin/team", label: "Team & Access", icon: ShieldCheck, permission: "team" },
+type NavItem = { to: string; label: string; icon: any; exact?: boolean; permission: AdminPermission; soon?: boolean };
+
+const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
+  { items: [{ to: "/admin", label: "Home", icon: Home, exact: true, permission: "overview" }] },
+  {
+    title: "Sales",
+    items: [
+      { to: "/admin/orders", label: "Orders", icon: ShoppingCart, permission: "orders" },
+      { to: "/admin/rates", label: "Daily Rates", icon: Coins, permission: "rates" },
+      { to: "/admin/coupons", label: "Coupons", icon: Ticket, permission: "coupons" },
+      { to: "/admin/customers", label: "Customers", icon: Users, permission: "customers" },
+    ],
+  },
+  {
+    title: "Catalog",
+    items: [
+      { to: "/admin/products", label: "Products", icon: Package, permission: "catalog" },
+      { to: "/admin/categories", label: "Categories", icon: Tags, permission: "catalog" },
+    ],
+  },
+  {
+    title: "Insights",
+    items: [
+      { to: "/admin/analytics", label: "Analytics", icon: BarChart3, permission: "analytics", soon: true },
+      { to: "/admin/google-analytics", label: "Google Analytics", icon: LineChart, permission: "google_analytics", soon: true },
+      { to: "/admin/visitors", label: "Visitors & Funnel", icon: Activity, permission: "visitors", soon: true },
+      { to: "/admin/search", label: "Google Search", icon: SearchCheck, permission: "search", soon: true },
+    ],
+  },
+  {
+    title: "Store",
+    items: [
+      { to: "/admin/settings", label: "Store Settings", icon: Settings, permission: "settings" },
+      { to: "/admin/team", label: "Team & Access", icon: ShieldCheck, permission: "team", soon: true },
+    ],
+  },
 ];
+
+function SoonBadge() {
+  return (
+    <span className="ml-auto shrink-0 rounded-full bg-[#C9A24A]/15 px-1.5 py-px text-[10px] font-semibold text-[#8A6A1F]">
+      Coming soon
+    </span>
+  );
+}
 
 export function AdminShell({ initialSession }: { initialSession?: AdminSessionInfo }) {
   const [session, setSession] = useState<AdminSessionInfo | null>(initialSession ?? null);
@@ -154,34 +184,76 @@ export function AdminShell({ initialSession }: { initialSession?: AdminSessionIn
 
   const currentUser = session.user;
   const can = (permission: AdminPermission) => hasAdminPermission(currentUser.role, permission);
-  const visibleNav = NAV.filter((item) => can(item.permission));
+  const sections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => item.soon || can(item.permission)),
+  })).filter((section) => section.items.length > 0);
   const neededPermission = requiredPermissionForAdminPath(pathname);
   const allowedOnRoute = can(neededPermission);
 
   const isActive = (to: string, exact?: boolean) =>
     exact ? pathname === to || pathname === `${to}/` : pathname.startsWith(to);
 
+  const itemBase = "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold transition-all duration-200";
   const nav = (
-    <nav className="space-y-0.5 p-3">
-      {visibleNav.map(({ to, label, icon: Icon, exact }) => (
-        <Link
-          key={to}
-          to={to as any}
-          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold transition-colors ${
-            isActive(to, exact) ? "bg-white text-[#303030] shadow-[0_1px_0_rgba(0,0,0,0.05)]" : "text-[#4A4A4A] hover:bg-white/60"
-          }`}
+    <nav className="h-full overflow-y-auto p-3">
+      {sections.map((section, si) => (
+        <div
+          key={section.title ?? "main"}
+          className={`motion-safe:animate-[admin-nav-in_320ms_ease-out_both] ${si > 0 ? "mt-4" : ""}`}
+          style={{ animationDelay: `${si * 45}ms` }}
         >
-          <Icon className="h-4 w-4" />
-          {label}
-        </Link>
+          {section.title && (
+            <p className="mb-1 px-2.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#8A8A8A]">{section.title}</p>
+          )}
+          <div className="space-y-0.5">
+            {section.items.map(({ to, label, icon: Icon, exact, permission, soon }) => {
+              if (!can(permission)) {
+                return (
+                  <div
+                    key={to}
+                    aria-disabled="true"
+                    title="Coming soon"
+                    className={`${itemBase} cursor-not-allowed text-[#9A9A9A]`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{label}</span>
+                    <SoonBadge />
+                  </div>
+                );
+              }
+              const active = isActive(to, exact);
+              return (
+                <Link
+                  key={to}
+                  to={to as any}
+                  className={`${itemBase} ${
+                    active ? "bg-white text-[#1A1A1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]" : "text-[#4A4A4A] hover:bg-white/60 hover:text-[#1A1A1A]"
+                  }`}
+                >
+                  <span
+                    className={`absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-[#C9A24A] transition-transform duration-200 ${
+                      active ? "scale-y-100" : "scale-y-0"
+                    }`}
+                  />
+                  <Icon
+                    className={`h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 ${active ? "text-[#0B4A36]" : ""}`}
+                  />
+                  <span className="truncate">{label}</span>
+                  {soon && <SoonBadge />}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       ))}
       <a
         href="/"
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-4 flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-semibold text-[#4A4A4A] hover:bg-white/60"
+        className={`${itemBase} mt-5 border-t border-black/5 pt-3 text-[#4A4A4A] hover:text-[#1A1A1A]`}
       >
-        <ExternalLink className="h-4 w-4" />
+        <ExternalLink className="h-4 w-4 shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
         View store
       </a>
     </nav>
@@ -226,11 +298,16 @@ export function AdminShell({ initialSession }: { initialSession?: AdminSessionIn
           </header>
 
           <div className="flex">
-            <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-60 shrink-0 bg-[#EBEBEB] lg:block">{nav}</aside>
+            <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-[17rem] shrink-0 bg-[#EBEBEB] lg:block">{nav}</aside>
             {navOpen && (
               <div className="fixed inset-0 top-14 z-30 lg:hidden">
-                <div className="absolute inset-0 bg-black/40" onClick={() => setNavOpen(false)} />
-                <aside className="relative h-full w-64 bg-[#EBEBEB]">{nav}</aside>
+                <div
+                  className="absolute inset-0 bg-black/40 motion-safe:animate-[admin-fade-in_200ms_ease-out_both]"
+                  onClick={() => setNavOpen(false)}
+                />
+                <aside className="relative h-full w-[17rem] max-w-[85vw] bg-[#EBEBEB] shadow-xl motion-safe:animate-[admin-drawer-in_240ms_cubic-bezier(0.2,0.8,0.2,1)_both]">
+                  {nav}
+                </aside>
               </div>
             )}
 

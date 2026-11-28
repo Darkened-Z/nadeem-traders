@@ -423,3 +423,22 @@
   color: var(--foreground) !important;
   border-color: var(--border) !important;
 }
+
+@keyframes admin-nav-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}
+
+@keyframes admin-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes admin-fade-in {
+  from {
+    opacity: 0;
+  }
+}
