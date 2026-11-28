@@ -11,6 +11,7 @@ type Audit = {
   displayValue?: string;
   numericValue?: number;
   details?: { type?: string; overallSavingsMs?: number };
+  metricSavings?: Record<string, number>;
 };
 
 type FieldMetric = { percentile?: number; category?: string };
@@ -72,9 +73,12 @@ async function runPageSpeed(path: string, strategy: Strategy, key: string) {
       })
     : [];
 
-  const opportunities = Object.values(audits)
-    .filter((a) => a.details?.type === "opportunity" && a.score != null && a.score < 0.9 && (a.details.overallSavingsMs ?? 0) > 0)
-    .sort((a, b) => (b.details?.overallSavingsMs ?? 0) - (a.details?.overallSavingsMs ?? 0))
+  // Lighthouse 13 reports most fixes as "-insight" audits; older ones are "opportunity" audits.
+  const impact = (a: Audit) => (a.metricSavings?.LCP ?? 0) + (a.metricSavings?.FCP ?? 0) + (a.details?.overallSavingsMs ?? 0);
+  const opportunities = Object.entries(audits)
+    .filter(([id, a]) => (id.endsWith("-insight") || a.details?.type === "opportunity") && a.score != null && a.score < 0.9)
+    .map(([, a]) => a)
+    .sort((a, b) => impact(b) - impact(a))
     .slice(0, 6)
     .map((a) => ({ title: a.title ?? "", savings: a.displayValue ?? "" }));
 
