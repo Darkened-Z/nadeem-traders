@@ -36,6 +36,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminCouponsRouteImport } from './routes/admin.coupons'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
+import { Route as AdminGoogleAnalyticsRouteImport } from './routes/admin.google-analytics'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
 import { Route as AdminRatesRouteImport } from './routes/admin.rates'
 import { Route as AdminSearchRouteImport } from './routes/admin.search'
@@ -182,6 +183,11 @@ const AdminCustomersRoute = AdminCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminGoogleAnalyticsRoute = AdminGoogleAnalyticsRouteImport.update({
+  id: '/google-analytics',
+  path: '/google-analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminOrdersRoute = AdminOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -260,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/coupons': typeof AdminCouponsRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/google-analytics': typeof AdminGoogleAnalyticsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/rates': typeof AdminRatesRoute
   '/admin/search': typeof AdminSearchRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/coupons': typeof AdminCouponsRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/google-analytics': typeof AdminGoogleAnalyticsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/rates': typeof AdminRatesRoute
   '/admin/search': typeof AdminSearchRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/coupons': typeof AdminCouponsRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/google-analytics': typeof AdminGoogleAnalyticsRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/rates': typeof AdminRatesRoute
   '/admin/search': typeof AdminSearchRoute
@@ -379,6 +388,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/coupons'
     | '/admin/customers'
+    | '/admin/google-analytics'
     | '/admin/orders'
     | '/admin/rates'
     | '/admin/search'
@@ -417,6 +427,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/coupons'
     | '/admin/customers'
+    | '/admin/google-analytics'
     | '/admin/orders'
     | '/admin/rates'
     | '/admin/search'
@@ -456,6 +467,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/coupons'
     | '/admin/customers'
+    | '/admin/google-analytics'
     | '/admin/orders'
     | '/admin/rates'
     | '/admin/search'
@@ -687,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCustomersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/google-analytics': {
+      id: '/admin/google-analytics'
+      path: '/google-analytics'
+      fullPath: '/admin/google-analytics'
+      preLoaderRoute: typeof AdminGoogleAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/orders': {
       id: '/admin/orders'
       path: '/orders'
@@ -765,6 +784,7 @@ interface AdminRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCouponsRoute: typeof AdminCouponsRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
+  AdminGoogleAnalyticsRoute: typeof AdminGoogleAnalyticsRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminRatesRoute: typeof AdminRatesRoute
   AdminSearchRoute: typeof AdminSearchRoute
@@ -781,6 +801,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCouponsRoute: AdminCouponsRoute,
   AdminCustomersRoute: AdminCustomersRoute,
+  AdminGoogleAnalyticsRoute: AdminGoogleAnalyticsRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminRatesRoute: AdminRatesRoute,
   AdminSearchRoute: AdminSearchRoute,
