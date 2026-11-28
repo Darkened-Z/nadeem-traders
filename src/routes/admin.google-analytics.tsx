@@ -172,7 +172,7 @@ function SiteSpeed({ productPath }: { productPath: string | null }) {
 
       {isFetching && !data ? (
         <div className="flex items-center gap-2 py-10 text-xs text-[#616161]">
-          <Loader2 className="h-4 w-4 animate-spin" /> Google is testing the page, this takes 15–30 seconds…
+          <Loader2 className="h-4 w-4 animate-spin" /> Google is testing the page, this takes up to a minute…
         </div>
       ) : error ? (
         <p className="mt-4 rounded-lg bg-[#FEE2E2] px-4 py-3 text-xs text-[#B42318]">{error instanceof Error ? error.message : "Test failed."}</p>
@@ -532,7 +532,7 @@ function GoogleAnalyticsPage() {
                     </td>
                     <td className="py-2 text-right tabular-nums">{p.views}</td>
                     <td className="py-2 text-right tabular-nums">{p.addedToCart}</td>
-                    <td className="py-2 text-right tabular-nums text-[#616161]">{p.views > 0 ? `${pct(p.addedToCart, p.views)}%` : "�"}</td>
+                    <td className="py-2 text-right tabular-nums text-[#616161]">{p.views > 0 ? `${pct(p.addedToCart, p.views)}%` : "–"}</td>
                   </tr>
                 ))}
               </tbody>
