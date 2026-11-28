@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { track } from "../lib/analytics";
+import { pageMeta } from "../lib/structured-data";
 import {
   StoreLayout,
   ModernProductCard,
@@ -12,13 +13,10 @@ import {
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
-    meta: [
-      { title: "All products | Nadeem Traders" },
-      {
-        name: "description",
-        content: "Dry fruits, spices, whole spices, seeds aur special items. Cash on delivery across Pakistan.",
-      },
-    ],
+    meta: pageMeta(
+      "All products | Nadeem Traders",
+      "Dry fruits, spices, whole spices, seeds aur special items. Cash on delivery across Pakistan.",
+    ),
   }),
   component: ShopPage,
 });

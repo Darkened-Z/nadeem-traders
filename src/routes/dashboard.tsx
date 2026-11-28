@@ -23,7 +23,8 @@ export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "My Dashboard — Nadeem Traders" },
-      { name: "description", content: "Manage your profile, orders, addresses, and reward points." }
+      { name: "description", content: "Manage your profile, orders, addresses, and reward points." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: DashboardPage,
@@ -1063,7 +1064,7 @@ function DashboardPage() {
                       className="h-4 w-4 rounded border-border bg-background text-primary focus:ring-primary mt-0.5"
                     />
                     <label htmlFor="opt-newsletter" className="ml-2 text-xs text-muted-foreground leading-relaxed font-medium">
-                      I would like to subscribe to the weekly wholesale commercial market prices analysis newsletter.
+                      I would like to subscribe to updates on seasonal dry fruit harvests, fresh spices, and new arrivals.
                     </label>
                   </div>
                 </div>

@@ -93,7 +93,7 @@ export const Route = createFileRoute("/product/$productId")({
 
 function ProductDetailsPage() {
   const { productId } = Route.useParams() as any;
-  const { categories, products, currentUser, isLoading } = useStoreData();
+  const { categories, products, currentUser, isLoading, storeSettings } = useStoreData();
   const [qty, setQty] = useState(1);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
@@ -289,51 +289,66 @@ function ProductDetailsPage() {
                 </span>
               </div>
 
-              <div className="mt-5 flex items-center gap-3">
-                <div className="inline-flex items-center border border-border bg-card">
-                  <button
-                    type="button"
-                    onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    className="grid h-11 w-11 place-items-center hover:bg-muted transition-colors"
-                    aria-label="Decrease quantity"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="w-10 text-center text-sm font-semibold">{qty}</span>
-                  <button
-                    type="button"
-                    onClick={() => setQty((q) => q + 1)}
-                    className="grid h-11 w-11 place-items-center hover:bg-muted transition-colors"
-                    aria-label="Increase quantity"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-                {qty > 1 && effectivePrice != null && (
-                  <span className="text-sm text-muted-foreground font-medium">
-                    Total: <strong className="text-foreground font-semibold">Rs. {(effectivePrice * qty).toLocaleString()}</strong>
-                  </span>
-                )}
-              </div>
+              {effectivePrice != null ? (
+                <>
+                  <div className="mt-5 flex items-center gap-3">
+                    <div className="inline-flex items-center border border-border bg-card">
+                      <button
+                        type="button"
+                        onClick={() => setQty((q) => Math.max(1, q - 1))}
+                        className="grid h-11 w-11 place-items-center hover:bg-muted transition-colors"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-10 text-center text-sm font-semibold">{qty}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQty((q) => q + 1)}
+                        className="grid h-11 w-11 place-items-center hover:bg-muted transition-colors"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                    {qty > 1 && (
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Total: <strong className="text-foreground font-semibold">Rs. {(effectivePrice * qty).toLocaleString()}</strong>
+                      </span>
+                    )}
+                  </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => addToBag(targetProduct, qty)}
-                  disabled={!canBuy}
-                  className="h-12 btn-gold-outline bg-background text-sm font-semibold text-foreground disabled:opacity-40"
-                >
-                  {product.stock ? "Add To Bag" : "Out Of Stock"}
-                </button>
-                <button
-                  type="button"
-                  onClick={buyNow}
-                  disabled={!canBuy}
-                  className="btn-gold h-12 text-sm font-semibold disabled:opacity-40"
-                >
-                  Buy Now
-                </button>
-              </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => addToBag(targetProduct, qty)}
+                      disabled={!canBuy}
+                      className="h-12 btn-gold-outline bg-background text-sm font-semibold text-foreground disabled:opacity-40"
+                    >
+                      {product.stock ? "Add To Bag" : "Out Of Stock"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={buyNow}
+                      disabled={!canBuy}
+                      className="btn-gold h-12 text-sm font-semibold disabled:opacity-40"
+                    >
+                      Buy Now
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-5">
+                  <a
+                    href={rateLink(product, selectedVariant || undefined, storeSettings.whatsapp_number)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 bg-[#25D366] px-6 text-sm font-semibold text-[#0B3D1F] transition-opacity hover:opacity-90"
+                  >
+                    Ask Latest Rate on WhatsApp
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Brand-Level Editorial Description */}

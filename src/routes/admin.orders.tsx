@@ -505,18 +505,30 @@ function PrintInvoiceModal({
           </table>
 
           {/* Grand Total COD Amount Box */}
-          <div className="mt-4 flex justify-end">
-            <div className="w-64 rounded border-2 border-black p-3 bg-white text-right space-y-1">
-              <div className="flex justify-between text-xs text-[#4A4A4A]">
-                <span>Delivery (PostEx):</span>
-                <span>Included</span>
+          {(() => {
+            const itemsSum = (order.items || []).reduce(
+              (s: number, it: any) => s + Number(it.price) * Number(it.quantity),
+              0,
+            );
+            const deliveryCharge = Math.max(
+              0,
+              Number(order.total_amount) + Number(order.discount_amount || 0) - itemsSum,
+            );
+            return (
+              <div className="mt-4 flex justify-end">
+                <div className="w-64 rounded border-2 border-black p-3 bg-white text-right space-y-1">
+                  <div className="flex justify-between text-xs text-[#4A4A4A]">
+                    <span>Delivery (PostEx):</span>
+                    <span>{deliveryCharge === 0 ? "FREE" : `Rs. ${deliveryCharge.toLocaleString()}`}</span>
+                  </div>
+                  <div className="border-t border-black pt-1.5 flex justify-between items-baseline">
+                    <span className="text-xs font-bold uppercase text-black">Total COD to Collect:</span>
+                    <span className="text-lg font-black text-black">Rs. {Number(order.total_amount).toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
-              <div className="border-t border-black pt-1.5 flex justify-between items-baseline">
-                <span className="text-xs font-bold uppercase text-black">Total COD to Collect:</span>
-                <span className="text-lg font-black text-black">Rs. {Number(order.total_amount).toLocaleString()}</span>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Courier Instructions Footer */}
           <div className="mt-5 rounded border border-dashed border-black/40 p-2.5 text-center text-[10px] text-[#4A4A4A]">

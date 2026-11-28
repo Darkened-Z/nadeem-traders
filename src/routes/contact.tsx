@@ -3,14 +3,12 @@ import { useState } from "react";
 import { Mail, Phone, MapPin, Send, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { submitInquiry } from "../lib/actions";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
-    meta: [
-      { title: "Contact Us — Nadeem Traders" },
-      { name: "description", content: "Reach out to Nadeem Traders for orders and inquiries." },
-    ],
+    meta: pageMeta("Contact Us — Nadeem Traders", "Reach out to Nadeem Traders for orders and inquiries."),
   }),
   component: ContactPage,
 });

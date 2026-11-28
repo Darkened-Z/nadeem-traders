@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { FileText } from "lucide-react";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/terms-of-use")({
   head: () => ({
-    meta: [
-      { title: "Terms of Use — Nadeem Traders" },
-      { name: "description", content: "Terms of service and commercial ordering conditions." },
-    ],
+    meta: pageMeta(
+      "Terms of Use — Nadeem Traders",
+      "Terms of service and commercial ordering conditions.",
+    ),
   }),
   component: TermsPage,
 });

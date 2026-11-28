@@ -12,7 +12,8 @@ export const Route = createFileRoute("/profile")({
   head: () => ({
     meta: [
       { title: "My Profile Dashboard — Nadeem Traders" },
-      { name: "description", content: "View your order history, delivery timelines, and account details." }
+      { name: "description", content: "View your order history, delivery timelines, and account details." },
+      { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: ProfileDashboardPage,
@@ -168,7 +169,7 @@ function ProfileDashboardPage() {
             </div>
           ) : orders.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center text-muted-foreground">
-              No orders found. Buy some wholesale products to start your timeline!
+              No orders found. Explore our dry fruits, spices, seeds, and special items to start your timeline!
             </div>
           ) : (
             <div className="space-y-4">

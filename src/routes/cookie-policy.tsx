@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Cookie } from "lucide-react";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/cookie-policy")({
   head: () => ({
-    meta: [
-      { title: "Cookie Policy — Nadeem Traders" },
-      { name: "description", content: "Details on how session tokens and cookies are used on the portal." },
-    ],
+    meta: pageMeta(
+      "Cookie Policy — Nadeem Traders",
+      "Details on how session tokens and cookies are used on the portal.",
+    ),
   }),
   component: CookiePage,
 });

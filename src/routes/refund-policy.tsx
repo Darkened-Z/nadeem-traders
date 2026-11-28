@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RotateCcw } from "lucide-react";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/refund-policy")({
   head: () => ({
-    meta: [
-      { title: "Refund & Return Policy — Nadeem Traders" },
-      { name: "description", content: "Returns and refund policy for grocery products and agricultural commodities." },
-    ],
+    meta: pageMeta(
+      "Refund & Return Policy — Nadeem Traders",
+      "Returns and refund policy for grocery products and agricultural commodities.",
+    ),
   }),
   component: RefundPage,
 });

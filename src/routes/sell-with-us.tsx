@@ -3,14 +3,15 @@ import { useState } from "react";
 import { Store, Send, Check } from "lucide-react";
 import { toast } from "sonner";
 import { submitInquiry } from "../lib/actions";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/sell-with-us")({
   head: () => ({
-    meta: [
-      { title: "Supplier Onboarding — Nadeem Traders" },
-      { name: "description", content: "Partner with Nadeem Traders as an agricultural grower or mill." },
-    ],
+    meta: pageMeta(
+      "Supplier Onboarding — Nadeem Traders",
+      "Partner with Nadeem Traders as an agricultural grower or mill.",
+    ),
   }),
   component: SellWithUsPage,
 });

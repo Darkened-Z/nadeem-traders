@@ -1,16 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, CategoryRail, CategorySection, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/categories")({
   head: () => ({
-    meta: [
-      { title: "Categories | Nadeem Traders" },
-      {
-        name: "description",
-        content:
-          "Dry Fruits, Seeds, Spices, Whole Spices, and Special Items — Nadeem Traders.",
-      },
-    ],
+    meta: pageMeta(
+      "Categories | Nadeem Traders",
+      "Dry Fruits, Seeds, Spices, Whole Spices, and Special Items — Nadeem Traders.",
+    ),
   }),
   component: CategoriesDirectoryPage,
 });

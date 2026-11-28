@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, ModernProductCard, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/brands")({
   head: () => ({
-    meta: [
-      { title: "Brands | Nadeem Traders" },
-      { name: "description", content: "Shop products by brand." },
-    ],
+    meta: pageMeta("Brands | Nadeem Traders", "Shop products by brand."),
   }),
   component: BrandsPage,
 });

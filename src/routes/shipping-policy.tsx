@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Truck } from "lucide-react";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/shipping-policy")({
   head: () => ({
-    meta: [
-      { title: "Shipping Policy — Nadeem Traders" },
-      { name: "description", content: "Shipping schedules and delivery details." },
-    ],
+    meta: pageMeta("Shipping Policy — Nadeem Traders", "Shipping schedules and delivery details."),
   }),
   component: ShippingPolicyPage,
 });

@@ -7,7 +7,6 @@ const STATIC_PATHS = [
   "/",
   "/shop",
   "/categories",
-  "/offers",
   "/bulk-orders",
   "/brands",
   "/sell-with-us",

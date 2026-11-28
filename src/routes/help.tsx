@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { HelpCircle, ArrowRight } from "lucide-react";
+import { pageMeta } from "../lib/structured-data";
 import { StoreLayout, useStoreData } from "../components/store-layout";
 
 export const Route = createFileRoute("/help")({
   head: () => ({
-    meta: [
-      { title: "Help Center & FAQs — Nadeem Traders" },
-      { name: "description", content: "Frequently asked questions about ordering, delivery, and payments." },
-    ],
+    meta: pageMeta(
+      "Help Center & FAQs — Nadeem Traders",
+      "Frequently asked questions about ordering, delivery, and payments.",
+    ),
   }),
   component: HelpPage,
 });

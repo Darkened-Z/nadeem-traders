@@ -16,6 +16,7 @@ import {
 import {
   DEFAULT_STORE_SETTINGS,
   sanitizeWhatsappNumber,
+  calculateDeliveryFee,
   type StoreSettings,
 } from "../lib/store-settings";
 import {
@@ -178,6 +179,7 @@ export function useStoreData() {
 }
 
 export function ModernProductCard({ product }: { product: any }) {
+  const settings = useStoreSettings();
   const classifications = productOptions(product);
   const [selectedVariant, setSelectedVariant] = useState(classifications[0]?.name || "");
   const [justAdded, setJustAdded] = useState(false);
@@ -296,24 +298,35 @@ export function ModernProductCard({ product }: { product: any }) {
         )}
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
-          {(() => {
-            return (
-              <>
-                <span className="text-sm font-semibold text-foreground">
-                  {view.price != null ? `Rs. ${Number(view.price).toLocaleString()}` : "Rate Poochein"}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAdd}
-                  disabled={!product.stock || view.price == null}
-                  aria-label={`Add ${product.name} to bag`}
-                  className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 btn-gold-outline px-3 text-xs font-semibold text-foreground disabled:opacity-40"
-                >
-                  {justAdded ? <Check className="h-4 w-4 animate-pop" /> : "Add"}
-                </button>
-              </>
-            );
-          })()}
+          {view.price != null ? (
+            <>
+              <span className="text-sm font-semibold text-foreground">
+                Rs. {Number(view.price).toLocaleString()}
+              </span>
+              <button
+                type="button"
+                onClick={handleAdd}
+                disabled={!product.stock}
+                aria-label={`Add ${product.name} to bag`}
+                className="inline-flex h-9 min-w-[3.25rem] items-center justify-center gap-1 btn-gold-outline px-3 text-xs font-semibold text-foreground disabled:opacity-40"
+              >
+                {justAdded ? <Check className="h-4 w-4 animate-pop" /> : "Add"}
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-sm font-semibold text-foreground">Rate Poochein</span>
+              <a
+                href={rateLink(product, selectedVariant || undefined, settings.whatsapp_number)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Ask rate for ${product.name} on WhatsApp`}
+                className="inline-flex h-9 items-center justify-center bg-[#25D366] px-3 text-xs font-semibold text-[#0B3D1F] transition-opacity hover:opacity-90"
+              >
+                WhatsApp
+              </a>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -685,7 +698,8 @@ export function StoreLayout({
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discountAmount = appliedCoupon ? appliedCoupon.discount_amount : 0;
-  const finalTotal = Math.max(0, subtotal - discountAmount);
+  const deliveryFee = calculateDeliveryFee(subtotal, settings);
+  const finalTotal = Math.max(0, subtotal - discountAmount) + deliveryFee;
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
@@ -744,7 +758,7 @@ export function StoreLayout({
         },
       });
       setCreatedOrderId(result.id);
-      track("order_placed", { order_id: result.id, items: cart.length, total: result.total });
+      track("order_placed", { order_id: result.id, items: cart.length, total: result.total_amount ?? finalTotal });
       clearCartDb().catch(() => {});
       cartStore.clearCartLocal();
       setAppliedCoupon(null);
@@ -1123,7 +1137,7 @@ export function StoreLayout({
             {cart.length > 0 && (
               <div className="space-y-3 border-t border-border p-4 sm:p-6">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm text-muted-foreground">Total</span>
+                  <span className="text-sm text-muted-foreground">Subtotal</span>
                   <span className="text-xl font-semibold">Rs. {subtotal.toLocaleString()}</span>
                 </div>
                 <button
@@ -1298,6 +1312,10 @@ export function StoreLayout({
                         <span>- Rs. {discountAmount.toLocaleString()}</span>
                       </div>
                     )}
+                    <div className="flex items-baseline justify-between text-sm text-muted-foreground">
+                      <span>Delivery</span>
+                      <span>{deliveryFee === 0 ? "FREE" : `Rs. ${deliveryFee.toLocaleString()}`}</span>
+                    </div>
                     <div className="flex items-baseline justify-between pt-1">
                       <span className="text-sm font-semibold">Total (Cash on Delivery)</span>
                       <span className="text-xl font-bold">Rs. {finalTotal.toLocaleString()}</span>

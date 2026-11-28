@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "./db";
 import { CATALOG_CATEGORIES, CATALOG_PRODUCTS, cleanProductTitle, type ProductOption } from "./catalog";
-import { assertAdmin } from "./admin";
+import { assertAdmin, readStoreSettings } from "./admin";
+import { calculateDeliveryFee } from "./store-settings";
 import { assertOrderStatus } from "./order-status";
 import { Resend } from "resend";
 import { OAuth2Client } from "google-auth-library";
@@ -20,8 +21,16 @@ function getMailFrom(): string {
 
 async function getAdminNotificationEmail(): Promise<string> {
   if (process.env.ADMIN_EMAIL) return process.env.ADMIN_EMAIL;
-  const { readStoreSettings } = await import("./admin");
   return (await readStoreSettings()).store_email;
+}
+
+function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // Helper to send order status emails
@@ -31,41 +40,54 @@ async function sendOrderStatusEmail(
   customerEmail: string,
   status: string,
   totalAmount: number,
-  items: Array<{ name: string; quantity: number; price: number }>
+  items: Array<{ name: string; quantity: number; price: number }>,
+  deliveryFee?: number,
 ) {
+  const settings = await readStoreSettings();
+  const safeName = escapeHtml(customerName);
+  const safeEmail = escapeHtml(customerEmail);
+  const safeStatus = escapeHtml(status);
+  const safeAddress = escapeHtml(settings.store_address);
   const itemsHtml = items
     .map(
       (item) =>
-        `<li>${item.name} x ${item.quantity} - Rs. ${(
+        `<li>${escapeHtml(item.name)} x ${item.quantity} - Rs. ${(
           item.price * item.quantity
         ).toLocaleString()}</li>`
     )
     .join("");
+  const deliveryRowHtml =
+    deliveryFee !== undefined
+      ? `<p style="font-size: 14px; color: #333333; margin-top: 12px;">Delivery (PostEx): <strong>${
+          deliveryFee === 0 ? "FREE" : `Rs. ${deliveryFee.toLocaleString()}`
+        }</strong></p>`
+      : "";
 
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #fdfdfd;">
-      <div style="background-color: #047857; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+      <div style="background-color: #0B4A36; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
         <h1 style="margin: 0; font-size: 24px;">Nadeem Traders</h1>
         <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Order Update</p>
       </div>
       <div style="padding: 20px; color: #333333; line-height: 1.6;">
-        <p>Dear <strong>${customerName}</strong>,</p>
-        <p>Your order <strong>#${orderId}</strong> status has been updated to: <span style="background-color: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 14px;">${status}</span></p>
+        <p>Dear <strong>${safeName}</strong>,</p>
+        <p>Your order <strong>#${orderId}</strong> status has been updated to: <span style="background-color: #e6f2ed; color: #0B4A36; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 14px;">${safeStatus}</span></p>
         
         <h3 style="border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; margin-top: 24px;">Order Summary</h3>
         <ul style="padding-left: 20px; margin-top: 10px;">
           ${itemsHtml}
         </ul>
-        <p style="font-size: 16px; font-weight: bold; margin-top: 20px;">Total Amount: <span style="color: #047857;">Rs. ${totalAmount.toLocaleString()}</span></p>
+        ${deliveryRowHtml}
+        <p style="font-size: 16px; font-weight: bold; margin-top: 12px;">Total Amount: <span style="color: #0B4A36;">Rs. ${totalAmount.toLocaleString()}</span></p>
         
-        <div style="margin-top: 30px; padding: 15px; background-color: #f9fafb; border-radius: 8px; font-size: 12px; color: #6b7280; border-left: 4px solid #047857;">
+        <div style="margin-top: 30px; padding: 15px; background-color: #f9fafb; border-radius: 8px; font-size: 12px; color: #6b7280; border-left: 4px solid #0B4A36;">
           <strong>Order Tracking:</strong> You can track this order live on our website using Order ID: <strong>${orderId}</strong>.
           <br/><br/>
-          <em style="font-size: 11px;">* Note: This email was sent to your registered address: ${customerEmail}</em>
+          <em style="font-size: 11px;">* Note: This email was sent to your registered address: ${safeEmail}</em>
         </div>
       </div>
       <div style="text-align: center; padding: 15px; font-size: 12px; color: #9ca3af; border-top: 1px solid #f3f4f6; margin-top: 30px;">
-        &copy; ${new Date().getFullYear()} Nadeem Traders. Commercial Hub, Punjab, Pakistan.
+        &copy; ${new Date().getFullYear()} Nadeem Traders. ${safeAddress}.
       </div>
     </div>
   `;
@@ -1155,7 +1177,8 @@ export const createOrder = createServerFn({ method: "POST" })
       couponCode = coupon.code;
       discount = coupon.discount;
     }
-    const total = Math.max(0, subtotal - discount);
+    const deliveryFee = calculateDeliveryFee(subtotal, await readStoreSettings());
+    const total = Math.max(0, subtotal - discount) + deliveryFee;
 
     const { serverCache } = await import("./server-cache");
     serverCache.delete("orders_list");
@@ -1189,7 +1212,8 @@ export const createOrder = createServerFn({ method: "POST" })
       customerEmail,
       "Pending (COD Received)",
       total,
-      lines.map((l) => ({ name: l.product_name, quantity: l.quantity, price: l.price }))
+      lines.map((l) => ({ name: l.product_name, quantity: l.quantity, price: l.price })),
+      deliveryFee,
     ).catch(console.error);
 
     return result;
@@ -1296,9 +1320,9 @@ export const sendVerificationEmail = createServerFn({ method: "POST" })
         subject: "Verify Your Email Address — Nadeem Traders",
         html: `
           <div style="font-family: sans-serif; padding: 20px; max-width: 500px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff;">
-            <h2 style="color: #2E7D32; margin-top: 0;">Nadeem Traders</h2>
+            <h2 style="color: #0B4A36; margin-top: 0;">Nadeem Traders</h2>
             <p style="font-size: 14px; color: #334155;">Thank you for registering at Nadeem Traders. Please use the verification code below to verify your email address:</p>
-            <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 16px; background: #e8f5e9; text-align: center; color: #1b5e20; border-radius: 8px; margin: 20px 0; border: 1px solid #c8e6c9;">
+            <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 16px; background: #e6f2ed; text-align: center; color: #0B4A36; border-radius: 8px; margin: 20px 0; border: 1px solid #b7dfd0;">
               ${code}
             </div>
             <p style="font-size: 12px; color: #64748b; line-height: 1.5;">This code will expire in 15 minutes. If you did not make this request, please disregard this email.</p>
@@ -1450,15 +1474,6 @@ type InquiryInput =
   | { kind: "contact"; name: string; email: string; subject: string; message: string }
   | { kind: "bulk"; companyName: string; contactPerson: string; phone: string; city: string; itemsQuery: string }
   | { kind: "supplier"; supplierName: string; city: string; phone: string; catalogType: string };
-
-function escapeHtml(raw: string): string {
-  return raw
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
 
 function cleanInquiryField(raw: unknown, label: string, maxLen = 2000): string {
   const val = String(raw ?? "").trim();
