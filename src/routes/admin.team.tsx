@@ -12,7 +12,15 @@ import {
   adminRevokeMemberSessions,
   adminUpdateMember,
 } from "../lib/admin";
-import { ADMIN_ROLES, roleLabel, type AdminRole } from "../lib/admin-roles";
+import {
+  ADMIN_ROLES,
+  assignableAdminRoles,
+  canManageTeamRole,
+  canRevokeAllAdminSessions,
+  roleLabel,
+  type AdminRole,
+  type TeamMember,
+} from "../lib/admin-roles";
 import { useAdminQuery } from "../components/admin-shell";
 import { Badge, Button, Card, EmptyState, Field, Modal, PageHeader, errorMessage, inputClass } from "../components/admin-ui";
 
@@ -53,7 +61,7 @@ function TeamPage() {
     }
   };
 
-  const updateMember = async (member: any, patch: { role?: AdminRole; active?: boolean }) => {
+  const updateMember = async (member: TeamMember, patch: { role?: AdminRole; active?: boolean }) => {
     setBusyId(member.id);
     try {
       await adminUpdateMember({
@@ -73,7 +81,7 @@ function TeamPage() {
     }
   };
 
-  const revokeMember = async (member: any) => {
+  const revokeMember = async (member: TeamMember) => {
     setBusyId(member.id);
     try {
       await adminRevokeMemberSessions({ data: { id: member.id } });
@@ -86,7 +94,7 @@ function TeamPage() {
     }
   };
 
-  const deleteMember = async (member: any) => {
+  const deleteMember = async (member: TeamMember) => {
     if (!confirm(`Remove ${member.name} (${member.email}) from admin access?`)) return;
     setBusyId(member.id);
     try {
@@ -142,16 +150,20 @@ function TeamPage() {
     );
   }
 
-  const { members, logs, currentActorId, masterPasswordEnabled } = data;
+  const { members, logs, currentActorId, currentActorRole, masterPasswordEnabled } = data;
+  const assignableRoles = ADMIN_ROLES.filter((r) => assignableAdminRoles(currentActorRole).includes(r.role));
+  const allowRevokeAll = canRevokeAllAdminSessions(currentActorRole);
 
   return (
     <div className="space-y-4">
       <PageHeader
         title="Team & Access Control"
         actions={
-          <Button variant="secondary" loading={revokingAll} onClick={handleRevokeAll}>
-            <LogOut className="h-3.5 w-3.5" /> Sign out all sessions
-          </Button>
+          allowRevokeAll ? (
+            <Button variant="secondary" loading={revokingAll} onClick={handleRevokeAll}>
+              <LogOut className="h-3.5 w-3.5" /> Sign out all sessions
+            </Button>
+          ) : undefined
         }
       />
 
@@ -198,7 +210,7 @@ function TeamPage() {
               onChange={(e) => setForm({ ...form, role: e.target.value as AdminRole })}
               className={inputClass}
             >
-              {ADMIN_ROLES.map((r) => (
+              {assignableRoles.map((r) => (
                 <option key={r.role} value={r.role}>
                   {r.label}
                 </option>
@@ -248,8 +260,9 @@ function TeamPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EBEBEB]">
-                {members.map((m: any) => {
+                {members.map((m) => {
                   const isSelf = currentActorId === m.id;
+                  const canManage = canManageTeamRole(currentActorRole, m.role);
                   const busy = busyId === m.id;
                   return (
                     <tr key={m.id}>
@@ -260,19 +273,25 @@ function TeamPage() {
                         <div className="text-[#616161]">{m.email}</div>
                       </td>
                       <td className="px-3 py-2.5">
-                        <select
-                          aria-label={`Role for ${m.name}`}
-                          disabled={busy || isSelf}
-                          value={m.role}
-                          onChange={(e) => updateMember(m, { role: e.target.value as AdminRole })}
-                          className="rounded-lg border border-[#D4D4D4] bg-white px-2 py-1 text-xs font-medium text-[#303030] disabled:opacity-50"
-                        >
-                          {ADMIN_ROLES.map((r) => (
-                            <option key={r.role} value={r.role}>
-                              {r.label}
-                            </option>
-                          ))}
-                        </select>
+                        {canManage ? (
+                          <select
+                            aria-label={`Role for ${m.name}`}
+                            disabled={busy || isSelf}
+                            value={m.role}
+                            onChange={(e) => updateMember(m, { role: e.target.value as AdminRole })}
+                            className="rounded-lg border border-[#D4D4D4] bg-white px-2 py-1 text-xs font-medium text-[#303030] disabled:opacity-50"
+                          >
+                            {assignableRoles.map((r) => (
+                              <option key={r.role} value={r.role}>
+                                {r.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="inline-flex items-center rounded-md bg-[#F6F6F7] px-2 py-1 text-xs font-medium text-[#303030]">
+                            {roleLabel(m.role)}
+                          </span>
+                        )}
                       </td>
                       <td className="px-3 py-2.5">
                         <Badge tone={m.active ? "active" : "Cancelled"}>{m.active ? "Active" : "Suspended"}</Badge>
@@ -284,44 +303,50 @@ function TeamPage() {
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="secondary"
-                            disabled={busy}
-                            onClick={() => {
-                              setResetTarget({ id: m.id, email: m.email });
-                              setNewPassword("");
-                            }}
-                            title="Reset password"
-                          >
-                            <KeyRound className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            disabled={busy}
-                            onClick={() => revokeMember(m)}
-                            title="Sign out everywhere"
-                          >
-                            <LogOut className="h-3.5 w-3.5" />
-                          </Button>
-                          {!isSelf && (
+                          {canManage ? (
                             <>
                               <Button
                                 variant="secondary"
                                 disabled={busy}
-                                onClick={() => updateMember(m, { active: !m.active })}
-                                title={m.active ? "Suspend access" : "Re-enable access"}
+                                onClick={() => {
+                                  setResetTarget({ id: m.id, email: m.email });
+                                  setNewPassword("");
+                                }}
+                                title="Reset password"
                               >
-                                {m.active ? <Ban className="h-3.5 w-3.5 text-[#C70A24]" /> : <CheckCircle2 className="h-3.5 w-3.5 text-[#16A34A]" />}
+                                <KeyRound className="h-3.5 w-3.5" />
                               </Button>
                               <Button
                                 variant="secondary"
                                 disabled={busy}
-                                onClick={() => deleteMember(m)}
-                                title="Delete member"
+                                onClick={() => revokeMember(m)}
+                                title="Sign out everywhere"
                               >
-                                <Trash2 className="h-3.5 w-3.5 text-[#C70A24]" />
+                                <LogOut className="h-3.5 w-3.5" />
                               </Button>
+                              {!isSelf && (
+                                <>
+                                  <Button
+                                    variant="secondary"
+                                    disabled={busy}
+                                    onClick={() => updateMember(m, { active: !m.active })}
+                                    title={m.active ? "Suspend access" : "Re-enable access"}
+                                  >
+                                    {m.active ? <Ban className="h-3.5 w-3.5 text-[#C70A24]" /> : <CheckCircle2 className="h-3.5 w-3.5 text-[#16A34A]" />}
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    disabled={busy}
+                                    onClick={() => deleteMember(m)}
+                                    title="Delete member"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 text-[#C70A24]" />
+                                  </Button>
+                                </>
+                              )}
                             </>
+                          ) : (
+                            <span className="text-[11px] text-[#8A8A8A]">Owner protected</span>
                           )}
                         </div>
                       </td>
@@ -349,7 +374,7 @@ function TeamPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EBEBEB]">
-                {logs.map((l: any) => (
+                {logs.map((l) => (
                   <tr key={l.id}>
                     <td className="whitespace-nowrap px-4 py-2 text-[#616161]">
                       {new Date(l.created_at).toLocaleString("en-PK", { dateStyle: "short", timeStyle: "short" })}

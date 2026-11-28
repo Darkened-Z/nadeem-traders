@@ -6,11 +6,16 @@ import { assertOrderStatus } from "./order-status";
 import { DEFAULT_STORE_SETTINGS, type StoreSettings } from "./store-settings";
 import {
   ADMIN_ROLES,
+  assignableAdminRoles,
+  canManageTeamRole,
+  canRevokeAllAdminSessions,
   hasAdminPermission,
   isAdminRole,
   type AdminPermission,
   type AdminRole,
   type AdminUserView,
+  type AuditLogEntry,
+  type TeamMember,
 } from "./admin-roles";
 
 export { DEFAULT_STORE_SETTINGS, type StoreSettings };
@@ -269,7 +274,7 @@ export const adminLogin = createServerFn({ method: "POST" })
     const email = (data.email ?? "").trim().toLowerCase();
     const password = String(data.password ?? "");
 
-    if (Boolean(sql)) {
+    if (sql !== null) {
       const { getClientIp } = await import("./server-cookies");
       const { assertUnderLimit } = await import("./rate-limit");
       const ipKey = `admin-login:${getClientIp() ?? "unknown"}`;
@@ -840,17 +845,39 @@ async function assertAnotherOwnerRemains(targetId: number) {
   }
 }
 
+async function loadTeamTarget(
+  q: ReturnType<typeof db>,
+  id: number,
+): Promise<{ id: number; email: string; role: string; active: boolean }> {
+  const rows = await q`SELECT id, email, role, active FROM admin_users WHERE id = ${id} LIMIT 1`;
+  const target = rows[0];
+  if (!target) throw new Error("Team member not found");
+  return {
+    id: Number(target.id),
+    email: String(target.email),
+    role: String(target.role),
+    active: target.active === true,
+  };
+}
+
+function assertCanManageTarget(actorRole: AdminRole, targetRole: string, actionLabel: string) {
+  const effectiveRole: AdminRole = isAdminRole(targetRole) ? targetRole : "owner";
+  if (!canManageTeamRole(actorRole, effectiveRole)) {
+    throw new Error(`Only an Owner can ${actionLabel} an Owner account.`);
+  }
+}
+
 export const adminListTeam = createServerFn({ method: "GET" }).handler(async () => {
   const actor = await assertAdmin("team");
   const q = db();
   await ensureAdminTables();
   const [members, logs] = await Promise.all([
-    q`
+    q<TeamMember[]>`
       SELECT id, email, name, role, active, last_login_at, created_at
       FROM admin_users
       ORDER BY CASE role WHEN 'owner' THEN 0 WHEN 'manager' THEN 1 ELSE 2 END, id ASC
     `,
-    q`
+    q<AuditLogEntry[]>`
       SELECT id, actor_email, actor_role, action, target, created_at
       FROM admin_audit_logs
       ORDER BY id DESC
@@ -861,6 +888,7 @@ export const adminListTeam = createServerFn({ method: "GET" }).handler(async () 
     members,
     logs,
     currentActorId: actor.id,
+    currentActorRole: actor.role,
     masterPasswordEnabled: !!process.env.ADMIN_PASSWORD,
     roles: ADMIN_ROLES,
   };
@@ -878,6 +906,9 @@ export const adminCreateMember = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const actor = await assertAdmin("team");
+    if (!assignableAdminRoles(actor.role).includes(data.role)) {
+      throw new Error("Only an Owner can create an Owner account.");
+    }
     const q = db();
     await ensureAdminTables();
     const existing = await q`SELECT id FROM admin_users WHERE email = ${data.email} LIMIT 1`;
@@ -904,9 +935,11 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     const actor = await assertAdmin("team");
     const q = db();
     await ensureAdminTables();
-    const rows = await q`SELECT id, email, role, active FROM admin_users WHERE id = ${data.id} LIMIT 1`;
-    const target = rows[0];
-    if (!target) throw new Error("Team member not found");
+    const target = await loadTeamTarget(q, data.id);
+    assertCanManageTarget(actor.role, target.role, "modify");
+    if (!assignableAdminRoles(actor.role).includes(data.role)) {
+      throw new Error("Only an Owner can assign the Owner role.");
+    }
     if (actor.id === data.id && (data.role !== target.role || !data.active)) {
       throw new Error("You cannot change your own role or deactivate your own account.");
     }
@@ -928,7 +961,7 @@ export const adminUpdateMember = createServerFn({ method: "POST" })
     await logAdminAction(
       actor,
       "member.updated",
-      `${String(target.email)} -> ${data.role}${data.active ? "" : " (disabled)"}`,
+      `${target.email} -> ${data.role}${data.active ? "" : " (disabled)"}`,
     );
     return updated;
   });
@@ -943,14 +976,14 @@ export const adminResetMemberPassword = createServerFn({ method: "POST" })
     const actor = await assertAdmin("team");
     const q = db();
     await ensureAdminTables();
-    const [updated] = await q`
+    const target = await loadTeamTarget(q, data.id);
+    assertCanManageTarget(actor.role, target.role, "reset the password for");
+    await q`
       UPDATE admin_users
       SET password_hash = ${hashPassword(data.password)}, token_version = token_version + 1, updated_at = NOW()
       WHERE id = ${data.id}
-      RETURNING email
     `;
-    if (!updated) throw new Error("Team member not found");
-    await logAdminAction(actor, "member.password_reset", String(updated.email));
+    await logAdminAction(actor, "member.password_reset", target.email);
     return { ok: true };
   });
 
@@ -960,13 +993,13 @@ export const adminRevokeMemberSessions = createServerFn({ method: "POST" })
     const actor = await assertAdmin("team");
     const q = db();
     await ensureAdminTables();
-    const [updated] = await q`
+    const target = await loadTeamTarget(q, data.id);
+    assertCanManageTarget(actor.role, target.role, "sign out");
+    await q`
       UPDATE admin_users SET token_version = token_version + 1, updated_at = NOW()
       WHERE id = ${data.id}
-      RETURNING email
     `;
-    if (!updated) throw new Error("Team member not found");
-    await logAdminAction(actor, "member.sessions_revoked", String(updated.email));
+    await logAdminAction(actor, "member.sessions_revoked", target.email);
     return { ok: true };
   });
 
@@ -977,18 +1010,21 @@ export const adminDeleteMember = createServerFn({ method: "POST" })
     if (actor.id === data.id) throw new Error("You cannot delete your own account.");
     const q = db();
     await ensureAdminTables();
-    const [target] = await q`SELECT id, email, role, active FROM admin_users WHERE id = ${data.id} LIMIT 1`;
-    if (!target) throw new Error("Team member not found");
+    const target = await loadTeamTarget(q, data.id);
+    assertCanManageTarget(actor.role, target.role, "delete");
     if (target.role === "owner" && target.active) {
       await assertAnotherOwnerRemains(data.id);
     }
     await q`DELETE FROM admin_users WHERE id = ${data.id}`;
-    await logAdminAction(actor, "member.deleted", String(target.email));
+    await logAdminAction(actor, "member.deleted", target.email);
     return { ok: true };
   });
 
 export const adminRevokeAllSessions = createServerFn({ method: "POST" }).handler(async () => {
   const actor = await assertAdmin("team");
+  if (!canRevokeAllAdminSessions(actor.role)) {
+    throw new Error("Only an Owner can sign out all admin sessions.");
+  }
   const q = db();
   await ensureAdminTables();
   await q`
