@@ -8,6 +8,7 @@ export type AdminPermission =
   | "coupons"
   | "customers"
   | "analytics"
+  | "google_analytics"
   | "visitors"
   | "search"
   | "settings"
@@ -66,6 +67,7 @@ const MANAGER_PERMS: AdminPermission[] = [
   "coupons",
   "customers",
   "analytics",
+  "google_analytics",
   "visitors",
   "search",
   "settings",
@@ -118,6 +120,7 @@ export function requiredPermissionForAdminPath(pathname: string): AdminPermissio
   if (pathname.startsWith("/admin/coupons")) return "coupons";
   if (pathname.startsWith("/admin/customers")) return "customers";
   if (pathname.startsWith("/admin/analytics")) return "analytics";
+  if (pathname.startsWith("/admin/google-analytics")) return "google_analytics";
   if (pathname.startsWith("/admin/visitors")) return "visitors";
   if (pathname.startsWith("/admin/search")) return "search";
   if (pathname.startsWith("/admin/settings")) return "settings";
