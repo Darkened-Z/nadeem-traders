@@ -14,6 +14,16 @@ const oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 
 
+function getMailFrom(): string {
+  return process.env.MAIL_FROM || "Nadeem Traders <onboarding@resend.dev>";
+}
+
+async function getAdminNotificationEmail(): Promise<string> {
+  if (process.env.ADMIN_EMAIL) return process.env.ADMIN_EMAIL;
+  const { readStoreSettings } = await import("./admin");
+  return (await readStoreSettings()).store_email;
+}
+
 // Helper to send order status emails
 async function sendOrderStatusEmail(
   orderId: number,
@@ -60,9 +70,11 @@ async function sendOrderStatusEmail(
     </div>
   `;
 
+  const from = getMailFrom();
+
   try {
     await resend?.emails.send({
-      from: "Nadeem Traders <onboarding@resend.dev>",
+      from,
       to: customerEmail,
       subject: `[Order #${orderId}] Status Update: ${status}`,
       html: emailHtml,
@@ -74,9 +86,9 @@ async function sendOrderStatusEmail(
 
   // Admin / Store Owner Notification
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || "technicalsubhan7801@gmail.com";
+    const adminEmail = await getAdminNotificationEmail();
     await resend?.emails.send({
-      from: "Nadeem Traders <onboarding@resend.dev>",
+      from,
       to: adminEmail,
       subject: `[Admin Alert - Order #${orderId}] Status: ${status}`,
       html: `<div style="background: #fff3cd; color: #856404; padding: 12px; border: 1px solid #ffeeba; border-radius: 6px; margin-bottom: 20px;">
@@ -1279,7 +1291,7 @@ export const sendVerificationEmail = createServerFn({ method: "POST" })
     // Resend v6 reports failures in the return value instead of throwing.
     const sent = resend
       ? await resend.emails.send({
-        from: "Nadeem Traders <onboarding@resend.dev>",
+        from: getMailFrom(),
         to: data.email,
         subject: "Verify Your Email Address — Nadeem Traders",
         html: `
@@ -1504,7 +1516,7 @@ export const submitInquiry = createServerFn({ method: "POST" })
     }
 
     const { subject, rows, replyTo } = buildInquiryEmail(data);
-    const adminEmail = process.env.ADMIN_EMAIL || "technicalsubhan7801@gmail.com";
+    const adminEmail = await getAdminNotificationEmail();
     const rowsHtml = rows
       .map(
         ([k, v]) =>
@@ -1514,11 +1526,11 @@ export const submitInquiry = createServerFn({ method: "POST" })
 
     const sent = resend
       ? await resend.emails.send({
-          from: "Nadeem Traders <onboarding@resend.dev>",
+          from: getMailFrom(),
           to: adminEmail,
           ...(replyTo ? { replyTo } : {}),
           subject,
-          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e5e5e5;border-radius:10px;"><h2 style="margin-top:0;color:#141311;">${escapeHtml(subject)}</h2><table style="width:100%;border-collapse:collapse;font-size:14px;color:#333;">${rowsHtml}</table></div>`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #e5e5e5;border-radius:10px;"><h2 style="margin-top:0;color:#0B4A36;">${escapeHtml(subject)}</h2><table style="width:100%;border-collapse:collapse;font-size:14px;color:#333;">${rowsHtml}</table></div>`,
         })
       : { error: new Error("RESEND_API_KEY is not configured") };
 

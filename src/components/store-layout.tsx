@@ -798,7 +798,7 @@ export function StoreLayout({
     <StoreSettingsContext.Provider value={settings}>
       <div className="min-h-screen flex flex-col bg-background text-foreground">
         {settings.announcement_text?.trim() && (
-          <div className="bg-[#141311] px-3 py-1.5 text-center text-[11px] font-medium tracking-wide text-[#E6E1D6]">
+          <div className="bg-emerald-deep px-3 py-1.5 text-center text-[11px] font-medium tracking-wide text-gold-light">
             {settings.announcement_text}
           </div>
         )}
