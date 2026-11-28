@@ -119,13 +119,22 @@ function forwardToGa4(event: string, properties?: Record<string, unknown>) {
     case "checkout_started":
       window.gtag("event", "begin_checkout", { items_count: Number(p.items ?? 0) });
       return;
-    case "order_placed":
+    case "order_placed": {
+      const products = Array.isArray(p.products) ? (p.products as Record<string, unknown>[]) : [];
       window.gtag("event", "purchase", {
         transaction_id: String(p.order_id ?? ""),
         currency: "PKR",
         value: Number(p.total ?? 0),
+        items: products.map((it) => ({
+          item_id: String(it.id ?? ""),
+          item_name: String(it.name ?? ""),
+          item_variant: String(it.variant ?? ""),
+          quantity: Number(it.quantity ?? 1),
+          price: Number(it.price ?? 0),
+        })),
       });
       return;
+    }
     case "searched":
       window.gtag("event", "search", { search_term: String(p.query ?? "") });
       return;

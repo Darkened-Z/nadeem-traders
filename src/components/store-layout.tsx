@@ -758,7 +758,12 @@ export function StoreLayout({
         },
       });
       setCreatedOrderId(result.id);
-      track("order_placed", { order_id: result.id, items: cart.length, total: result.total_amount ?? finalTotal });
+      track("order_placed", {
+        order_id: result.id,
+        items: cart.length,
+        total: result.total_amount ?? finalTotal,
+        products: cart.map((item) => ({ id: item.id, name: item.name, variant: item.variant, quantity: item.quantity, price: item.price })),
+      });
       clearCartDb().catch(() => {});
       cartStore.clearCartLocal();
       setAppliedCoupon(null);

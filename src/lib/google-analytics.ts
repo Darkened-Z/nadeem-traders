@@ -92,7 +92,7 @@ export const adminGetGoogleAnalytics = createServerFn({ method: "GET" })
     const auth = await getGoogleAccessToken(serviceAccount, GA4_SCOPE);
     const dateRanges = [{ startDate: `${data.days}daysAgo`, endDate: "today" }];
 
-    const [batch, deviceReport, realtimeReport] = await Promise.all([
+    const [batch, salesBatch, deviceReport, realtimeReport] = await Promise.all([
       gaRequest<GaBatchResponse>(auth, propertyId, "batchRunReports", {
         requests: [
           {
@@ -104,6 +104,7 @@ export const adminGetGoogleAnalytics = createServerFn({ method: "GET" })
               { name: "screenPageViews" },
               { name: "engagementRate" },
               { name: "averageSessionDuration" },
+              { name: "bounceRate" },
             ],
           },
           {
@@ -136,6 +137,46 @@ export const adminGetGoogleAnalytics = createServerFn({ method: "GET" })
           },
         ],
       }),
+      gaRequest<GaBatchResponse>(auth, propertyId, "batchRunReports", {
+        requests: [
+          {
+            dateRanges,
+            metrics: [
+              { name: "ecommercePurchases" },
+              { name: "purchaseRevenue" },
+              { name: "addToCarts" },
+              { name: "checkouts" },
+              { name: "itemsViewed" },
+            ],
+          },
+          {
+            dateRanges,
+            dimensions: [{ name: "eventName" }],
+            metrics: [{ name: "eventCount" }, { name: "totalUsers" }],
+            orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+            limit: 50,
+          },
+          {
+            dateRanges,
+            dimensions: [{ name: "itemName" }],
+            metrics: [{ name: "itemsViewed" }, { name: "itemsAddedToCart" }, { name: "itemsPurchased" }, { name: "itemRevenue" }],
+            orderBys: [{ metric: { metricName: "itemsViewed" }, desc: true }],
+            limit: 15,
+          },
+          {
+            dateRanges,
+            dimensions: [{ name: "landingPage" }],
+            metrics: [{ name: "sessions" }, { name: "bounceRate" }, { name: "averageSessionDuration" }, { name: "ecommercePurchases" }],
+            orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+            limit: 12,
+          },
+          {
+            dateRanges,
+            dimensions: [{ name: "newVsReturning" }],
+            metrics: [{ name: "activeUsers" }, { name: "sessions" }, { name: "engagementRate" }],
+          },
+        ],
+      }),
       gaRequest<GaReportResponse>(auth, propertyId, "runReport", {
         dateRanges,
         dimensions: [{ name: "deviceCategory" }],
@@ -158,7 +199,59 @@ export const adminGetGoogleAnalytics = createServerFn({ method: "GET" })
       pageviews: Math.round(numMetric(totalRow, 3)),
       engagementRate: Math.round(numMetric(totalRow, 4) * 1000) / 10,
       avgSessionDuration: Math.round(numMetric(totalRow, 5)),
+      bounceRate: Math.round(numMetric(totalRow, 6) * 1000) / 10,
     };
+
+    const [salesTotalsReport, eventsReport, itemsReport, landingReport, newVsReturningReport] = salesBatch.reports ?? [];
+    const salesRow = salesTotalsReport?.rows?.[0];
+    const sales = {
+      purchases: Math.round(numMetric(salesRow, 0)),
+      revenue: Math.round(numMetric(salesRow, 1)),
+      addToCarts: Math.round(numMetric(salesRow, 2)),
+      checkouts: Math.round(numMetric(salesRow, 3)),
+      itemsViewed: Math.round(numMetric(salesRow, 4)),
+    };
+
+    const events = (eventsReport?.rows ?? []).map((r) => ({
+      name: dimVal(r),
+      count: Math.round(numMetric(r, 0)),
+      users: Math.round(numMetric(r, 1)),
+    }));
+    const usersFor = (name: string) => events.find((e) => e.name === name)?.users ?? 0;
+    const funnel = [
+      { step: "Visited site", users: usersFor("page_view") || totals.activeUsers },
+      { step: "Viewed a product", users: usersFor("view_item") },
+      { step: "Added to cart", users: usersFor("add_to_cart") },
+      { step: "Started checkout", users: usersFor("begin_checkout") },
+      { step: "Placed order", users: usersFor("purchase") },
+    ];
+
+    const products = (itemsReport?.rows ?? [])
+      .map((r) => ({
+        name: dimVal(r),
+        views: Math.round(numMetric(r, 0)),
+        addedToCart: Math.round(numMetric(r, 1)),
+        purchased: Math.round(numMetric(r, 2)),
+        revenue: Math.round(numMetric(r, 3)),
+      }))
+      .filter((p) => p.name && p.name !== "(not set)");
+
+    const landingPages = (landingReport?.rows ?? []).map((r) => ({
+      path: dimVal(r) || "/",
+      sessions: Math.round(numMetric(r, 0)),
+      bounceRate: Math.round(numMetric(r, 1) * 1000) / 10,
+      avgDuration: Math.round(numMetric(r, 2)),
+      purchases: Math.round(numMetric(r, 3)),
+    }));
+
+    const audience = (newVsReturningReport?.rows ?? [])
+      .map((r) => ({
+        name: dimVal(r) === "new" ? "New visitors" : dimVal(r) === "returning" ? "Returning visitors" : "Unknown",
+        users: Math.round(numMetric(r, 0)),
+        sessions: Math.round(numMetric(r, 1)),
+        engagementRate: Math.round(numMetric(r, 2) * 1000) / 10,
+      }))
+      .filter((a) => a.name !== "Unknown");
 
     const daily = (dailyReport?.rows ?? []).map((r) => ({
       day: formatGaDate(dimVal(r)),
@@ -213,5 +306,11 @@ export const adminGetGoogleAnalytics = createServerFn({ method: "GET" })
       sources,
       cities,
       devices,
+      sales,
+      funnel,
+      events,
+      products,
+      landingPages,
+      audience,
     };
   });
