@@ -27,8 +27,10 @@ function initGa4() {
   gaStarted = true;
 
   window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer!.push(args);
+  // gtag.js only processes Arguments objects, not plain arrays.
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer!.push(arguments);
   };
   window.gtag("js", new Date());
   window.gtag("config", GA_ID, { send_page_view: false });
